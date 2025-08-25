@@ -26,7 +26,7 @@ include(FetchContent)
 FetchContent_Declare(
   proton
   GIT_REPOSITORY https://gitlab.clearpathrobotics.com/research/proton.git
-  GIT_TAG        feature/remove_ros2
+  GIT_TAG        milestone-2
   SOURCE_SUBDIR proto
 )
 
