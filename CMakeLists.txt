@@ -22,75 +22,108 @@ if(NOT PROTOC_EXECUTABLE)
 endif()
 
 # Fetch .proto files from main proton repo
-include(FetchContent)
-FetchContent_Declare(
-  proton
-  GIT_REPOSITORY https://gitlab.clearpathrobotics.com/research/proton.git
-  GIT_TAG        milestone-2
-  SOURCE_SUBDIR proto
-)
+# include(FetchContent)
+# FetchContent_Declare(
+#   proton
+#   GIT_REPOSITORY https://gitlab.clearpathrobotics.com/research/proton.git
+#   GIT_TAG        milestone-2
+#   #SOURCE_SUBDIR proto
+# )
+# FetchContent_MakeAvailable(proton)
+
+find_package(proton REQUIRED)
 
 # Get repo contents without building it.
-FetchContent_GetProperties(proton)
-if(NOT proton_POPULATED)
-  FetchContent_Populate(proton)
-endif()
+# FetchContent_GetProperties(proton)
+# if(NOT proton_POPULATED)
+#   FetchContent_Populate(proton)
+# endif()
 
 # Path to proto directory in proton repo
-set(PROTON_PROTO_DIR ${proton_SOURCE_DIR}/proto)
+# set(PROTON_PROTO_DIR ${proton_SOURCE_DIR}/proto)
 
-# Path to generate python files
-set(GENERATED_PY_DIR "${CMAKE_BINARY_DIR}/generated_py")
+# # Path to generate python files
+# set(GENERATED_PY_DIR "${CMAKE_BINARY_DIR}/generated_py")
 
-# Create the directory
-file(MAKE_DIRECTORY "${GENERATED_PY_DIR}")
-file(TOUCH "${GENERATED_PY_DIR}/__init__.py")
+# # Create the directory
+# file(MAKE_DIRECTORY "${GENERATED_PY_DIR}")
+# file(TOUCH "${GENERATED_PY_DIR}/__init__.py")
 
-# Protobuf files
-file(GLOB PROTO_FILES "${PROTON_PROTO_DIR}/proton/*.proto")
+# # Protobuf files
+# file(GLOB PROTO_FILES "${PROTON_PROTO_DIR}/proton/*.proto")
 
-set(GENERATED_PY_FILES
-  "${GENERATED_PY_DIR}/signal_pb2.py"
-  "${GENERATED_PY_DIR}/bundle_pb2.py"
+# set(GENERATED_PY_FILES
+#   "${GENERATED_PY_DIR}/signal_pb2.py"
+#   "${GENERATED_PY_DIR}/bundle_pb2.py"
+# )
+
+# set(GENERATED_PYI_FILES
+#   "${GENERATED_PY_DIR}/signal_pb2.pyi"
+#   "${GENERATED_PY_DIR}/bundle_pb2.pyi"
+# )
+
+# # Generate python pb2 files
+# add_custom_command(
+#   OUTPUT ${GENERATED_PY_FILES}
+#   COMMAND ${PROTOC_EXECUTABLE}
+#     -I ${PROTON_PROTO_DIR}
+#     --python_out=${GENERATED_PY_DIR} signal.proto bundle.proto
+#     ${PROTO_FILES}
+#   # Fix import statement in bundle_pb2.py
+#   COMMAND sed -i "s|import signal_pb2 as signal__pb2|from ${PROJECT_NAME} import signal_pb2 as signal__pb2|"
+#           ${GENERATED_PY_DIR}/bundle_pb2.py
+#   DEPENDS ${PROTO_FILES}
+#   VERBATIM
+#   COMMENT "Generating Python proto: ${PROTO_FILES}"
+# )
+
+# # Generate python stub files
+# add_custom_command(
+#   OUTPUT ${GENERATED_PYI_FILES}
+#   COMMAND ${PROTOC_EXECUTABLE}
+#     -I ${PROTON_PROTO_DIR}
+#     --pyi_out=${GENERATED_PY_DIR} signal.proto bundle.proto
+#     ${PROTO_FILES}
+#   DEPENDS ${PROTO_FILES}
+#   COMMENT "Generating Python proto: ${PROTO_FILES}"
+# )
+
+# # Add target so that files are built
+# add_custom_target(generate_proto_py ALL
+#   DEPENDS
+#   ${GENERATED_PY_DIR}/__init__.py
+#   ${GENERATED_PY_FILES}
+#   ${GENERATED_PYI_FILES}
+# )
+
+set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
+set(PROTON_ROS2_LIB proton_ros2)
+set(PROTON_ROS2_DEPENDENCIES
+  proton
+  rclcpp
+  std_msgs
+)
+set(PROTON_ROS2_SOURCES
+  src/node.cpp
 )
 
-set(GENERATED_PYI_FILES
-  "${GENERATED_PY_DIR}/signal_pb2.pyi"
-  "${GENERATED_PY_DIR}/bundle_pb2.pyi"
+add_library(${PROTON_ROS2_LIB}
+  STATIC
+  ${PROTON_ROS2_SOURCES}
 )
+target_link_libraries(${PROTON_ROS2_LIB} proton::protoncpp)
+target_include_directories(${PROTON_ROS2_LIB} PRIVATE include)
+ament_target_dependencies(${PROTON_ROS2_LIB} ${PROTON_ROS2_DEPENDENCIES})
 
-# Generate python pb2 files
-add_custom_command(
-  OUTPUT ${GENERATED_PY_FILES}
-  COMMAND ${PROTOC_EXECUTABLE}
-    -I ${PROTON_PROTO_DIR}
-    --python_out=${GENERATED_PY_DIR} signal.proto bundle.proto
-    ${PROTO_FILES}
-  # Fix import statement in bundle_pb2.py
-  COMMAND sed -i "s|import signal_pb2 as signal__pb2|from ${PROJECT_NAME} import signal_pb2 as signal__pb2|"
-          ${GENERATED_PY_DIR}/bundle_pb2.py
-  DEPENDS ${PROTO_FILES}
-  VERBATIM
-  COMMENT "Generating Python proto: ${PROTO_FILES}"
-)
+add_executable(${PROTON_ROS2_EXECUTABLE} src/main.cpp)
+target_link_libraries(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_LIB})
+target_include_directories(${PROTON_ROS2_EXECUTABLE} PRIVATE include)
+ament_target_dependencies(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_DEPENDENCIES})
 
-# Generate python stub files
-add_custom_command(
-  OUTPUT ${GENERATED_PYI_FILES}
-  COMMAND ${PROTOC_EXECUTABLE}
-    -I ${PROTON_PROTO_DIR}
-    --pyi_out=${GENERATED_PY_DIR} signal.proto bundle.proto
-    ${PROTO_FILES}
-  DEPENDS ${PROTO_FILES}
-  COMMENT "Generating Python proto: ${PROTO_FILES}"
-)
-
-# Add target so that files are built
-add_custom_target(generate_proto_py ALL
-  DEPENDS
-  ${GENERATED_PY_DIR}/__init__.py
-  ${GENERATED_PY_FILES}
-  ${GENERATED_PYI_FILES}
+install(
+  TARGETS ${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_LIB}
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
@@ -105,6 +138,10 @@ install(DIRECTORY launch
 ament_python_install_package(${PROJECT_NAME}
   PACKAGE_DIR ${GENERATED_PY_DIR}
 )
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROTON_ROS2_LIB})
+ament_export_dependencies(${PROTON_ROS2_DEPENDENCIES})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
