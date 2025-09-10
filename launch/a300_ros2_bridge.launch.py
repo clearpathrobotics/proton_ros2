@@ -39,7 +39,7 @@ def generate_launch_description():
 
     node_a300_ros2_bridge = Node(
         executable='a300_ros2_bridge',
-        package='proton',
+        package='proton_ros2',
         namespace=LaunchConfiguration('namespace'),
         output='screen'
     )
