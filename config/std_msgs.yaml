@@ -1,0 +1,11 @@
+package: std_msgs
+
+messages:
+  - name: String
+    path: msg
+    mapping:
+      - {ros_path: data, signal: data, type: string}
+  - name: Bool
+    path: msg
+    mapping:
+      - {ros_path: data, signal: data, type: bool}

@@ -1,0 +1,48 @@
+package: sensor_msgs
+messages:
+  - name: BatteryState
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: voltage, signal: voltage, type: float}
+      - {ros_path: temperature, signal: temperature, type: float}
+      - {ros_path: charge, signal: charge, type: float}
+      - {ros_path: capacity, signal: capacity, type: float}
+      - {ros_path: design_capacity, signal: design_capacity, type: float}
+      - {ros_path: percentage, signal: percentage, type: float}
+      - {ros_path: power_supply_status, signal: power_supply_status, type: uint32}
+      - {ros_path: power_supply_health, signal: power_supply_health, type: uint32}
+      - {ros_path: power_supply_technology, signal: power_supply_technology, type: uint32}
+      - {ros_path: present, signal: present, type: bool}
+      - {ros_path: cell_voltage, signal: cell_voltage, type: float, length: 0}
+      - {ros_path: cell_temperature, signal: cell_temperature, type: float, length: 0}
+      - {ros_path: location, signal: location, type: string}
+      - {ros_path: serial_number, signal: serial_number, type: string}
+  - name: Imu
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: orientation.x, signal: orientation, index: 0, type: double}
+      - {ros_path: orientation.y, signal: orientation, index: 1, type: double}
+      - {ros_path: orientation.z, signal: orientation, index: 2, type: double}
+      - {ros_path: orientation.w, signal: orientation, index: 3, type: double}
+      - {ros_path: orientation_covariance, signal: orientation_covariance, type: double, length: 9}
+      - {ros_path: angular_velocity.x, signal: angular_velocity, index: 0, type: double}
+      - {ros_path: angular_velocity.y, signal: angular_velocity, index: 1, type: double}
+      - {ros_path: angular_velocity.z, signal: angular_velocity, index: 2, type: double}
+      - {ros_path: angular_velocity_covariance, signal: angular_velocity_covariance, type: double, length: 9}
+      - {ros_path: linear_acceleration.x, signal: linear_acceleration, index: 0, type: double}
+      - {ros_path: linear_acceleration.y, signal: linear_acceleration, index: 1, type: double}
+      - {ros_path: linear_acceleration.z, signal: linear_acceleration, index: 2, type: double}
+      - {ros_path: linear_acceleration_covariance, signal: linear_acceleration_covariance, type: double, length: 9}
+  - name: MagneticField
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: magnetic_field.x, signal: magnetic_field, index: 0, type: double}
+      - {ros_path: magnetic_field.y, signal: magnetic_field, index: 1, type: double}
+      - {ros_path: magnetic_field.z, signal: magnetic_field, index: 2, type: double}
+      - {ros_path: magnetic_field_covariance, signal: magnetic_field_covariance, type: double, length: 9}

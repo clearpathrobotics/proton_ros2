@@ -12,6 +12,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(clearpath_platform_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 find_package(Protobuf REQUIRED)
 
@@ -102,6 +103,9 @@ set(PROTON_ROS2_DEPENDENCIES
   proton
   rclcpp
   std_msgs
+  rcl_interfaces
+  clearpath_platform_msgs
+  sensor_msgs
 )
 set(PROTON_ROS2_SOURCES
   src/node.cpp
@@ -127,7 +131,14 @@ install(
 )
 
 install(
-  PROGRAMS ${PROJECT_NAME}/a300_ros2_bridge
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  PROGRAMS
+    ${PROJECT_NAME}/a300_ros2_bridge
+    ${PROJECT_NAME}/proton_ros2_generator
   DESTINATION lib/${PROJECT_NAME}
 )
 

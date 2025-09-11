@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+
+# Software License Agreement (BSD)
+#
+# @author    Roni Kreinin <rkreinin@clearpathrobotics.com>
+# @copyright (c) 2025, Clearpath Robotics, Inc., All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice,
+#   this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# * Neither the name of Clearpath Robotics nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+import argparse
+import os
+import yaml
+
+from proton_ros2.config import ProtonROS2MessageConfig
+from proton_ros2.source_writer import CPPWriter, Variable, Struct, Function
+
+
+class ProtonROS2Generator:
+
+    SignalMap = {
+        "double": "double",
+        "float": "float",
+        "int32": "int32_t",
+        "int64": "int64_t",
+        "uint32": "uint32_t",
+        "uint64": "uint64_t",
+        "bool": "bool",
+        "string": "std::string",
+        "bytes": "proton::bytes"
+    }
+
+    ListSignalMap = {
+        "double": "proton::list_double",
+        "float": "proton::list_float",
+        "int32": "proton::list_int32",
+        "int64": "proton::list_int64",
+        "uint32": "proton::list_uint32",
+        "uint64": "proton::list_uint64",
+        "bool": "proton::list_bool",
+        "string": "proton::list_string",
+    }
+
+    def __init__(self, config_file: str, destination_path: str):
+        self.config_file = config_file
+        self.destination_path = destination_path
+        assert os.path.exists(self.config_file)
+        if not os.path.exists(self.destination_path):
+            os.mkdir(self.destination_path)
+
+        self.dictionary = self.read_yaml()
+        self.config = ProtonROS2MessageConfig(self.dictionary)
+
+    def read_yaml(self):
+        # Check YAML can be Opened
+        try:
+            config = yaml.load(open(self.config_file), Loader=yaml.SafeLoader)
+        except yaml.scanner.ScannerError:
+            raise AssertionError(f'YAML file "{self.config_file}" is not well formed')
+        except yaml.constructor.ConstructorError:
+            raise AssertionError(
+                f'YAML file "{self.config_file}" is attempting to create unsafe objects'
+            )
+        # Check contents are a Dictionary
+        assert isinstance(config, dict), (
+            f'YAML file "{self.config_file}" is not a dictionary'
+        )
+        return config
+
+    def camelcase_to_snakecase(self, string: str):
+        scase: str = ""
+        i = 0
+        for c in string:
+            if c.isupper():
+                if i == 0:
+                    scase += c.lower()
+                else:
+                    scase += "_" + c.lower()
+            else:
+                scase += c
+            i += 1
+        return scase
+
+
+    def generate_type_adapter(self, config: ProtonROS2MessageConfig):
+      self.header_writer.write("template<>", indent_level=0)
+      self.header_writer.write(f"struct rclcpp::TypeAdapter<proton::BundleHandle, {config.ros_type}> {{", indent_level=0)
+      self.header_writer.write("using is_specialized = std::true_type;", indent_level=1)
+      self.header_writer.write("using custom_type = proton::BundleHandle;", indent_level=1)
+      self.header_writer.write(f"using ros_message_type = {config.ros_type};", indent_level=1)
+      self.header_writer.write_newline()
+
+      # Convert to ROS
+      self.header_writer.write("static void convert_to_ros_message(const custom_type & source,ros_message_type & destination) {", indent_level=1)
+      if config.stamp:
+          self.header_writer.write(f'destination.{config.stamp} = proton::ros2::getTimeStamp();', indent_level=2)
+      for map in config.mappings:
+          self.header_writer.write(f'if (source.hasSignal(\"{map.signal}\")) {{', indent_level=2)
+          if map.index is not None:
+              self.header_writer.write(f'destination.{map.ros_path} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>().at({map.index});', indent_level=3)
+          elif map.length == 0:
+              self.header_writer.write(f'destination.{map.ros_path} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>();', indent_level=3)
+          elif map.length is not None:
+              self.header_writer.write(f'{self.ListSignalMap[map.type]} {map.signal} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>();', indent_level=3)
+              self.header_writer.write(f'std::copy({map.signal}.begin(), {map.signal}.end(), destination.{map.ros_path}.begin());', indent_level=3)
+          else:
+              self.header_writer.write(f'destination.{map.ros_path} = source.getConstSignal(\"{map.signal}\").getValue<{self.SignalMap[map.type]}>();', indent_level=3)
+          self.header_writer.write('}', indent_level=2)
+      self.header_writer.write("}", indent_level=1)
+      self.header_writer.write_newline()
+
+      # Convert to Custom
+      self.header_writer.write("static void convert_to_custom(const ros_message_type & source, custom_type & destination) {", indent_level=1)
+      for map in config.mappings:
+          self.header_writer.write(f'if (destination.hasSignal(\"{map.signal}\"))  {{', indent_level=2)
+          if map.index is not None:
+              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>({map.index}, source.{map.ros_path});', indent_level=3)
+          elif map.length == 0:
+              self.header_writer.write(f'std::size_t len = destination.getSignal(\"{map.signal}\").getLength();', indent_level=3)
+              self.header_writer.write(f'{self.ListSignalMap[map.type]} {map.signal}(len);', indent_level=3)
+              self.header_writer.write(f'int n = std::min(len, source.{map.ros_path}.size());', indent_level=3)
+              self.header_writer.write(f'std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.begin() + n, {map.signal}.begin());', indent_level=3)
+              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.ListSignalMap[map.type]}>({map.signal});', indent_level=3)
+          elif map.length is not None:
+              self.header_writer.write(f'{self.ListSignalMap[map.type]} {map.signal}({map.length});', indent_level=3)
+              self.header_writer.write(f'std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.end(), {map.signal}.begin());', indent_level=3)
+              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.ListSignalMap[map.type]}>({map.signal});', indent_level=3)
+          else:
+              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(source.{map.ros_path});', indent_level=3)
+          self.header_writer.write('}', indent_level=2)
+      self.header_writer.write("}", indent_level=1)
+
+      self.header_writer.write('};', indent_level=0)
+
+    def generate(self):
+        self.header_writer = CPPWriter(
+            self.destination_path,
+            f"{self.config.package}.hpp",
+        )
+
+        self.header_writer.write_header_guard_open()
+        self.header_writer.write_include("rclcpp/type_adapter.hpp")
+        self.header_writer.write_include("protoncpp/bundle.hpp")
+        self.header_writer.write_include("proton_ros2/conversions/utils.hpp")
+        self.header_writer.write_newline()
+
+        for m in self.config.messages:
+            self.header_writer.write_include(f'{m.package}/{m.path}/{self.camelcase_to_snakecase(m.name)}.hpp')
+
+        self.header_writer.write_newline()
+
+        for m in self.config.messages:
+            self.generate_type_adapter(m)
+
+        self.header_writer.write_newline()
+        self.header_writer.write_header_guard_close()
+
+        self.header_writer.close_file()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config_folder",
+        type=str,
+        action="store",
+        default="/home/rkreinin/proto_ws/src/proton_ros2/config/",
+        help="Configuration folder path.",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--destination",
+        type=str,
+        action="store",
+        default="/home/rkreinin/proto_ws/src/proton_ros2/include/proton_ros2/conversions/",
+        help="Destination folder path for generated files.",
+    )
+
+    args = parser.parse_args()
+
+    folder = args.config_folder
+    dest = args.destination
+
+    files = os.listdir(folder)
+    for f in files:
+        print(f)
+        _, ext = os.path.splitext(f)
+        if ext == '.yaml':
+            generator = ProtonROS2Generator(os.path.join(folder, f), dest)
+            generator.generate()
+
+if __name__ == "__main__":
+    main()

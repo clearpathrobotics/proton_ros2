@@ -13,51 +13,21 @@
 #ifndef INC_PROTON_ROS2_NODE_HPP_
 #define INC_PROTON_ROS2_NODE_HPP_
 
+#include <map>
+
 #include "protoncpp/proton.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "proton_ros2/conversions/std_msgs.hpp"
+#include "proton_ros2/typed.hpp"
 
-struct IPublisher {
-  virtual void publish(const proton::BundleHandle & bundle) = 0;
-  virtual ~IPublisher() = default;
-};
-
-template<typename MsgT>
-struct TypedPublisher : public IPublisher {
-  typename rclcpp::Publisher<rclcpp::TypeAdapter<proton::BundleHandle, MsgT>>::SharedPtr pub;
-
-  TypedPublisher(rclcpp::Node * node, const std::string & topic) {
-    pub = node->create_publisher<rclcpp::TypeAdapter<proton::BundleHandle, MsgT>>(topic, 10);
-  }
-
-  void publish(const proton::BundleHandle & bundle) override {
-    pub->publish(bundle);
-  }
-};
-
-struct ISubscription {
-  virtual ~ISubscription() = default;
-};
-
-template<typename MsgT>
-struct TypedSubscription : public ISubscription {
-    typename rclcpp::Subscription<MsgT>::SharedPtr sub;
-
-    TypedSubscription(rclcpp::Node * node,
-                      const std::string & topic, proton::BundleHandle & bundle)
-    {
-      sub = node->create_subscription<MsgT>(
-        topic, 10,
-        [this, &bundle](const MsgT & msg) {
-          rclcpp::TypeAdapter<proton::BundleHandle, MsgT>::convert_to_custom(msg, bundle);
-          // proton::BundleHandle handle(msg);
-          // handle.getSignal()
-          std::cout << "callback" << std::endl;
-        });
-    }
-};
 
 namespace proton::ros2 {
+
+namespace keys {
+  static const char *const ROS2 = "ros2";
+  static const char *const MESSAGE = "message";
+  static const char *const TOPIC = "topic";
+}
 
 class Node : public rclcpp::Node
 {
@@ -65,14 +35,15 @@ public:
   Node();
 
 private:
-  void callback(proton::BundleHandle& bundle);
+  void protonCallback(proton::BundleHandle& bundle);
+  void rosCallback(proton::BundleHandle& bundle);
   std::string config_file_;
   std::string target_;
   proton::Node proton_node_;
   rclcpp::TimerBase::SharedPtr proton_timer_;
 
-  std::vector<std::shared_ptr<IPublisher>> publishers_;
-  std::vector<std::shared_ptr<ISubscription>> subscriptions_;
+  std::map<std::string, std::shared_ptr<IPublisher>> publishers_;
+  std::map<std::string, std::shared_ptr<ISubscriber>> subscribers_;
 };
 
 }
