@@ -32,12 +32,13 @@ import argparse
 import os
 import yaml
 
+from typing import List
+
 from proton_ros2.config import ProtonROS2MessageConfig
-from proton_ros2.source_writer import CPPWriter, Variable, Struct, Function
+from proton_ros2.source_writer import CPPWriter, Function, Variable
 
 
-class ProtonROS2Generator:
-
+class ProtonROS2ConversionGenerator:
     SignalMap = {
         "double": "double",
         "float": "float",
@@ -47,7 +48,7 @@ class ProtonROS2Generator:
         "uint64": "uint64_t",
         "bool": "bool",
         "string": "std::string",
-        "bytes": "proton::bytes"
+        "bytes": "proton::bytes",
     }
 
     ListSignalMap = {
@@ -70,6 +71,8 @@ class ProtonROS2Generator:
 
         self.dictionary = self.read_yaml()
         self.config = ProtonROS2MessageConfig(self.dictionary)
+        self.generated_file_name = f"{self.config.package}.hpp"
+        self.generated_include = f"proton_ros2/conversions/{self.generated_file_name}"
 
     def read_yaml(self):
         # Check YAML can be Opened
@@ -87,75 +90,126 @@ class ProtonROS2Generator:
         )
         return config
 
-    def camelcase_to_snakecase(self, string: str):
-        scase: str = ""
-        i = 0
-        for c in string:
-            if c.isupper():
-                if i == 0:
-                    scase += c.lower()
-                else:
-                    scase += "_" + c.lower()
-            else:
-                scase += c
-            i += 1
-        return scase
-
-
     def generate_type_adapter(self, config: ProtonROS2MessageConfig):
-      self.header_writer.write("template<>", indent_level=0)
-      self.header_writer.write(f"struct rclcpp::TypeAdapter<proton::BundleHandle, {config.ros_type}> {{", indent_level=0)
-      self.header_writer.write("using is_specialized = std::true_type;", indent_level=1)
-      self.header_writer.write("using custom_type = proton::BundleHandle;", indent_level=1)
-      self.header_writer.write(f"using ros_message_type = {config.ros_type};", indent_level=1)
-      self.header_writer.write_newline()
+        self.header_writer.write("template<>", indent_level=0)
+        self.header_writer.write(
+            f"struct rclcpp::TypeAdapter<proton::BundleHandle, {config.ros_type}> {{",
+            indent_level=0,
+        )
+        self.header_writer.write(
+            "using is_specialized = std::true_type;", indent_level=1
+        )
+        self.header_writer.write(
+            "using custom_type = proton::BundleHandle;", indent_level=1
+        )
+        self.header_writer.write(
+            f"using ros_message_type = {config.ros_type};", indent_level=1
+        )
+        self.header_writer.write_newline()
 
-      # Convert to ROS
-      self.header_writer.write("static void convert_to_ros_message(const custom_type & source,ros_message_type & destination) {", indent_level=1)
-      if config.stamp:
-          self.header_writer.write(f'destination.{config.stamp} = proton::ros2::getTimeStamp();', indent_level=2)
-      for map in config.mappings:
-          self.header_writer.write(f'if (source.hasSignal(\"{map.signal}\")) {{', indent_level=2)
-          if map.index is not None:
-              self.header_writer.write(f'destination.{map.ros_path} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>().at({map.index});', indent_level=3)
-          elif map.length == 0:
-              self.header_writer.write(f'destination.{map.ros_path} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>();', indent_level=3)
-          elif map.length is not None:
-              self.header_writer.write(f'{self.ListSignalMap[map.type]} {map.signal} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>();', indent_level=3)
-              self.header_writer.write(f'std::copy({map.signal}.begin(), {map.signal}.end(), destination.{map.ros_path}.begin());', indent_level=3)
-          else:
-              self.header_writer.write(f'destination.{map.ros_path} = source.getConstSignal(\"{map.signal}\").getValue<{self.SignalMap[map.type]}>();', indent_level=3)
-          self.header_writer.write('}', indent_level=2)
-      self.header_writer.write("}", indent_level=1)
-      self.header_writer.write_newline()
+        # Convert to ROS
+        self.header_writer.write(
+            "static void convert_to_ros_message(const custom_type & source,ros_message_type & destination) {",
+            indent_level=1,
+        )
+        if config.stamp:
+            self.header_writer.write(
+                f"destination.{config.stamp} = proton::ros2::getTimeStamp();",
+                indent_level=2,
+            )
+        for map in config.mappings:
+            self.header_writer.write(
+                f'if (source.hasSignal("{map.signal}")) {{', indent_level=2
+            )
+            if map.index is not None:
+                self.header_writer.write(
+                    f'destination.{map.ros_path} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>().at({map.index});',
+                    indent_level=3,
+                )
+            elif map.length == 0:
+                self.header_writer.write(
+                    f'destination.{map.ros_path} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>();',
+                    indent_level=3,
+                )
+            elif map.length is not None:
+                self.header_writer.write(
+                    f'{self.ListSignalMap[map.type]} {map.signal} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>();',
+                    indent_level=3,
+                )
+                self.header_writer.write(
+                    f"std::copy({map.signal}.begin(), {map.signal}.end(), destination.{map.ros_path}.begin());",
+                    indent_level=3,
+                )
+            else:
+                self.header_writer.write(
+                    f'destination.{map.ros_path} = source.getConstSignal("{map.signal}").getValue<{self.SignalMap[map.type]}>();',
+                    indent_level=3,
+                )
+            self.header_writer.write("}", indent_level=2)
+        self.header_writer.write("}", indent_level=1)
+        self.header_writer.write_newline()
 
-      # Convert to Custom
-      self.header_writer.write("static void convert_to_custom(const ros_message_type & source, custom_type & destination) {", indent_level=1)
-      for map in config.mappings:
-          self.header_writer.write(f'if (destination.hasSignal(\"{map.signal}\"))  {{', indent_level=2)
-          if map.index is not None:
-              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>({map.index}, source.{map.ros_path});', indent_level=3)
-          elif map.length == 0:
-              self.header_writer.write(f'std::size_t len = destination.getSignal(\"{map.signal}\").getLength();', indent_level=3)
-              self.header_writer.write(f'{self.ListSignalMap[map.type]} {map.signal}(len);', indent_level=3)
-              self.header_writer.write(f'int n = std::min(len, source.{map.ros_path}.size());', indent_level=3)
-              self.header_writer.write(f'std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.begin() + n, {map.signal}.begin());', indent_level=3)
-              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.ListSignalMap[map.type]}>({map.signal});', indent_level=3)
-          elif map.length is not None:
-              self.header_writer.write(f'{self.ListSignalMap[map.type]} {map.signal}({map.length});', indent_level=3)
-              self.header_writer.write(f'std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.end(), {map.signal}.begin());', indent_level=3)
-              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.ListSignalMap[map.type]}>({map.signal});', indent_level=3)
-          else:
-              self.header_writer.write(f'destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(source.{map.ros_path});', indent_level=3)
-          self.header_writer.write('}', indent_level=2)
-      self.header_writer.write("}", indent_level=1)
+        # Convert to Custom
+        self.header_writer.write(
+            "static void convert_to_custom(const ros_message_type & source, custom_type & destination) {",
+            indent_level=1,
+        )
+        for map in config.mappings:
+            self.header_writer.write(
+                f'if (destination.hasSignal("{map.signal}"))  {{', indent_level=2
+            )
+            if map.index is not None:
+                self.header_writer.write(
+                    f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>({map.index}, source.{map.ros_path});',
+                    indent_level=3,
+                )
+            elif map.length == 0:
+                self.header_writer.write(
+                    f'std::size_t len = destination.getSignal("{map.signal}").getLength();',
+                    indent_level=3,
+                )
+                self.header_writer.write(
+                    f"{self.ListSignalMap[map.type]} {map.signal}(len);", indent_level=3
+                )
+                self.header_writer.write(
+                    f"int n = std::min(len, source.{map.ros_path}.size());",
+                    indent_level=3,
+                )
+                self.header_writer.write(
+                    f"std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.begin() + n, {map.signal}.begin());",
+                    indent_level=3,
+                )
+                self.header_writer.write(
+                    f'destination.getSignal("{map.signal}").setValue<{self.ListSignalMap[map.type]}>({map.signal});',
+                    indent_level=3,
+                )
+            elif map.length is not None:
+                self.header_writer.write(
+                    f"{self.ListSignalMap[map.type]} {map.signal}({map.length});",
+                    indent_level=3,
+                )
+                self.header_writer.write(
+                    f"std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.end(), {map.signal}.begin());",
+                    indent_level=3,
+                )
+                self.header_writer.write(
+                    f'destination.getSignal("{map.signal}").setValue<{self.ListSignalMap[map.type]}>({map.signal});',
+                    indent_level=3,
+                )
+            else:
+                self.header_writer.write(
+                    f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>(source.{map.ros_path});',
+                    indent_level=3,
+                )
+            self.header_writer.write("}", indent_level=2)
+        self.header_writer.write("}", indent_level=1)
 
-      self.header_writer.write('};', indent_level=0)
+        self.header_writer.write("};", indent_level=0)
 
     def generate(self):
         self.header_writer = CPPWriter(
             self.destination_path,
-            f"{self.config.package}.hpp",
+            self.generated_file_name,
         )
 
         self.header_writer.write_header_guard_open()
@@ -165,13 +219,96 @@ class ProtonROS2Generator:
         self.header_writer.write_newline()
 
         for m in self.config.messages:
-            self.header_writer.write_include(f'{m.package}/{m.path}/{self.camelcase_to_snakecase(m.name)}.hpp')
+            self.header_writer.write_include(m.hpp_header)
 
         self.header_writer.write_newline()
 
         for m in self.config.messages:
             self.generate_type_adapter(m)
 
+        self.header_writer.write_newline()
+        self.header_writer.write_header_guard_close()
+
+        self.header_writer.close_file()
+
+
+class ProtonROS2FactoryGenerator:
+    def __init__(
+        self, conversions: List[ProtonROS2ConversionGenerator], destination_path: str
+    ):
+        self.conversions = conversions
+        self.destination_path = destination_path
+        if not os.path.exists(self.destination_path):
+            os.mkdir(self.destination_path)
+
+    def generate_publisher_factory(self):
+        parameters: List[Variable] = [
+            Variable("type", "const std::string&"),
+            Variable("node", "rclcpp::Node *"),
+            Variable("topic", "const std::string&"),
+            Variable("qos", "const rclcpp::QoS &"),
+        ]
+        f = Function("createTypedPublisher", parameters, "static std::shared_ptr<IPublisher>")
+        self.header_writer.write_function_start(f, indent_level=0)
+        first = True
+        for c in self.conversions:
+            for m in c.config.messages:
+                if first:
+                    self.header_writer.write_if_statement_start(f"type == \"{m.full_name}\"", indent_level=1)
+                    first = False
+                else:
+                    self.header_writer.write_else_if_statement_start(f"type == \"{m.full_name}\"", indent_level=1)
+                self.header_writer.write(f"return std::make_shared<TypedPublisher<{m.ros_type}>>(node, topic, qos);", indent_level=2)
+                self.header_writer.write_if_statement_end(indent_level=1)
+        self.header_writer.write_else_statement_start(indent_level=1)
+        self.header_writer.write("throw std::runtime_error(\"Invalid publisher message type \" + type);", indent_level=2)
+        self.header_writer.write_if_statement_end(indent_level=1)
+        self.header_writer.write_function_end(indent_level=0)
+
+    def generate_subscriber_factory(self):
+        parameters: List[Variable] = [
+            Variable("type", "const std::string&"),
+            Variable("node", "rclcpp::Node *"),
+            Variable("topic", "const std::string&"),
+            Variable("qos", "const rclcpp::QoS &"),
+            Variable("bundle", "proton::BundleHandle &"),
+            Variable("callback", "proton::BundleHandle::BundleCallback"),
+        ]
+        f = Function("createTypedSubscriber", parameters, "static std::shared_ptr<ISubscriber>")
+        self.header_writer.write_function_start(f, indent_level=0)
+        first = True
+        for c in self.conversions:
+            for m in c.config.messages:
+                if first:
+                    self.header_writer.write_if_statement_start(f"type == \"{m.full_name}\"", indent_level=1)
+                    first = False
+                else:
+                    self.header_writer.write_else_if_statement_start(f"type == \"{m.full_name}\"", indent_level=1)
+                self.header_writer.write(f"return std::make_shared<TypedSubscriber<{m.ros_type}>>(node, topic, qos, bundle, callback);", indent_level=2)
+                self.header_writer.write_if_statement_end(indent_level=1)
+        self.header_writer.write_else_statement_start(indent_level=1)
+        self.header_writer.write("throw std::runtime_error(\"Invalid subscriber message type \" + type);", indent_level=2)
+        self.header_writer.write_if_statement_end(indent_level=1)
+        self.header_writer.write_function_end(indent_level=0)
+
+    def generate(self):
+        self.header_writer = CPPWriter(
+            self.destination_path,
+            "factory.hpp",
+        )
+
+        self.header_writer.write_header_guard_open()
+        self.header_writer.write_include("proton_ros2/typed.hpp")
+        for c in self.conversions:
+            self.header_writer.write_include(c.generated_include)
+        self.header_writer.write_newline()
+        self.header_writer.write("namespace proton::ros2 {", indent_level=0)
+        self.header_writer.write_newline()
+
+        self.generate_publisher_factory()
+        self.generate_subscriber_factory()
+
+        self.header_writer.write("}  // namespace proton::ros2", indent_level=0)
         self.header_writer.write_newline()
         self.header_writer.write_header_guard_close()
 
@@ -204,12 +341,17 @@ def main():
     dest = args.destination
 
     files = os.listdir(folder)
+    generators: List[ProtonROS2ConversionGenerator] = []
     for f in files:
-        print(f)
         _, ext = os.path.splitext(f)
-        if ext == '.yaml':
-            generator = ProtonROS2Generator(os.path.join(folder, f), dest)
+        if ext == ".yaml":
+            generator = ProtonROS2ConversionGenerator(os.path.join(folder, f), dest)
             generator.generate()
+            generators.append(generator)
+
+    factory_generator = ProtonROS2FactoryGenerator(generators, dest)
+    factory_generator.generate()
+
 
 if __name__ == "__main__":
     main()

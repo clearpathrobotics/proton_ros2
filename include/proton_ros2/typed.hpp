@@ -10,8 +10,8 @@
  * @author Roni Kreinin (rkreinin@clearpathrobotics.com)
  */
 
-#ifndef INC_PROTON_ROS2_CONVERSTIONS_TYPED_HPP_
-#define INC_PROTON_ROS2_CONVERSTIONS_TYPED_HPP_
+#ifndef INC_PROTON_ROS2_TYPED_HPP_
+#define INC_PROTON_ROS2_TYPED_HPP_
 
 #include "protoncpp/bundle.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -62,4 +62,4 @@ template <typename MsgT> struct TypedSubscriber : public ISubscriber {
 
 } // namespace proton::ros2
 
-#endif // INC_PROTON_ROS2_CONVERSTIONS_TYPED_HPP_
+#endif // INC_PROTON_ROS2_TYPED_HPP_

@@ -69,8 +69,10 @@ class ProtonROS2MessageConfig:
             self.path = config[self.PATH]
             self.config = config
             self.name = config[self.NAME]
-            self.full_name = f'{package}/{self.path}/{self.name.lower()}'
+            self.snakecase_name = ProtonROS2MessageConfig.camelcase_to_snakecase(self.name)
+            self.full_name = f'{package}/{self.path}/{self.name}'
             self.ros_type = f'{package}::{self.path}::{self.name}'
+            self.hpp_header = f'{package}/{self.path}/{self.snakecase_name}.hpp'
 
             try:
                 self.stamp = config[self.STAMP]
@@ -80,6 +82,20 @@ class ProtonROS2MessageConfig:
             self.mappings: List[ProtonROS2MessageConfig.Message.Mapping] = []
             for m in config[self.MAPPING]:
                 self.mappings.append(self.Mapping(m))
+
+    def camelcase_to_snakecase(string: str):
+        scase: str = ""
+        i = 0
+        for c in string:
+            if c.isupper():
+                if i == 0:
+                    scase += c.lower()
+                else:
+                    scase += "_" + c.lower()
+            else:
+                scase += c
+            i += 1
+        return scase
 
     def __init__(self, config: dict):
         self.config = config

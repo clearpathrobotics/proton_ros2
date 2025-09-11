@@ -10,8 +10,8 @@
  * @author Roni Kreinin (rkreinin@clearpathrobotics.com)
  */
 
-#ifndef INC_PROTON_ROS2_CONVERSTIONS_UTILS_HPP_
-#define INC_PROTON_ROS2_CONVERSTIONS_UTILS_HPP_
+#ifndef INC_PROTON_ROS2_CONVERSIONS_UTILS_HPP_
+#define INC_PROTON_ROS2_CONVERSIONS_UTILS_HPP_
 
 #include "rclcpp/clock.hpp"
 #include "builtin_interfaces/msg/time.hpp"
@@ -19,7 +19,7 @@
 namespace proton::ros2
 {
 
-builtin_interfaces::msg::Time getTimeStamp()
+static builtin_interfaces::msg::Time getTimeStamp()
 {
   static rclcpp::Clock clock(RCL_ROS_TIME);
   builtin_interfaces::msg::Time time;
@@ -32,4 +32,4 @@ builtin_interfaces::msg::Time getTimeStamp()
 
 }
 
-#endif  // INC_PROTON_ROS2_CONVERSTIONS_UTILS_HPP_
+#endif  // INC_PROTON_ROS2_CONVERSIONS_UTILS_HPP_

@@ -10,8 +10,8 @@
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT MODIFY.
  */
 
-#ifndef PROTONC__STD_MSGS_HPP
-#define PROTONC__STD_MSGS_HPP
+#ifndef INC_PROTON_ROS2__STD_MSGS_HPP
+#define INC_PROTON_ROS2__STD_MSGS_HPP
 
 #include "rclcpp/type_adapter.hpp"
 #include "protoncpp/bundle.hpp"
@@ -57,4 +57,4 @@ struct rclcpp::TypeAdapter<proton::BundleHandle, std_msgs::msg::Bool> {
   }
 };
 
-#endif  // PROTONC__STD_MSGS_HPP
+#endif  // INC_PROTON_ROS2__STD_MSGS_HPP

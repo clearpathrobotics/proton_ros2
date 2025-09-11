@@ -81,12 +81,12 @@ class CPPWriter:
         self.write("", 0)
 
     def write_header_guard_open(self):
-        self.write(f'#ifndef PROTONC__{self.header_guard}', indent_level=0)
-        self.write(f'#define PROTONC__{self.header_guard}', indent_level=0)
+        self.write(f'#ifndef INC_PROTON_ROS2__{self.header_guard}', indent_level=0)
+        self.write(f'#define INC_PROTON_ROS2__{self.header_guard}', indent_level=0)
         self.write_newline()
 
     def write_header_guard_close(self):
-        self.write(f'#endif  // PROTONC__{self.header_guard}', indent_level=0)
+        self.write(f'#endif  // INC_PROTON_ROS2__{self.header_guard}', indent_level=0)
 
     def write_variable(self, variable: Variable, indent_level=0):
         var_string = f"{variable.type} {variable.name}"
@@ -181,6 +181,14 @@ class CPPWriter:
 
     def write_if_statement_start(self, condition: str, indent_level=1):
         self.write(f'if ({condition})', indent_level)
+        self.write('{', indent_level)
+
+    def write_else_if_statement_start(self, condition: str, indent_level=1):
+        self.write(f'else if ({condition})', indent_level)
+        self.write('{', indent_level)
+
+    def write_else_statement_start(self,  indent_level=1):
+        self.write('else', indent_level)
         self.write('{', indent_level)
 
     def write_if_statement_end(self, indent_level=1):

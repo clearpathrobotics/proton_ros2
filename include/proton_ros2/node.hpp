@@ -17,9 +17,8 @@
 
 #include "protoncpp/proton.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "proton_ros2/conversions/std_msgs.hpp"
 #include "proton_ros2/typed.hpp"
-
+#include "proton_ros2/conversions/factory.hpp"
 
 namespace proton::ros2 {
 
