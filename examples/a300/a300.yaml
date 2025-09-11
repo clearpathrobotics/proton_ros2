@@ -124,8 +124,8 @@ ros2:
     - {topic: platform/mcu/status/temperature,  message: clearpath_platform_msgs/msg/Temperature,   qos.profile: sensor_data, bundle: temperature}
     - {topic: platform/mcu/status/pinout,       message: clearpath_platform_msgs/msg/PinoutState,   qos.profile: sensor_data, bundle: pinout_state}
     - {topic: platform/mcu/status/alerts,       message: std_msgs/msg/String,                       qos.profile: sensor_data, bundle: alerts}
-    - {topic: platform/cmd_fans,                message: clearpath_platform_msgs/msg/Fans,          qos.profile: sensor_data, bundle: cmd_fans}
+    - {topic: platform/mcu/_cmd_fans,           message: clearpath_platform_msgs/msg/Fans,          qos.profile: sensor_data, bundle: cmd_fans}
     - {topic: platform/display/status,          message: clearpath_platform_msgs/msg/DisplayStatus, qos.profile: sensor_data, bundle: display_status}
-    - {topic: platform/mcu/cmd_lights,          message: clearpath_platform_msgs/msg/Lights,        qos.profile: sensor_data, bundle: cmd_lights}
+    - {topic: platform/mcu/_cmd_lights,         message: clearpath_platform_msgs/msg/Lights,        qos.profile: sensor_data, bundle: cmd_lights}
     - {topic: platform/bms/state,               message: sensor_msgs/msg/BatteryState,              qos.profile: sensor_data, bundle: battery}
-    - {topic: platform/mcu/cmd_pinout,          message: clearpath_platform_msgs/msg/PinoutCommand, qos.profile: sensor_data, bundle: pinout_command}
+    - {topic: platform/mcu/_cmd_pinout,         message: clearpath_platform_msgs/msg/PinoutCommand, qos.profile: sensor_data, bundle: pinout_command}

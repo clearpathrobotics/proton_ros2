@@ -150,6 +150,11 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(FILES
+  examples/a300/a300.yaml
+  DESTINATION share/${PROJECT_NAME}/examples/a300/
+)
+
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )

@@ -38,7 +38,14 @@ Node::Node() : rclcpp::Node("proton_ros2") {
       publishers_.emplace(config.bundle, createTypedPublisher(config.message, this, config.topic, proton::ros2::qos::profiles.at(config.qos)));
       proton_node_.registerCallback(
           config.bundle, std::bind(&Node::protonCallback, this, std::placeholders::_1));
-      std::cout << "Created publisher: " << config.topic << std::endl;
+      if (config.topic.at(0) != '/')
+      {
+        std::cout << "Created publisher: " << get_namespace() << "/" << config.topic << std::endl;
+      }
+      else
+      {
+        std::cout << "Created publisher: " << config.topic << std::endl;
+      }
     }
     // Proton node produces this bundle, so the ROS node should subscribe to it.
     else if (handle.getProducer() == proton_node_.getTarget()) {
@@ -48,7 +55,14 @@ Node::Node() : rclcpp::Node("proton_ros2") {
               config.message, this, config.topic,
               proton::ros2::qos::profiles.at(config.qos), handle,
               std::bind(&Node::rosCallback, this, std::placeholders::_1)));
-      std::cout << "Created subscriber: " << config.topic << std::endl;
+      if (config.topic.at(0) != '/')
+      {
+        std::cout << "Created subscriber: " << get_namespace() << "/" << config.topic << std::endl;
+      }
+      else
+      {
+        std::cout << "Created subscriber: " << config.topic << std::endl;
+      }
     }
   }
 
