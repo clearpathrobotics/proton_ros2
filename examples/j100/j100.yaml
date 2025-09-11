@@ -97,6 +97,9 @@ bundles:
       - {name: measured_travel, type: float, length: 2}
       - {name: commanded_mode, type: int32}
       - {name: actual_mode, type: int32}
+    ros2:
+      message: clearpath_platform_msgs/msg/Feedback
+      topic: platform/motors/feedback
 
   - name: wifi_connected
     id: 0x200

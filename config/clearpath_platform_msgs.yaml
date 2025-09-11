@@ -1,0 +1,103 @@
+package: clearpath_platform_msgs
+messages:
+  - name: DisplayStatus
+    path: msg
+    mapping:
+      - {ros_path: string1, signal: string1, type: string}
+      - {ros_path: string2, signal: string2, type: string}
+  - name: Drive
+    path: msg
+    mapping:
+      - {ros_path: drivers, signal: drivers, type: float, length: 2}
+  - name: DriveFeedback
+    path: msg
+    mapping:
+      - {ros_path: current, signal: current, type: float}
+      - {ros_path: duty_cycle, signal: duty_cycle, type: float}
+      - {ros_path: bridge_temperature, signal: bridge_temperature, type: float}
+      - {ros_path: motor_temperature, signal: motor_temperature, type: float}
+      - {ros_path: measured_velocity, signal: measured_velocity, type: float}
+      - {ros_path: measured_travel, signal: measured_travel, type: float}
+      - {ros_path: driver_fault, signal: driver_fault, type: bool}
+  - name: Fans
+    path: msg
+    mapping:
+      - {ros_path: fans, signal: fans, type: bytes, length: 0}
+  - name: Feedback
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: current, signal: current, type: float}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: duty_cycle, signal: duty_cycle, type: float}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: bridge_temperature, signal: bridge_temperature, type: float}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: motor_temperature, signal: motor_temperature, type: float}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: measured_velocity, signal: measured_velocity, type: float}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: measured_travel, signal: measured_travel, type: float}
+      - {ros_path: drivers, ros_length: 2, ros_subpath: driver_fault, signal: driver_fault, type: bool}
+      - {ros_path: commanded_mode, signal: commanded_mode, type: int32}
+      - {ros_path: actual_mode, signal: actual_mode, type: int32}
+  - name: Lights
+    path: msg
+    mapping:
+      - {ros_path: lights, ros_subpath: red, ros_length: 0, signal: red, type: bytes}
+      - {ros_path: lights, ros_subpath: green, ros_length: 0, signal: green, type: bytes}
+      - {ros_path: lights, ros_subpath: blue, ros_length: 0, signal: blue, type: bytes}
+  - name: PinoutCommand
+    path: msg
+    mapping:
+      - {ros_path: rails, signal: rails, length: 0, type: bool}
+      - {ros_path: outputs, signal: outputs, length: 0, type: uint32}
+  - name: PinoutState
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: rails, signal: rails, length: 0, type: bool}
+      - {ros_path: inputs, signal: inputs, length: 0, type: bool}
+      - {ros_path: outputs, signal: outputs, length: 0, type: bool}
+      - {ros_path: output_periods, signal: output_periods, length: 0, type: uint32}
+  - name: Power
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: shore_power_connected, signal: shore_power_connected, type: int32}
+      - {ros_path: battery_connected, signal: battery_connected, type: int32}
+      - {ros_path: power_12v_user_nominal, signal: power_12v_user_nominal, type: int32}
+      - {ros_path: charger_connected, signal: charger_connected, type: int32}
+      - {ros_path: charging_complete, signal: charging_complete, type: int32}
+      - {ros_path: measured_voltages, signal: measured_voltages, length: 0, type: float}
+      - {ros_path: measured_currents, signal: measured_currents, length: 0, type: float}
+  - name: RGB
+    path: msg
+    mapping:
+      - {ros_path: red, signal: rgb, index: 0, type: bytes}
+      - {ros_path: green, signal: rgb, index: 1, type: bytes}
+      - {ros_path: blue, signal: rgb, index: 2, type: bytes}
+  - name: Status
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: hardware_id, signal: hardware_id, type: string}
+      - {ros_path: firmware_version, signal: firmware_version, type: string}
+      - {ros_path: mcu_uptime.sec, signal: mcu_uptime_s, type: int32}
+      - {ros_path: mcu_uptime.nanosec, signal: mcu_uptime_ns, type: uint32}
+      - {ros_path: connection_uptime.sec, signal: connection_uptime_s, type: int32}
+      - {ros_path: connection_uptime.nanosec, signal: connection_uptime_ns, type: uint32}
+  - name: StopStatus
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: stop_power_status, signal: stop_power_status, type: bool}
+      - {ros_path: external_stop_present, signal: external_stop_present, type: bool}
+      - {ros_path: needs_reset, signal: needs_reset, type: bool}
+  - name: Temperature
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros_path: header.frame_id, signal: frame_id, type: string}
+      - {ros_path: temperatures, signal: temperatures, length: 0, type: float}
+

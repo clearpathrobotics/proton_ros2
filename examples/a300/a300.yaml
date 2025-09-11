@@ -21,9 +21,6 @@ bundles:
       - {name: file, type: string, capacity: 64}
       - {name: function, type: string, capacity: 64}
       - {name: line, type: uint32}
-    ros2:
-      message: rcl_interfaces/msg/Log
-      topic: /rosout
   - name: status
     id: 0x101
     producer: mcu
@@ -31,9 +28,9 @@ bundles:
     signals:
       - {name: hardware_id, type: string, capacity: 10}
       - {name: firmware_version, type: string, capacity: 10}
-      - {name: mcu_uptime_s, type: uint32}
+      - {name: mcu_uptime_s, type: int32}
       - {name: mcu_uptime_ns, type: uint32}
-      - {name: connection_uptime_s, type: uint32}
+      - {name: connection_uptime_s, type: int32}
       - {name: connection_uptime_ns, type: uint32}
   - name: power
     id: 0x102
@@ -48,9 +45,6 @@ bundles:
     consumer: pc
     signals:
       - {name: data, type: bool}
-    ros2:
-      message: std_msgs/msg/Bool
-      topic: platform/emergency_stop
   - name: temperature
     id: 0x104
     producer: mcu
@@ -78,19 +72,12 @@ bundles:
     consumer: pc
     signals:
       - {name: data, type: string, capacity: 86}
-    ros2:
-      message: std_msgs/msg/String
-      topic: platform/mcu/alerts
-
   - name: cmd_fans
     id: 0x200
     producer: pc
     consumer: mcu
     signals:
       - {name: fans, type: bytes, capacity: 8}
-    ros2:
-      message: clearpath_platform_msgs/msg/Fans
-      topic: platform/cmd_fans
   - name: display_status
     id: 0x201
     producer: pc
@@ -98,18 +85,14 @@ bundles:
     signals:
       - {name: string1, type: string, capacity: 50}
       - {name: string2, type: string, capacity: 50}
-    ros2:
-      message: clearpath_platform_msgs/msg/DisplayStatus
-      topic: platform/display/status
   - name: cmd_lights
     id: 0x202
     producer: pc
     consumer: mcu
     signals:
-      - {name: front_left_light, type: bytes, capacity: 3}
-      - {name: front_right_light, type: bytes, capacity: 3}
-      - {name: rear_left_light, type: bytes, capacity: 3}
-      - {name: rear_right_light, type: bytes, capacity: 3}
+      - {name: red, type: bytes, capacity: 4}
+      - {name: green, type: bytes, capacity: 4}
+      - {name: blue, type: bytes, capacity: 4}
   - name: battery
     id: 0x203
     producer: pc
@@ -131,3 +114,18 @@ bundles:
     id: 0x301
     producer: pc
     consumer: mcu
+
+ros2:
+  topics:
+    - {topic: /rosout,                          message: rcl_interfaces/msg/Log,                    qos.profile: rosout,      bundle: log}
+    - {topic: platform/mcu/status,              message: clearpath_platform_msgs/msg/Status,        qos.profile: sensor_data, bundle: status}
+    - {topic: platform/mcu/status/power,        message: clearpath_platform_msgs/msg/Power,         qos.profile: sensor_data, bundle: power}
+    - {topic: platform/emergency_stop,          message: std_msgs/msg/Bool,                         qos.profile: sensor_data, bundle: emergency_stop}
+    - {topic: platform/mcu/status/temperature,  message: clearpath_platform_msgs/msg/Temperature,   qos.profile: sensor_data, bundle: temperature}
+    - {topic: platform/mcu/status/pinout,       message: clearpath_platform_msgs/msg/PinoutState,   qos.profile: sensor_data, bundle: pinout_state}
+    - {topic: platform/mcu/status/alerts,       message: std_msgs/msg/String,                       qos.profile: sensor_data, bundle: alerts}
+    - {topic: platform/cmd_fans,                message: clearpath_platform_msgs/msg/Fans,          qos.profile: sensor_data, bundle: cmd_fans}
+    - {topic: platform/display/status,          message: clearpath_platform_msgs/msg/DisplayStatus, qos.profile: sensor_data, bundle: display_status}
+    - {topic: platform/mcu/cmd_lights,          message: clearpath_platform_msgs/msg/Lights,        qos.profile: sensor_data, bundle: cmd_lights}
+    - {topic: platform/bms/state,               message: sensor_msgs/msg/BatteryState,              qos.profile: sensor_data, bundle: battery}
+    - {topic: platform/mcu/cmd_pinout,          message: clearpath_platform_msgs/msg/PinoutCommand, qos.profile: sensor_data, bundle: pinout_command}

@@ -15,7 +15,7 @@
 
 #include "rclcpp/type_adapter.hpp"
 #include "protoncpp/bundle.hpp"
-#include "proton_ros2/conversions/utils.hpp"
+#include "proton_ros2/adapters/utils.hpp"
 
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -33,11 +33,12 @@ struct rclcpp::TypeAdapter<proton::BundleHandle, std_msgs::msg::String> {
   }
 
   static void convert_to_custom(const ros_message_type & source, custom_type & destination) {
-    if (destination.hasSignal("data"))  {
+    if (destination.hasSignal("data")) {
       destination.getSignal("data").setValue<std::string>(source.data);
     }
   }
 };
+
 template<>
 struct rclcpp::TypeAdapter<proton::BundleHandle, std_msgs::msg::Bool> {
   using is_specialized = std::true_type;
@@ -51,7 +52,7 @@ struct rclcpp::TypeAdapter<proton::BundleHandle, std_msgs::msg::Bool> {
   }
 
   static void convert_to_custom(const ros_message_type & source, custom_type & destination) {
-    if (destination.hasSignal("data"))  {
+    if (destination.hasSignal("data")) {
       destination.getSignal("data").setValue<bool>(source.data);
     }
   }

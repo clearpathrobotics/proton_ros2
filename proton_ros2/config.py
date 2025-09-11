@@ -43,6 +43,9 @@ class ProtonROS2MessageConfig:
 
         class Mapping:
             ROS_PATH = "ros_path"
+            ROS_SUBPATH = "ros_subpath"
+            ROS_INDEX = "ros_index"
+            ROS_LENGTH = "ros_length"
             SIGNAL = "signal"
             TYPE = "type"
             LENGTH = "length"
@@ -50,6 +53,8 @@ class ProtonROS2MessageConfig:
 
             def __init__(self, config: dict):
                 self.config = config
+
+                # Required fields
                 self.ros_path = config[self.ROS_PATH]
                 self.signal = config[self.SIGNAL]
                 self.type = config[self.TYPE]
@@ -63,6 +68,21 @@ class ProtonROS2MessageConfig:
                     self.index = config[self.INDEX]
                 except KeyError:
                     self.index = None
+
+                try:
+                    self.ros_index = config[self.ROS_INDEX]
+                except KeyError:
+                    self.ros_index = None
+
+                try:
+                    self.ros_length = config[self.ROS_LENGTH]
+                except KeyError:
+                    self.ros_length = None
+
+                try:
+                    self.ros_subpath = config[self.ROS_SUBPATH]
+                except KeyError:
+                    self.ros_subpath = None
 
         def __init__(self, package: str, config: dict):
             self.package = package
@@ -88,7 +108,7 @@ class ProtonROS2MessageConfig:
         i = 0
         for c in string:
             if c.isupper():
-                if i == 0:
+                if i == 0 or string[i - 1].isupper():
                     scase += c.lower()
                 else:
                     scase += "_" + c.lower()

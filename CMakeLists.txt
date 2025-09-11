@@ -97,6 +97,8 @@ find_package(proton REQUIRED)
 #   ${GENERATED_PYI_FILES}
 # )
 
+add_subdirectory(examples)
+
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
 set(PROTON_ROS2_DEPENDENCIES
@@ -139,6 +141,12 @@ install(
   PROGRAMS
     ${PROJECT_NAME}/a300_ros2_bridge
     ${PROJECT_NAME}/proton_ros2_generator
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    ${CMAKE_BINARY_DIR}/examples/a300/a300_mcu_cpp
   DESTINATION lib/${PROJECT_NAME}
 )
 

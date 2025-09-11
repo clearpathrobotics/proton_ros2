@@ -15,7 +15,7 @@
 
 #include "rclcpp/type_adapter.hpp"
 #include "protoncpp/bundle.hpp"
-#include "proton_ros2/conversions/utils.hpp"
+#include "proton_ros2/adapters/utils.hpp"
 
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "sensor_msgs/msg/imu.hpp"
@@ -77,61 +77,62 @@ struct rclcpp::TypeAdapter<proton::BundleHandle, sensor_msgs::msg::BatteryState>
   }
 
   static void convert_to_custom(const ros_message_type & source, custom_type & destination) {
-    if (destination.hasSignal("frame_id"))  {
+    if (destination.hasSignal("frame_id")) {
       destination.getSignal("frame_id").setValue<std::string>(source.header.frame_id);
     }
-    if (destination.hasSignal("voltage"))  {
+    if (destination.hasSignal("voltage")) {
       destination.getSignal("voltage").setValue<float>(source.voltage);
     }
-    if (destination.hasSignal("temperature"))  {
+    if (destination.hasSignal("temperature")) {
       destination.getSignal("temperature").setValue<float>(source.temperature);
     }
-    if (destination.hasSignal("charge"))  {
+    if (destination.hasSignal("charge")) {
       destination.getSignal("charge").setValue<float>(source.charge);
     }
-    if (destination.hasSignal("capacity"))  {
+    if (destination.hasSignal("capacity")) {
       destination.getSignal("capacity").setValue<float>(source.capacity);
     }
-    if (destination.hasSignal("design_capacity"))  {
+    if (destination.hasSignal("design_capacity")) {
       destination.getSignal("design_capacity").setValue<float>(source.design_capacity);
     }
-    if (destination.hasSignal("percentage"))  {
+    if (destination.hasSignal("percentage")) {
       destination.getSignal("percentage").setValue<float>(source.percentage);
     }
-    if (destination.hasSignal("power_supply_status"))  {
+    if (destination.hasSignal("power_supply_status")) {
       destination.getSignal("power_supply_status").setValue<uint32_t>(source.power_supply_status);
     }
-    if (destination.hasSignal("power_supply_health"))  {
+    if (destination.hasSignal("power_supply_health")) {
       destination.getSignal("power_supply_health").setValue<uint32_t>(source.power_supply_health);
     }
-    if (destination.hasSignal("power_supply_technology"))  {
+    if (destination.hasSignal("power_supply_technology")) {
       destination.getSignal("power_supply_technology").setValue<uint32_t>(source.power_supply_technology);
     }
-    if (destination.hasSignal("present"))  {
+    if (destination.hasSignal("present")) {
       destination.getSignal("present").setValue<bool>(source.present);
     }
-    if (destination.hasSignal("cell_voltage"))  {
+    if (destination.hasSignal("cell_voltage")) {
       std::size_t len = destination.getSignal("cell_voltage").getLength();
       proton::list_float cell_voltage(len);
       int n = std::min(len, source.cell_voltage.size());
       std::copy(source.cell_voltage.begin(), source.cell_voltage.begin() + n, cell_voltage.begin());
       destination.getSignal("cell_voltage").setValue<proton::list_float>(cell_voltage);
     }
-    if (destination.hasSignal("cell_temperature"))  {
+    if (destination.hasSignal("cell_temperature")) {
       std::size_t len = destination.getSignal("cell_temperature").getLength();
       proton::list_float cell_temperature(len);
       int n = std::min(len, source.cell_temperature.size());
       std::copy(source.cell_temperature.begin(), source.cell_temperature.begin() + n, cell_temperature.begin());
       destination.getSignal("cell_temperature").setValue<proton::list_float>(cell_temperature);
     }
-    if (destination.hasSignal("location"))  {
+    if (destination.hasSignal("location")) {
       destination.getSignal("location").setValue<std::string>(source.location);
     }
-    if (destination.hasSignal("serial_number"))  {
+    if (destination.hasSignal("serial_number")) {
       destination.getSignal("serial_number").setValue<std::string>(source.serial_number);
     }
   }
 };
+
 template<>
 struct rclcpp::TypeAdapter<proton::BundleHandle, sensor_msgs::msg::Imu> {
   using is_specialized = std::true_type;
@@ -188,56 +189,57 @@ struct rclcpp::TypeAdapter<proton::BundleHandle, sensor_msgs::msg::Imu> {
   }
 
   static void convert_to_custom(const ros_message_type & source, custom_type & destination) {
-    if (destination.hasSignal("frame_id"))  {
+    if (destination.hasSignal("frame_id")) {
       destination.getSignal("frame_id").setValue<std::string>(source.header.frame_id);
     }
-    if (destination.hasSignal("orientation"))  {
+    if (destination.hasSignal("orientation")) {
       destination.getSignal("orientation").setValue<double>(0, source.orientation.x);
     }
-    if (destination.hasSignal("orientation"))  {
+    if (destination.hasSignal("orientation")) {
       destination.getSignal("orientation").setValue<double>(1, source.orientation.y);
     }
-    if (destination.hasSignal("orientation"))  {
+    if (destination.hasSignal("orientation")) {
       destination.getSignal("orientation").setValue<double>(2, source.orientation.z);
     }
-    if (destination.hasSignal("orientation"))  {
+    if (destination.hasSignal("orientation")) {
       destination.getSignal("orientation").setValue<double>(3, source.orientation.w);
     }
-    if (destination.hasSignal("orientation_covariance"))  {
+    if (destination.hasSignal("orientation_covariance")) {
       proton::list_double orientation_covariance(9);
       std::copy(source.orientation_covariance.begin(), source.orientation_covariance.end(), orientation_covariance.begin());
       destination.getSignal("orientation_covariance").setValue<proton::list_double>(orientation_covariance);
     }
-    if (destination.hasSignal("angular_velocity"))  {
+    if (destination.hasSignal("angular_velocity")) {
       destination.getSignal("angular_velocity").setValue<double>(0, source.angular_velocity.x);
     }
-    if (destination.hasSignal("angular_velocity"))  {
+    if (destination.hasSignal("angular_velocity")) {
       destination.getSignal("angular_velocity").setValue<double>(1, source.angular_velocity.y);
     }
-    if (destination.hasSignal("angular_velocity"))  {
+    if (destination.hasSignal("angular_velocity")) {
       destination.getSignal("angular_velocity").setValue<double>(2, source.angular_velocity.z);
     }
-    if (destination.hasSignal("angular_velocity_covariance"))  {
+    if (destination.hasSignal("angular_velocity_covariance")) {
       proton::list_double angular_velocity_covariance(9);
       std::copy(source.angular_velocity_covariance.begin(), source.angular_velocity_covariance.end(), angular_velocity_covariance.begin());
       destination.getSignal("angular_velocity_covariance").setValue<proton::list_double>(angular_velocity_covariance);
     }
-    if (destination.hasSignal("linear_acceleration"))  {
+    if (destination.hasSignal("linear_acceleration")) {
       destination.getSignal("linear_acceleration").setValue<double>(0, source.linear_acceleration.x);
     }
-    if (destination.hasSignal("linear_acceleration"))  {
+    if (destination.hasSignal("linear_acceleration")) {
       destination.getSignal("linear_acceleration").setValue<double>(1, source.linear_acceleration.y);
     }
-    if (destination.hasSignal("linear_acceleration"))  {
+    if (destination.hasSignal("linear_acceleration")) {
       destination.getSignal("linear_acceleration").setValue<double>(2, source.linear_acceleration.z);
     }
-    if (destination.hasSignal("linear_acceleration_covariance"))  {
+    if (destination.hasSignal("linear_acceleration_covariance")) {
       proton::list_double linear_acceleration_covariance(9);
       std::copy(source.linear_acceleration_covariance.begin(), source.linear_acceleration_covariance.end(), linear_acceleration_covariance.begin());
       destination.getSignal("linear_acceleration_covariance").setValue<proton::list_double>(linear_acceleration_covariance);
     }
   }
 };
+
 template<>
 struct rclcpp::TypeAdapter<proton::BundleHandle, sensor_msgs::msg::MagneticField> {
   using is_specialized = std::true_type;
@@ -265,19 +267,19 @@ struct rclcpp::TypeAdapter<proton::BundleHandle, sensor_msgs::msg::MagneticField
   }
 
   static void convert_to_custom(const ros_message_type & source, custom_type & destination) {
-    if (destination.hasSignal("frame_id"))  {
+    if (destination.hasSignal("frame_id")) {
       destination.getSignal("frame_id").setValue<std::string>(source.header.frame_id);
     }
-    if (destination.hasSignal("magnetic_field"))  {
+    if (destination.hasSignal("magnetic_field")) {
       destination.getSignal("magnetic_field").setValue<double>(0, source.magnetic_field.x);
     }
-    if (destination.hasSignal("magnetic_field"))  {
+    if (destination.hasSignal("magnetic_field")) {
       destination.getSignal("magnetic_field").setValue<double>(1, source.magnetic_field.y);
     }
-    if (destination.hasSignal("magnetic_field"))  {
+    if (destination.hasSignal("magnetic_field")) {
       destination.getSignal("magnetic_field").setValue<double>(2, source.magnetic_field.z);
     }
-    if (destination.hasSignal("magnetic_field_covariance"))  {
+    if (destination.hasSignal("magnetic_field_covariance")) {
       proton::list_double magnetic_field_covariance(9);
       std::copy(source.magnetic_field_covariance.begin(), source.magnetic_field_covariance.end(), magnetic_field_covariance.begin());
       destination.getSignal("magnetic_field_covariance").setValue<proton::list_double>(magnetic_field_covariance);

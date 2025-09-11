@@ -1,0 +1,12 @@
+package: rcl_interfaces
+messages:
+  - name: Log
+    path: msg
+    stamp: stamp
+    mapping:
+      - {ros_path: level, signal: level, type: uint32}
+      - {ros_path: name, signal: name, type: string}
+      - {ros_path: msg, signal: msg, type: string}
+      - {ros_path: file, signal: file, type: string}
+      - {ros_path: function, signal: function, type: string}
+      - {ros_path: line, signal: line, type: uint32}

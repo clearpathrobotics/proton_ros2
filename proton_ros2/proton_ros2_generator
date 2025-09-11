@@ -38,7 +38,7 @@ from proton_ros2.config import ProtonROS2MessageConfig
 from proton_ros2.source_writer import CPPWriter, Function, Variable
 
 
-class ProtonROS2ConversionGenerator:
+class ProtonROS2AdapterGenerator:
     SignalMap = {
         "double": "double",
         "float": "float",
@@ -48,7 +48,7 @@ class ProtonROS2ConversionGenerator:
         "uint64": "uint64_t",
         "bool": "bool",
         "string": "std::string",
-        "bytes": "proton::bytes",
+        "bytes": "uint8_t",
     }
 
     ListSignalMap = {
@@ -60,7 +60,11 @@ class ProtonROS2ConversionGenerator:
         "uint64": "proton::list_uint64",
         "bool": "proton::list_bool",
         "string": "proton::list_string",
+        "bytes": "proton::bytes",
     }
+
+    PROTON_ROS2 = "proton_ros2"
+    ADAPTERS = "adapters"
 
     def __init__(self, config_file: str, destination_path: str):
         self.config_file = config_file
@@ -72,7 +76,7 @@ class ProtonROS2ConversionGenerator:
         self.dictionary = self.read_yaml()
         self.config = ProtonROS2MessageConfig(self.dictionary)
         self.generated_file_name = f"{self.config.package}.hpp"
-        self.generated_include = f"proton_ros2/conversions/{self.generated_file_name}"
+        self.generated_include = f"{self.PROTON_ROS2}/{self.ADAPTERS}/{self.generated_file_name}"
 
     def read_yaml(self):
         # Check YAML can be Opened
@@ -121,14 +125,20 @@ class ProtonROS2ConversionGenerator:
             self.header_writer.write(
                 f'if (source.hasSignal("{map.signal}")) {{', indent_level=2
             )
+            path = map.ros_path
+            if map.ros_index is not None:
+                path += f".at({map.ros_index})"
+            if map.ros_subpath is not None:
+                path += f".{map.ros_subpath}"
+
             if map.index is not None:
                 self.header_writer.write(
-                    f'destination.{map.ros_path} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>().at({map.index});',
+                    f'destination.{path} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>().at({map.index});',
                     indent_level=3,
                 )
             elif map.length == 0:
                 self.header_writer.write(
-                    f'destination.{map.ros_path} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>();',
+                    f'destination.{path} = source.getConstSignal("{map.signal}").getValue<{self.ListSignalMap[map.type]}>();',
                     indent_level=3,
                 )
             elif map.length is not None:
@@ -137,12 +147,40 @@ class ProtonROS2ConversionGenerator:
                     indent_level=3,
                 )
                 self.header_writer.write(
-                    f"std::copy({map.signal}.begin(), {map.signal}.end(), destination.{map.ros_path}.begin());",
+                    f"std::copy({map.signal}.begin(), {map.signal}.end(), destination.{path}.begin());",
                     indent_level=3,
                 )
+            elif map.ros_length == 0:
+                if map.type == "bytes":
+                    self.header_writer.write(
+                        f'std::size_t len = source.getConstSignal(\"{map.signal}\").getCapacity();',
+                        indent_level=3,
+                    )
+                else:
+                    self.header_writer.write(
+                        f'std::size_t len = source.getConstSignal(\"{map.signal}\").getLength();',
+                        indent_level=3,
+                    )
+                self.header_writer.write(
+                    f"int n = std::min(len, destination.{map.ros_path}.size());",
+                    indent_level=3,
+                )
+                self.header_writer.write_for_loop_start("n",indent_level=3)
+                if map.ros_subpath:
+                    self.header_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>().at(i);", indent_level=4)
+                else:
+                    self.header_writer.write(f"destination.{map.ros_path}.at(i) = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>().at(i);", indent_level=4)
+                self.header_writer.write_for_loop_end(indent_level=3)
+            elif map.ros_length is not None:
+                self.header_writer.write_for_loop_start(f"{map.ros_length}", indent_level=3)
+                if map.ros_subpath:
+                    self.header_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>().at(i);", indent_level=4)
+                else:
+                    self.header_writer.write(f"destination.{map.ros_path}.at(i) = source.getConstSignal(\"{map.signal}\").getValue<{self.ListSignalMap[map.type]}>().at(i);", indent_level=4)
+                self.header_writer.write_for_loop_end(indent_level=3)
             else:
                 self.header_writer.write(
-                    f'destination.{map.ros_path} = source.getConstSignal("{map.signal}").getValue<{self.SignalMap[map.type]}>();',
+                    f'destination.{path} = source.getConstSignal("{map.signal}").getValue<{self.SignalMap[map.type]}>();',
                     indent_level=3,
                 )
             self.header_writer.write("}", indent_level=2)
@@ -156,11 +194,17 @@ class ProtonROS2ConversionGenerator:
         )
         for map in config.mappings:
             self.header_writer.write(
-                f'if (destination.hasSignal("{map.signal}"))  {{', indent_level=2
+                f'if (destination.hasSignal("{map.signal}")) {{', indent_level=2
             )
+            path = map.ros_path
+            if map.ros_index is not None:
+                path += f".at({map.ros_index})"
+            if map.ros_subpath is not None:
+                path += f".{map.ros_subpath}"
+
             if map.index is not None:
                 self.header_writer.write(
-                    f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>({map.index}, source.{map.ros_path});',
+                    f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>({map.index}, source.{path});',
                     indent_level=3,
                 )
             elif map.length == 0:
@@ -172,11 +216,11 @@ class ProtonROS2ConversionGenerator:
                     f"{self.ListSignalMap[map.type]} {map.signal}(len);", indent_level=3
                 )
                 self.header_writer.write(
-                    f"int n = std::min(len, source.{map.ros_path}.size());",
+                    f"int n = std::min(len, source.{path}.size());",
                     indent_level=3,
                 )
                 self.header_writer.write(
-                    f"std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.begin() + n, {map.signal}.begin());",
+                    f"std::copy(source.{path}.begin(), source.{path}.begin() + n, {map.signal}.begin());",
                     indent_level=3,
                 )
                 self.header_writer.write(
@@ -189,16 +233,44 @@ class ProtonROS2ConversionGenerator:
                     indent_level=3,
                 )
                 self.header_writer.write(
-                    f"std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.end(), {map.signal}.begin());",
+                    f"std::copy(source.{path}.begin(), source.{path}.end(), {map.signal}.begin());",
                     indent_level=3,
                 )
                 self.header_writer.write(
                     f'destination.getSignal("{map.signal}").setValue<{self.ListSignalMap[map.type]}>({map.signal});',
                     indent_level=3,
                 )
+            elif map.ros_length == 0:
+                if map.type == "bytes":
+                    self.header_writer.write(
+                        f'std::size_t len = destination.getConstSignal(\"{map.signal}\").getCapacity();',
+                        indent_level=3,
+                    )
+                else:
+                    self.header_writer.write(
+                        f'std::size_t len = destination.getConstSignal(\"{map.signal}\").getLength();',
+                        indent_level=3,
+                    )
+                self.header_writer.write(
+                    f"int n = std::min(len, source.{map.ros_path}.size());",
+                    indent_level=3,
+                )
+                self.header_writer.write_for_loop_start("n",indent_level=3)
+                if map.ros_subpath:
+                    self.header_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=4)
+                else:
+                    self.header_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i);", indent_level=4)
+                self.header_writer.write_for_loop_end(indent_level=3)
+            elif map.ros_length is not None:
+                self.header_writer.write_for_loop_start(f'{map.ros_length}',indent_level=3)
+                if map.ros_subpath:
+                    self.header_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=4)
+                else:
+                    self.header_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i);", indent_level=4)
+                self.header_writer.write_for_loop_end(indent_level=3)
             else:
                 self.header_writer.write(
-                    f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>(source.{map.ros_path});',
+                    f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>(source.{path});',
                     indent_level=3,
                 )
             self.header_writer.write("}", indent_level=2)
@@ -215,7 +287,7 @@ class ProtonROS2ConversionGenerator:
         self.header_writer.write_header_guard_open()
         self.header_writer.write_include("rclcpp/type_adapter.hpp")
         self.header_writer.write_include("protoncpp/bundle.hpp")
-        self.header_writer.write_include("proton_ros2/conversions/utils.hpp")
+        self.header_writer.write_include(f"{self.PROTON_ROS2}/{self.ADAPTERS}/utils.hpp")
         self.header_writer.write_newline()
 
         for m in self.config.messages:
@@ -225,8 +297,8 @@ class ProtonROS2ConversionGenerator:
 
         for m in self.config.messages:
             self.generate_type_adapter(m)
+            self.header_writer.write_newline()
 
-        self.header_writer.write_newline()
         self.header_writer.write_header_guard_close()
 
         self.header_writer.close_file()
@@ -234,7 +306,7 @@ class ProtonROS2ConversionGenerator:
 
 class ProtonROS2FactoryGenerator:
     def __init__(
-        self, conversions: List[ProtonROS2ConversionGenerator], destination_path: str
+        self, conversions: List[ProtonROS2AdapterGenerator], destination_path: str
     ):
         self.conversions = conversions
         self.destination_path = destination_path
@@ -331,7 +403,7 @@ def main():
         "--destination",
         type=str,
         action="store",
-        default="/home/rkreinin/proto_ws/src/proton_ros2/include/proton_ros2/conversions/",
+        default="/home/rkreinin/proto_ws/src/proton_ros2/include/proton_ros2/adapters/",
         help="Destination folder path for generated files.",
     )
 
@@ -341,11 +413,11 @@ def main():
     dest = args.destination
 
     files = os.listdir(folder)
-    generators: List[ProtonROS2ConversionGenerator] = []
+    generators: List[ProtonROS2AdapterGenerator] = []
     for f in files:
         _, ext = os.path.splitext(f)
         if ext == ".yaml":
-            generator = ProtonROS2ConversionGenerator(os.path.join(folder, f), dest)
+            generator = ProtonROS2AdapterGenerator(os.path.join(folder, f), dest)
             generator.generate()
             generators.append(generator)
 
