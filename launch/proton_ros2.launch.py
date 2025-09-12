@@ -51,7 +51,7 @@ def generate_launch_description():
     )
 
     node_a300_proton_ros2 = Node(
-        name='a300_proton_ros2',
+        name='proton_ros2',
         executable='proton_ros2_node',
         package='proton_ros2',
         namespace=LaunchConfiguration('namespace'),

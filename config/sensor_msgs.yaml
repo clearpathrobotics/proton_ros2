@@ -4,45 +4,45 @@ messages:
     path: msg
     stamp: header.stamp
     mapping:
-      - {ros_path: header.frame_id, signal: frame_id, type: string}
-      - {ros_path: voltage, signal: voltage, type: float}
-      - {ros_path: temperature, signal: temperature, type: float}
-      - {ros_path: charge, signal: charge, type: float}
-      - {ros_path: capacity, signal: capacity, type: float}
-      - {ros_path: design_capacity, signal: design_capacity, type: float}
-      - {ros_path: percentage, signal: percentage, type: float}
-      - {ros_path: power_supply_status, signal: power_supply_status, type: uint32}
-      - {ros_path: power_supply_health, signal: power_supply_health, type: uint32}
-      - {ros_path: power_supply_technology, signal: power_supply_technology, type: uint32}
-      - {ros_path: present, signal: present, type: bool}
-      - {ros_path: cell_voltage, signal: cell_voltage, type: float, length: 0}
-      - {ros_path: cell_temperature, signal: cell_temperature, type: float, length: 0}
-      - {ros_path: location, signal: location, type: string}
-      - {ros_path: serial_number, signal: serial_number, type: string}
+      - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
+      - {ros2.path: voltage, proton.signal: voltage, type: float}
+      - {ros2.path: temperature, proton.signal: temperature, type: float}
+      - {ros2.path: charge, proton.signal: charge, type: float}
+      - {ros2.path: capacity, proton.signal: capacity, type: float}
+      - {ros2.path: design_capacity, proton.signal: design_capacity, type: float}
+      - {ros2.path: percentage, proton.signal: percentage, type: float}
+      - {ros2.path: power_supply_status, proton.signal: power_supply_status, type: uint32}
+      - {ros2.path: power_supply_health, proton.signal: power_supply_health, type: uint32}
+      - {ros2.path: power_supply_technology, proton.signal: power_supply_technology, type: uint32}
+      - {ros2.path: present, proton.signal: present, type: bool}
+      - {ros2.path: cell_voltage, ros2.length: 0, proton.signal: cell_voltage, type: float}
+      - {ros2.path: cell_temperature, ros2.length: 0, proton.signal: cell_temperature, type: float}
+      - {ros2.path: location, proton.signal: location, type: string}
+      - {ros2.path: serial_number, proton.signal: serial_number, type: string}
   - name: Imu
     path: msg
     stamp: header.stamp
     mapping:
-      - {ros_path: header.frame_id, signal: frame_id, type: string}
-      - {ros_path: orientation.x, signal: orientation, index: 0, type: double}
-      - {ros_path: orientation.y, signal: orientation, index: 1, type: double}
-      - {ros_path: orientation.z, signal: orientation, index: 2, type: double}
-      - {ros_path: orientation.w, signal: orientation, index: 3, type: double}
-      - {ros_path: orientation_covariance, signal: orientation_covariance, type: double, length: 9}
-      - {ros_path: angular_velocity.x, signal: angular_velocity, index: 0, type: double}
-      - {ros_path: angular_velocity.y, signal: angular_velocity, index: 1, type: double}
-      - {ros_path: angular_velocity.z, signal: angular_velocity, index: 2, type: double}
-      - {ros_path: angular_velocity_covariance, signal: angular_velocity_covariance, type: double, length: 9}
-      - {ros_path: linear_acceleration.x, signal: linear_acceleration, index: 0, type: double}
-      - {ros_path: linear_acceleration.y, signal: linear_acceleration, index: 1, type: double}
-      - {ros_path: linear_acceleration.z, signal: linear_acceleration, index: 2, type: double}
-      - {ros_path: linear_acceleration_covariance, signal: linear_acceleration_covariance, type: double, length: 9}
+      - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
+      - {ros2.path: orientation.x, proton.signal: orientation, proton.index: 0, type: double}
+      - {ros2.path: orientation.y, proton.signal: orientation, proton.index: 1, type: double}
+      - {ros2.path: orientation.z, proton.signal: orientation, proton.index: 2, type: double}
+      - {ros2.path: orientation.w, proton.signal: orientation, proton.index: 3, type: double}
+      - {ros2.path: orientation_covariance, ros2.length: 9, proton.signal: orientation_covariance, type: double}
+      - {ros2.path: angular_velocity.x, proton.signal: angular_velocity, proton.index: 0, type: double}
+      - {ros2.path: angular_velocity.y, proton.signal: angular_velocity, proton.index: 1, type: double}
+      - {ros2.path: angular_velocity.z, proton.signal: angular_velocity, proton.index: 2, type: double}
+      - {ros2.path: angular_velocity_covariance, ros2.length: 9, proton.signal: angular_velocity_covariance, type: double}
+      - {ros2.path: linear_acceleration.x, proton.signal: linear_acceleration, proton.index: 0, type: double}
+      - {ros2.path: linear_acceleration.y, proton.signal: linear_acceleration, proton.index: 1, type: double}
+      - {ros2.path: linear_acceleration.z, proton.signal: linear_acceleration, proton.index: 2, type: double}
+      - {ros2.path: linear_acceleration_covariance, ros2.length: 9, proton.signal: linear_acceleration_covariance, type: double}
   - name: MagneticField
     path: msg
     stamp: header.stamp
     mapping:
-      - {ros_path: header.frame_id, signal: frame_id, type: string}
-      - {ros_path: magnetic_field.x, signal: magnetic_field, index: 0, type: double}
-      - {ros_path: magnetic_field.y, signal: magnetic_field, index: 1, type: double}
-      - {ros_path: magnetic_field.z, signal: magnetic_field, index: 2, type: double}
-      - {ros_path: magnetic_field_covariance, signal: magnetic_field_covariance, type: double, length: 9}
+      - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
+      - {ros2.path: magnetic_field.x, proton.signal: magnetic_field, proton.index: 0, type: double}
+      - {ros2.path: magnetic_field.y, proton.signal: magnetic_field, proton.index: 1, type: double}
+      - {ros2.path: magnetic_field.z, proton.signal: magnetic_field, proton.index: 2, type: double}
+      - {ros2.path: magnetic_field_covariance, ros2.length: 9, proton.signal: magnetic_field_covariance, type: double}

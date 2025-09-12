@@ -19,16 +19,11 @@
 namespace proton::ros2
 {
 
-static builtin_interfaces::msg::Time getTimeStamp()
-{
-  static rclcpp::Clock clock(RCL_ROS_TIME);
-  builtin_interfaces::msg::Time time;
+class Utils {
+public:
+  static builtin_interfaces::msg::Time getTimeStamp();
+};
 
-  time.set__sec(clock.now().seconds());
-  time.set__nanosec(clock.now().nanoseconds());
-
-  return time;
-}
 
 }
 

@@ -24,6 +24,7 @@ namespace proton::ros2 {
 struct IPublisher {
   virtual void publish(const proton::BundleHandle &bundle) = 0;
   virtual ~IPublisher() = default;
+  virtual std::string getTopic() = 0;
 };
 
 template <typename MsgT> struct TypedPublisher : public IPublisher {
@@ -39,10 +40,15 @@ template <typename MsgT> struct TypedPublisher : public IPublisher {
   void publish(const proton::BundleHandle &bundle) override {
     pub->publish(bundle);
   }
+
+  std::string getTopic() override{
+    return std::string(pub->get_topic_name());
+  }
 };
 
 struct ISubscriber {
   virtual ~ISubscriber() = default;
+  virtual std::string getTopic() = 0;
 };
 
 template <typename MsgT> struct TypedSubscriber : public ISubscriber {
@@ -57,6 +63,10 @@ template <typename MsgT> struct TypedSubscriber : public ISubscriber {
               msg, bundle);
           callback(bundle);
         });
+  }
+
+  std::string getTopic() override{
+    return std::string(sub->get_topic_name());
   }
 };
 

@@ -4,8 +4,12 @@ messages:
   - name: String
     path: msg
     mapping:
-      - {ros_path: data, signal: data, type: string}
+      - {ros2.path: data, proton.signal: data, type: string}
   - name: Bool
     path: msg
     mapping:
-      - {ros_path: data, signal: data, type: bool}
+      - {ros2.path: data, proton.signal: data, type: bool}
+  - name: UInt8
+    path: msg
+    mapping:
+      - {ros2.path: data, proton.signal: data, type: uint32}

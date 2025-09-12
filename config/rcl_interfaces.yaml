@@ -4,9 +4,9 @@ messages:
     path: msg
     stamp: stamp
     mapping:
-      - {ros_path: level, signal: level, type: uint32}
-      - {ros_path: name, signal: name, type: string}
-      - {ros_path: msg, signal: msg, type: string}
-      - {ros_path: file, signal: file, type: string}
-      - {ros_path: function, signal: function, type: string}
-      - {ros_path: line, signal: line, type: uint32}
+      - {ros2.path: level, proton.signal: level, type: uint32}
+      - {ros2.path: name, proton.signal: name, type: string}
+      - {ros2.path: msg, proton.signal: msg, type: string}
+      - {ros2.path: file, proton.signal: file, type: string}
+      - {ros2.path: function, proton.signal: function, type: string}
+      - {ros2.path: line, proton.signal: line, type: uint32}

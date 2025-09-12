@@ -1,0 +1,9 @@
+package: nmea_msgs
+
+messages:
+  - name: Sentence
+    path: msg
+    stamp: header.stamp
+    mapping:
+      - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
+      - {ros2.path: sentence, proton.signal: sentence, type: string}

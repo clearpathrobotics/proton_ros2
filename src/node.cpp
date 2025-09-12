@@ -20,49 +20,47 @@ using namespace proton::ros2;
 Node::Node() : rclcpp::Node("proton_ros2") {
   declare_parameter(
       "config_file",
-      "/home/rkreinin/proto_ws/src/proton_ros2/examples/a300/a300.yaml");
+      "/home/rkreinin/proto_ws/src/proton_ros2/examples/j100/j100.yaml");
   declare_parameter("target", "pc");
 
   config_file_ = get_parameter("config_file").as_string();
   target_ = get_parameter("target").as_string();
 
+  // Create Proton Node
   proton_node_ = proton::Node(config_file_, target_);
 
+  // Parse ROS 2 config
   parseRos2Configs();
 
+  // Create publishers and subscribers
   for (auto config : ros2_configs_) {
     auto& handle = proton_node_.getBundle(config.bundle);
 
     // Proton node consumes this bundle, so the ROS node should publish it.
     if (handle.getConsumer() == proton_node_.getTarget()) {
-      publishers_.emplace(config.bundle, createTypedPublisher(config.message, this, config.topic, proton::ros2::qos::profiles.at(config.qos)));
+      auto pub = Factory::createTypedPublisher(config.message, this, config.topic, proton::ros2::qos::profiles.at(config.qos));
+      publishers_.emplace(config.bundle, pub);
       proton_node_.registerCallback(
           config.bundle, std::bind(&Node::protonCallback, this, std::placeholders::_1));
-      if (config.topic.at(0) != '/')
-      {
-        std::cout << "Created publisher: " << get_namespace() << "/" << config.topic << std::endl;
-      }
-      else
-      {
-        std::cout << "Created publisher: " << config.topic << std::endl;
-      }
+
+      RCLCPP_INFO(get_logger(), "Created publisher %s",
+        rclcpp::expand_topic_or_service_name(
+          pub->getTopic(),
+          get_name(),
+          get_namespace()).c_str());
     }
     // Proton node produces this bundle, so the ROS node should subscribe to it.
     else if (handle.getProducer() == proton_node_.getTarget()) {
-      subscribers_.emplace(
-          config.bundle,
-          createTypedSubscriber(
-              config.message, this, config.topic,
-              proton::ros2::qos::profiles.at(config.qos), handle,
-              std::bind(&Node::rosCallback, this, std::placeholders::_1)));
-      if (config.topic.at(0) != '/')
-      {
-        std::cout << "Created subscriber: " << get_namespace() << "/" << config.topic << std::endl;
-      }
-      else
-      {
-        std::cout << "Created subscriber: " << config.topic << std::endl;
-      }
+      auto sub = Factory::createTypedSubscriber(
+                  config.message, this, config.topic,
+                  proton::ros2::qos::profiles.at(config.qos), handle,
+                  std::bind(&Node::rosCallback, this, std::placeholders::_1));
+      subscribers_.emplace(config.bundle, sub);
+      RCLCPP_INFO(get_logger(), "Created subscriber %s",
+        rclcpp::expand_topic_or_service_name(
+          sub->getTopic(),
+          get_name(),
+          get_namespace()).c_str());
     }
   }
 
@@ -71,6 +69,11 @@ Node::Node() : rclcpp::Node("proton_ros2") {
                         [this]() -> void { proton_node_.spinOnce(); });
 }
 
+/**
+ * @brief Parse ros2 section of config file.
+ * Read in topics, message types, qos profiles, and matching bundle
+ *
+ */
 void Node::parseRos2Configs()
 {
   YAML::Node yaml_node = proton_node_.getConfig().getYamlNode();
