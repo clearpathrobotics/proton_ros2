@@ -111,7 +111,7 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fan
 
 void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fans>::convert_to_custom(const ros_message_type & source, custom_type & destination) {
   if (destination.hasSignal("fans")) {
-    std::size_t len = destination.getSignal("fans").getLength();
+    std::size_t len = destination.getSignal("fans").getCapacity();
     int n = std::min(len, source.fans.size());
     proton::bytes fans(n);
     std::copy(source.fans.begin(), source.fans.begin() + n, fans.begin());
@@ -279,8 +279,9 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
 
 void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lights>::convert_to_ros_message(const custom_type & source, ros_message_type & destination) {
   if (source.hasSignal("red")) {
-    std::size_t len = source.getConstSignal("red").getLength();
+    std::size_t len = source.getConstSignal("red").getCapacity();
     int n = std::min(len, destination.lights.size());
+    destination.lights.resize(n);
     proton::bytes red = source.getConstSignal("red").getValue<proton::bytes>();
     for (int i = 0; i < n; i += 1)
     {
@@ -288,8 +289,9 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lig
     }
   }
   if (source.hasSignal("green")) {
-    std::size_t len = source.getConstSignal("green").getLength();
+    std::size_t len = source.getConstSignal("green").getCapacity();
     int n = std::min(len, destination.lights.size());
+    destination.lights.resize(n);
     proton::bytes green = source.getConstSignal("green").getValue<proton::bytes>();
     for (int i = 0; i < n; i += 1)
     {
@@ -297,8 +299,9 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lig
     }
   }
   if (source.hasSignal("blue")) {
-    std::size_t len = source.getConstSignal("blue").getLength();
+    std::size_t len = source.getConstSignal("blue").getCapacity();
     int n = std::min(len, destination.lights.size());
+    destination.lights.resize(n);
     proton::bytes blue = source.getConstSignal("blue").getValue<proton::bytes>();
     for (int i = 0; i < n; i += 1)
     {
@@ -309,7 +312,7 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lig
 
 void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lights>::convert_to_custom(const ros_message_type & source, custom_type & destination) {
   if (destination.hasSignal("red")) {
-    std::size_t len = destination.getSignal("red").getLength();
+    std::size_t len = destination.getSignal("red").getCapacity();
     int n = std::min(len, source.lights.size());
     proton::bytes red(n);
     for (int i = 0; i < n; i += 1)
@@ -319,7 +322,7 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lig
     destination.getSignal("red").setValue<proton::bytes>(red);
   }
   if (destination.hasSignal("green")) {
-    std::size_t len = destination.getSignal("green").getLength();
+    std::size_t len = destination.getSignal("green").getCapacity();
     int n = std::min(len, source.lights.size());
     proton::bytes green(n);
     for (int i = 0; i < n; i += 1)
@@ -329,7 +332,7 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lig
     destination.getSignal("green").setValue<proton::bytes>(green);
   }
   if (destination.hasSignal("blue")) {
-    std::size_t len = destination.getSignal("blue").getLength();
+    std::size_t len = destination.getSignal("blue").getCapacity();
     int n = std::min(len, source.lights.size());
     proton::bytes blue(n);
     for (int i = 0; i < n; i += 1)

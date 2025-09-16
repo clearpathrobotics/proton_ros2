@@ -48,7 +48,7 @@ class ProtonROS2AdapterGenerator:
         "uint64": "uint64_t",
         "bool": "bool",
         "string": "std::string",
-        "bytes": "uint8_t",
+        "bytes": "proton::bytes",
     }
 
     ListSignalMap = {
@@ -164,10 +164,16 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_LIST:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, destination.{map.ros_path}.size());",
@@ -184,10 +190,16 @@ class ProtonROS2AdapterGenerator:
                     self.source_writer.write(f"destination.{map.ros_path} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.ListSignalMap[map.data_type]}>();", indent_level=2)
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBMESSAGE:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, destination.{map.ros_path}.size());",
@@ -200,10 +212,16 @@ class ProtonROS2AdapterGenerator:
                     self.source_writer.write_for_loop_end(indent_level=2)
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, destination.{map.ros_path}.size());",
@@ -217,7 +235,7 @@ class ProtonROS2AdapterGenerator:
                     # Copy proton list to ROS array
                     self.source_writer.write(f"{self.SignalMap[map.data_type]} {map.proton_signal} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.SignalMap[map.data_type]}>();", indent_level=2)
                     self.source_writer.write_for_loop_start("n",indent_level=2)
-                    self.source_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = {map.proton_signal}.at(i);;", indent_level=3)
+                    self.source_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = {map.proton_signal}.at(i);", indent_level=3)
                     self.source_writer.write_for_loop_end(indent_level=2)
             self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_function_end()
@@ -236,10 +254,16 @@ class ProtonROS2AdapterGenerator:
                       indent_level=2,
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.PROTON_INDEXED:
-                    self.source_writer.write(
-                      f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>({map.proton_index}, source.{map.ros_path});',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'destination.getSignal("{map.proton_signal}").setValue<uint8_t>({map.proton_index}, source.{map.ros_path});',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>({map.proton_index}, source.{map.ros_path});',
+                          indent_level=2,
+                        )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.ROS_INDEXED:
                     self.source_writer.write(
                       f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>(source.{map.ros_path}.at({map.ros_index}));',
@@ -252,10 +276,16 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_LIST:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, source.{map.ros_path}.size());",
@@ -278,10 +308,16 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_LIST:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, source.{map.ros_path}.size());",
@@ -304,10 +340,16 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBMESSAGE:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, source.{map.ros_path}.size());",
@@ -328,10 +370,16 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE:
                     # Get signal list length
-                    self.source_writer.write(
-                      f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
-                      indent_level=2,
-                    )
+                    if map.data_type == "bytes":
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getCapacity();',
+                          indent_level=2,
+                        )
+                    else:
+                        self.source_writer.write(
+                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
+                          indent_level=2,
+                        )
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
                       f"int n = std::min(len, source.{map.ros_path}.size());",
@@ -343,7 +391,10 @@ class ProtonROS2AdapterGenerator:
                       indent_level=2,
                     )
                     self.source_writer.write_for_loop_start("n",indent_level=2)
-                    self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<{self.SignalMap[map.data_type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
+                    if map.data_type == "bytes":
+                        self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<uint8_t>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
+                    else:
+                        self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<{self.SignalMap[map.data_type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
                     self.source_writer.write_for_loop_end(indent_level=2)
                     # Set value
                     self.source_writer.write(
@@ -351,75 +402,6 @@ class ProtonROS2AdapterGenerator:
                       indent_level=2,
                     )
             self.source_writer.write_if_statement_end(indent_level=1)
-            # if map.index is not None:
-
-            # elif map.length == 0:
-            #     self.source_writer.write(
-            #         f'std::size_t len = destination.getSignal("{map.signal}").getLength();',
-            #         indent_level=2,
-            #     )
-            #     self.source_writer.write(
-            #         f"{self.ListSignalMap[map.type]} {map.signal}(len);", indent_level=2
-            #     )
-            #     self.source_writer.write(
-            #         f"int n = std::min(len, source.{path}.size());",
-            #         indent_level=2,
-            #     )
-            #     self.source_writer.write(
-            #         f"std::copy(source.{path}.begin(), source.{path}.begin() + n, {map.signal}.begin());",
-            #         indent_level=2,
-            #     )
-            #     self.source_writer.write(
-            #         f'destination.getSignal("{map.signal}").setValue<{self.ListSignalMap[map.type]}>({map.signal});',
-            #         indent_level=2,
-            #     )
-            # elif map.length is not None:
-            #     self.source_writer.write(
-            #         f"{self.ListSignalMap[map.type]} {map.signal}({map.length});",
-            #         indent_level=2,
-            #     )
-            #     self.source_writer.write(
-            #         f"std::copy(source.{path}.begin(), source.{path}.end(), {map.signal}.begin());",
-            #         indent_level=2,
-            #     )
-            #     self.source_writer.write(
-            #         f'destination.getSignal("{map.signal}").setValue<{self.ListSignalMap[map.type]}>({map.signal});',
-            #         indent_level=2,
-            #     )
-            # elif map.ros_length == 0:
-            #     if map.type == "bytes":
-            #         self.source_writer.write(
-            #             f'std::size_t len = destination.getConstSignal(\"{map.signal}\").getCapacity();',
-            #             indent_level=2,
-            #         )
-            #     else:
-            #         self.source_writer.write(
-            #             f'std::size_t len = destination.getConstSignal(\"{map.signal}\").getLength();',
-            #             indent_level=2,
-            #         )
-            #     self.source_writer.write(
-            #         f"int n = std::min(len, source.{map.ros_path}.size());",
-            #         indent_level=2,
-            #     )
-            #     self.source_writer.write_for_loop_start("n",indent_level=2)
-            #     if map.ros_subpath:
-            #         self.source_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
-            #     else:
-            #         self.source_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i);", indent_level=3)
-            #     self.source_writer.write_for_loop_end(indent_level=3)
-            # elif map.ros_length is not None:
-            #     self.source_writer.write_for_loop_start(f'{map.ros_length}',indent_level=2)
-            #     if map.ros_subpath:
-            #         self.source_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
-            #     else:
-            #         self.source_writer.write(f"destination.getSignal(\"{map.signal}\").setValue<{self.SignalMap[map.type]}>(i, source.{map.ros_path}.at(i);", indent_level=3)
-            #     self.source_writer.write_for_loop_end(indent_level=2)
-            # else:
-            #     self.source_writer.write(
-            #         f'destination.getSignal("{map.signal}").setValue<{self.SignalMap[map.type]}>(source.{path});',
-            #         indent_level=2,
-            #     )
-            # self.source_writer.write("}", indent_level=1)
         self.source_writer.write_function_end()
 
     def generate(self):

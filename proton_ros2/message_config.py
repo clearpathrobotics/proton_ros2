@@ -60,7 +60,8 @@ class ProtonROS2MessageConfig:
                 FIXED_LIST = 4
                 DYNAMIC_LIST = 5
                 FIXED_SUBMESSAGE = 6
-                DYNAMIC_SUBMESSAGE = 6
+                DYNAMIC_SUBMESSAGE = 7
+
 
             def __init__(self, config: dict):
                 self.config = config
