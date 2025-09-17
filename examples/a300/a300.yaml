@@ -26,6 +26,7 @@ bundles:
     producer: mcu
     consumer: pc
     signals:
+      - {name: frame_id, type: string, value: mcu_link}
       - {name: hardware_id, type: string, capacity: 10}
       - {name: firmware_version, type: string, capacity: 10}
       - {name: mcu_uptime_s, type: int32}
@@ -37,8 +38,14 @@ bundles:
     producer: mcu
     consumer: pc
     signals:
-      - {name: measured_voltages, type: float, length: 13}
-      - {name: measured_currents, type: float, length: 13}
+      - {name: frame_id, type: string, value: mcu_link}
+      - {name: shore_power_connected, type: int32, value: -1}
+      - {name: battery_connected, type: int32, value: 1}
+      - {name: power_12v_user_nominal, type: int32, value: -1}
+      - {name: charger_connected, type: int32, value: -1}
+      - {name: charging_complete, type: int32, value: -1}
+      - {name: measured_voltages, type: list_float, length: 13}
+      - {name: measured_currents, type: list_float, length: 13}
   - name: emergency_stop
     id: 0x103
     producer: mcu
@@ -50,22 +57,27 @@ bundles:
     producer: mcu
     consumer: pc
     signals:
-      - {name: temperatures, type: float, length: 18}
+      - {name: frame_id, type: string, value: mcu_link}
+      - {name: temperatures, type: list_float, length: 18}
   - name: stop_status
     id: 0x105
     producer: mcu
     consumer: pc
     signals:
+      - {name: frame_id, type: string, value: mcu_link}
+      - {name: stop_power_status, type: bool, value: True}
+      - {name: external_stop_present, type: bool, value: False}
       - {name: needs_reset, type: bool}
   - name: pinout_state
     id: 0x106
     producer: mcu
     consumer: pc
     signals:
-      - {name: rails, type: bool, length: 1}
-      - {name: inputs, type: bool, length: 7}
-      - {name: outputs, type: bool, length: 7}
-      - {name: output_periods, type: uint32, length: 7}
+      - {name: frame_id, type: string, value: mcu_link}
+      - {name: rails, type: list_bool, length: 1}
+      - {name: inputs, type: list_bool, length: 7}
+      - {name: outputs, type: list_bool, length: 7}
+      - {name: output_periods, type: list_uint32, length: 7}
   - name: alerts
     id: 0x107
     producer: mcu
@@ -104,8 +116,8 @@ bundles:
     producer: pc
     consumer: mcu
     signals:
-      - {name: rails, type: bool, length: 1}
-      - {name: outputs, type: uint32, length: 7}
+      - {name: rails, type: list_bool, length: 1}
+      - {name: outputs, type: list_uint32, length: 7}
   - name: cmd_shutdown
     id: 0x300
     producer: pc

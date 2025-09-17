@@ -113,7 +113,6 @@ void update_imu()
 {
   auto& imu_bundle = node.getBundle("imu");
 
-  imu_bundle.getSignal("frame_id").setValue<std::string>("imu_0_link");
   imu_bundle.getSignal("linear_acceleration").setValue<proton::list_double>({static_cast<double>(rand()), static_cast<double>(rand()), static_cast<double>(rand())});
   imu_bundle.getSignal("angular_velocity").setValue<proton::list_double>({static_cast<double>(rand()), static_cast<double>(rand()), static_cast<double>(rand())});
 
@@ -124,7 +123,6 @@ void update_magnetometer()
 {
   auto& mag_bundle = node.getBundle("magnetometer");
 
-  mag_bundle.getSignal("frame_id").setValue<std::string>("imu_0_link");
   mag_bundle.getSignal("magnetic_field").setValue<proton::list_double>({static_cast<double>(rand()), static_cast<double>(rand()), static_cast<double>(rand())});
 
   node.sendBundle(mag_bundle);
@@ -149,7 +147,6 @@ void update_nmea()
 {
   auto& nmea_bundle = node.getBundle("nmea");
 
-  nmea_bundle.getSignal("frame_id").setValue<std::string>("gps_0_link");
   nmea_bundle.getSignal("sentence").setValue<std::string>(gen_random_string(rand() % nmea_bundle.getSignal("sentence").getCapacity()));
 
   node.sendBundle(nmea_bundle);
