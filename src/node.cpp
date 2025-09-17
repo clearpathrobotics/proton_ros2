@@ -15,6 +15,52 @@
 #include <chrono>
 #include <iostream>
 
+namespace YAML {
+
+template<>
+struct convert<proton::ros2::TopicConfig> {
+  static bool decode(const Node& node, proton::ros2::TopicConfig& rhs) {
+    if(!node.IsDefined() || node.IsNull()) {
+      return false;
+    }
+
+    rhs.topic = node[proton::ros2::keys::TOPIC].as<std::string>();
+    rhs.message = node[proton::ros2::keys::MESSAGE].as<std::string>();
+    rhs.bundle = node[proton::ros2::keys::BUNDLE].as<std::string>();
+
+    auto qos_profile_node = node[proton::ros2::keys::QOS_PROFILE];
+    if (qos_profile_node.IsDefined() && !qos_profile_node.IsNull())
+    {
+      rhs.qos = qos_profile_node.as<std::string>();
+    }
+    else
+    {
+      rhs.qos = proton::ros2::qos::SYSTEM_DEFAULT;
+    }
+
+    return true;
+  }
+};
+
+template<>
+struct convert<proton::ros2::ROS2Config> {
+  static bool decode(const Node& node, proton::ros2::ROS2Config& rhs) {
+    if(!node.IsDefined() || node.IsNull()) {
+      return false;
+    }
+
+    for (auto topic: node[proton::ros2::keys::TOPICS])
+    {
+      rhs.topics.push_back(topic.as<proton::ros2::TopicConfig>());
+    }
+
+    return true;
+  }
+};
+
+}
+
+
 using namespace proton::ros2;
 
 Node::Node() : rclcpp::Node("proton_ros2") {
@@ -30,11 +76,13 @@ Node::Node() : rclcpp::Node("proton_ros2") {
   proton_node_ = proton::Node(config_file_, target_);
 
   // Parse ROS 2 config
-  parseRos2Configs();
+  YAML::Node yaml_node = proton_node_.getConfig().getYamlNode();
+  ros2_config_ = yaml_node[proton::ros2::keys::ROS2].as<ROS2Config>();
 
   // Create publishers and subscribers
-  for (auto config : ros2_configs_) {
+  for (auto config : ros2_config_.topics) {
     auto& handle = proton_node_.getBundle(config.bundle);
+    std::cout << config.qos << std::endl;
 
     // Proton node consumes this bundle, so the ROS node should publish it.
     if (handle.getConsumer() == proton_node_.getTarget()) {
@@ -70,40 +118,11 @@ Node::Node() : rclcpp::Node("proton_ros2") {
 }
 
 /**
- * @brief Parse ros2 section of config file.
- * Read in topics, message types, qos profiles, and matching bundle
- *
- */
-void Node::parseRos2Configs()
-{
-  YAML::Node yaml_node = proton_node_.getConfig().getYamlNode();
-
-  auto ros2_config = yaml_node[proton::ros2::keys::ROS2];
-  for (auto topic_config: ros2_config[proton::ros2::keys::TOPICS])
-  {
-    auto topic = topic_config[proton::ros2::keys::TOPIC].as<std::string>();
-    auto message = topic_config[proton::ros2::keys::MESSAGE].as<std::string>();
-    auto bundle = topic_config[proton::ros2::keys::BUNDLE].as<std::string>();
-
-    std::string qos;
-    try {
-      qos = topic_config[proton::ros2::keys::QOS][proton::ros2::keys::PROFILE].as<std::string>();
-    }
-    catch (const YAML::TypedBadConversion<std::string> &e) {
-      qos = proton::ros2::qos::SYSTEM_DEFAULT;
-    }
-
-    ros2_configs_.push_back({topic, message, qos, bundle});
-  }
-}
-
-/**
  * @brief Callback for proton bundle received from a proton peer.
  * Publish directly to ROS 2.
  * @param bundle
  */
 void Node::protonCallback(proton::BundleHandle &bundle) {
-  //bundle.printBundle();
   publishers_.at(bundle.getName())->publish(bundle);
 }
 
@@ -114,7 +133,5 @@ void Node::protonCallback(proton::BundleHandle &bundle) {
  * @param bundle
  */
 void Node::rosCallback(proton::BundleHandle &bundle) {
-  RCLCPP_INFO(get_logger(), "ROS 2 Callback");
-  bundle.printBundle();
   proton_node_.sendBundle(bundle);
 }

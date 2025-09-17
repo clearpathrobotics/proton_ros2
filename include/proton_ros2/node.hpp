@@ -28,7 +28,7 @@ namespace keys {
   static const char *const TOPIC = "topic";
   static const char *const MESSAGE = "message";
   static const char *const QOS = "qos";
-  static const char *const PROFILE = "profile";
+  static const char *const QOS_PROFILE = "qos.profile";
   static const char *const BUNDLE = "bundle";
 }
 
@@ -46,11 +46,15 @@ namespace qos {
   };
 }
 
-struct ROS2Config {
+struct TopicConfig {
   std::string topic;
   std::string message;
   std::string qos;
   std::string bundle;
+};
+
+struct ROS2Config {
+  std::vector<TopicConfig> topics;
 };
 
 class Node : public rclcpp::Node
@@ -61,11 +65,10 @@ public:
 private:
   void protonCallback(proton::BundleHandle& bundle);
   void rosCallback(proton::BundleHandle& bundle);
-  void parseRos2Configs();
   std::string config_file_;
   std::string target_;
   proton::Node proton_node_;
-  std::vector<ROS2Config> ros2_configs_;
+  ROS2Config ros2_config_;
 
   rclcpp::TimerBase::SharedPtr proton_timer_;
 
