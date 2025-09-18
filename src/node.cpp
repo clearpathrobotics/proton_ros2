@@ -43,6 +43,41 @@ struct convert<proton::ros2::TopicConfig> {
 };
 
 template<>
+struct convert<proton::ros2::ServiceConfig> {
+  static bool decode(const Node& node, proton::ros2::ServiceConfig& rhs) {
+    if(!node.IsDefined() || node.IsNull()) {
+      return false;
+    }
+
+    rhs.topic = node[proton::ros2::keys::TOPIC].as<std::string>();
+    rhs.service = node[proton::ros2::keys::SERVICE].as<std::string>();
+    rhs.request = node[proton::ros2::keys::REQUEST].as<std::string>();
+
+    auto response_node = node[proton::ros2::keys::RESPONSE];
+    if (response_node.IsDefined() && !response_node.IsNull())
+    {
+      rhs.response = response_node.as<std::string>();
+    }
+    else
+    {
+      rhs.response = "";
+    }
+
+    auto qos_profile_node = node[proton::ros2::keys::QOS_PROFILE];
+    if (qos_profile_node.IsDefined() && !qos_profile_node.IsNull())
+    {
+      rhs.qos = qos_profile_node.as<std::string>();
+    }
+    else
+    {
+      rhs.qos = proton::ros2::qos::SERVICES;
+    }
+
+    return true;
+  }
+};
+
+template<>
 struct convert<proton::ros2::ROS2Config> {
   static bool decode(const Node& node, proton::ros2::ROS2Config& rhs) {
     if(!node.IsDefined() || node.IsNull()) {
@@ -52,6 +87,11 @@ struct convert<proton::ros2::ROS2Config> {
     for (auto topic: node[proton::ros2::keys::TOPICS])
     {
       rhs.topics.push_back(topic.as<proton::ros2::TopicConfig>());
+    }
+
+    for (auto service: node[proton::ros2::keys::SERVICES])
+    {
+      rhs.services.push_back(service.as<proton::ros2::ServiceConfig>());
     }
 
     return true;
@@ -82,7 +122,6 @@ Node::Node() : rclcpp::Node("proton_ros2") {
   // Create publishers and subscribers
   for (auto config : ros2_config_.topics) {
     auto& handle = proton_node_.getBundle(config.bundle);
-    std::cout << config.qos << std::endl;
 
     // Proton node consumes this bundle, so the ROS node should publish it.
     if (handle.getConsumer() == proton_node_.getTarget()) {
@@ -112,6 +151,101 @@ Node::Node() : rclcpp::Node("proton_ros2") {
     }
   }
 
+  // Create services
+  for (auto config : ros2_config_.services) {
+    auto& request_handle = proton_node_.getBundle(config.request);
+
+    if (config.response != "")
+    {
+      auto &response_handle = proton_node_.getBundle(config.response);
+
+      if (request_handle.getProducer() == proton_node_.getTarget() &&
+          response_handle.getConsumer() == proton_node_.getTarget())
+      {
+        auto srv = ServiceFactory::createTypedService(
+          config.service,
+          this,
+          config.topic,
+          proton::ros2::qos::profiles.at(config.qos),
+          request_handle,
+          response_handle,
+          std::bind(&Node::serviceCallback, this, std::placeholders::_1));
+
+        services_.emplace(config.request, srv);
+
+        RCLCPP_INFO(get_logger(), "Created service %s",
+        rclcpp::expand_topic_or_service_name(
+          srv->getServiceName(),
+          get_name(),
+          get_namespace()).c_str());
+      }
+      else if (request_handle.getConsumer() == proton_node_.getTarget() &&
+               response_handle.getProducer() == proton_node_.getTarget())
+      {
+        // Client
+      }
+      else
+      {
+        // Error
+      }
+    }
+    else {
+      if (request_handle.getProducer() == proton_node_.getTarget())
+      {
+        auto srv = ServiceFactory::createTypedService(
+          config.service,
+          this,
+          config.topic,
+          proton::ros2::qos::profiles.at(config.qos),
+          request_handle,
+          std::bind(&Node::rosCallback, this, std::placeholders::_1));
+
+        services_.emplace(config.request, srv);
+
+        RCLCPP_INFO(get_logger(), "Created service %s",
+        rclcpp::expand_topic_or_service_name(
+          srv->getServiceName(),
+          get_name(),
+          get_namespace()).c_str());
+      }
+      else if (request_handle.getConsumer() == proton_node_.getTarget())
+      {
+        // Client
+      }
+      else
+      {
+        // Error
+      }
+    }
+
+    // // Proton node consumes this bundle, so the ROS node should publish it.
+    // if (handle.getConsumer() == proton_node_.getTarget()) {
+    //   auto pub = Factory::createTypedServiceServer(config.service, this, config.topic, proton::ros2::qos::profiles.at(config.qos));
+    //   publishers_.emplace(config.bundle, pub);
+    //   proton_node_.registerCallback(
+    //       config.bundle, std::bind(&Node::protonCallback, this, std::placeholders::_1));
+
+    //   RCLCPP_INFO(get_logger(), "Created publisher %s",
+    //     rclcpp::expand_topic_or_service_name(
+    //       pub->getTopic(),
+    //       get_name(),
+    //       get_namespace()).c_str());
+    // }
+    // // Proton node produces this bundle, so the ROS node should subscribe to it.
+    // else if (handle.getProducer() == proton_node_.getTarget()) {
+    //   auto sub = Factory::createTypedSubscriber(
+    //               config.message, this, config.topic,
+    //               proton::ros2::qos::profiles.at(config.qos), handle,
+    //               std::bind(&Node::rosCallback, this, std::placeholders::_1));
+    //   subscribers_.emplace(config.bundle, sub);
+    //   RCLCPP_INFO(get_logger(), "Created subscriber %s",
+    //     rclcpp::expand_topic_or_service_name(
+    //       sub->getTopic(),
+    //       get_name(),
+    //       get_namespace()).c_str());
+    // }
+  }
+
   proton_timer_ =
       create_wall_timer(std::chrono::milliseconds(1),
                         [this]() -> void { proton_node_.spinOnce(); });
@@ -134,4 +268,13 @@ void Node::protonCallback(proton::BundleHandle &bundle) {
  */
 void Node::rosCallback(proton::BundleHandle &bundle) {
   proton_node_.sendBundle(bundle);
+}
+
+proton::BundleHandle& Node::serviceCallback(proton::BundleHandle & request)
+{
+  std::cout << "Callback" << std::endl;
+  // Send request bundle
+  proton_node_.sendBundle(request);
+  // Wait for receive bundle
+  return request;
 }

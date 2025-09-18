@@ -176,12 +176,18 @@ void cmd_lights_callback(proton::BundleHandle& bundle)
   bundle.printBundleVerbose();
 }
 
+void cmd_shutdown_callback(proton::BundleHandle& bundle)
+{
+  bundle.printBundleVerbose();
+}
+
 int main()
 {
   node = proton::Node(CONFIG_FILE, "mcu");
 
   node.registerCallback("clear_needs_reset", clear_needs_reset_callback);
   node.registerCallback("cmd_lights", cmd_lights_callback);
+  node.registerCallback("cmd_shutdown", cmd_shutdown_callback);
 
   std::thread stats_thread(run_stats_thread);
   std::thread send_1hz_thread(run_1hz_thread);

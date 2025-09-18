@@ -482,7 +482,7 @@ def main():
         "--config_folder",
         type=str,
         action="store",
-        default="/home/rkreinin/proto_ws/src/proton_ros2/config/",
+        default="/home/rkreinin/proto_ws/src/proton_ros2/messages/",
         help="Configuration folder path.",
     )
 

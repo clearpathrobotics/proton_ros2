@@ -10,13 +10,14 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(clearpath_platform_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nmea_msgs REQUIRED)
 find_package(proton REQUIRED)
 
-add_subdirectory(examples)
+ament_python_install_package(${PROJECT_NAME})
 
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
@@ -26,37 +27,75 @@ set(PROTON_ROS2_MESSAGES
   clearpath_platform_msgs
   sensor_msgs
   nmea_msgs
+  #std_srvs
 )
 
 set(PROTON_ROS2_DEPENDENCIES
   proton
   rclcpp
   ${PROTON_ROS2_MESSAGES}
+  std_srvs
+)
+
+set(PROTON_ROS2_GENERATOR ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}/proton_ros2_generator)
+set(ADAPTER_CONFIG_PATH ${CMAKE_CURRENT_SOURCE_DIR}/messages)
+set(GENERATED_SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(GENERATED_HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include)
+set(GENERATED_ADAPTER_HEADER_PATH ${GENERATED_HEADER_PATH}/${PROJECT_NAME}/adapters)
+set(GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory.cpp)
+set(GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/factory.hpp)
+
+file(MAKE_DIRECTORY ${GENERATED_SOURCE_PATH})
+file(MAKE_DIRECTORY ${GENERATED_ADAPTER_HEADER_PATH})
+
+
+foreach(name IN LISTS PROTON_ROS2_MESSAGES)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/${name}.cpp)
+    list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/${name}.hpp)
+endforeach()
+
+set(GENERATED_OUTPUT ${GENERATED_SOURCES} ${GENERATED_HEADERS})
+
+message(STATUS ${GENERATED_OUTPUT})
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+add_custom_command(
+  OUTPUT ${GENERATED_OUTPUT}
+  COMMAND ${CMAKE_COMMAND} -E env
+    PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}
+    ${Python3_EXECUTABLE} ${PROTON_ROS2_GENERATOR}
+      -c ${ADAPTER_CONFIG_PATH}
+      -d ${GENERATED_ADAPTER_HEADER_PATH}
+      -s ${GENERATED_SOURCE_PATH}
+  COMMENT "Generating ROS 2 message Type Adapters"
 )
 
 set(PROTON_ROS2_SOURCES
   src/node.cpp
   src/utils.cpp
-  src/adapters/clearpath_platform_msgs.cpp
-  src/adapters/factory.cpp
-  src/adapters/rcl_interfaces.cpp
-  src/adapters/sensor_msgs.cpp
-  src/adapters/std_msgs.cpp
-  src/adapters/nmea_msgs.cpp
+  src/std_srvs.cpp
+  ${GENERATED_SOURCES}
+  ${GENERATED_HEADERS}
 )
 
+# Proton ROS2 lib
 add_library(${PROTON_ROS2_LIB}
   STATIC
   ${PROTON_ROS2_SOURCES}
 )
 target_link_libraries(${PROTON_ROS2_LIB} proton::protoncpp)
-target_include_directories(${PROTON_ROS2_LIB} PRIVATE include)
+target_include_directories(${PROTON_ROS2_LIB} PRIVATE include ${GENERATED_HEADER_PATH})
 ament_target_dependencies(${PROTON_ROS2_LIB} ${PROTON_ROS2_DEPENDENCIES})
 
+# Proton ROS2 node
 add_executable(${PROTON_ROS2_EXECUTABLE} src/main.cpp)
 target_link_libraries(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_LIB})
-target_include_directories(${PROTON_ROS2_EXECUTABLE} PRIVATE include)
+target_include_directories(${PROTON_ROS2_EXECUTABLE} PRIVATE include ${GENERATED_HEADER_PATH})
 ament_target_dependencies(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_DEPENDENCIES})
+
+# Make examples subdirectory
+add_subdirectory(examples)
 
 install(
   TARGETS ${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_LIB}
@@ -92,9 +131,7 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
-ament_python_install_package(${PROJECT_NAME}
-  PACKAGE_DIR ${GENERATED_PY_DIR}
-)
+
 
 ament_export_include_directories(include)
 ament_export_libraries(${PROTON_ROS2_LIB})

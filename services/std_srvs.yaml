@@ -1,0 +1,19 @@
+package: std_srvs
+
+services:
+  - name: Empty
+    path: srv
+  - name: SetBool
+    path: srv
+    mapping:
+      request:
+        - {ros2.path: data, proton.signal: data, type: bool}
+      response:
+        - {ros2.path: success, proton.signal: success, type: bool}
+        - {ros2.path: message, proton.signal: message, type: string}
+  - name: Trigger
+    path: srv
+    mapping:
+      response:
+        - {ros2.path: success, proton.signal: success, type: bool}
+        - {ros2.path: message, proton.signal: message, type: string}

@@ -25,11 +25,15 @@ namespace proton::ros2 {
 namespace keys {
   static const char *const ROS2 = "ros2";
   static const char *const TOPICS = "topics";
+  static const char *const SERVICES = "services";
   static const char *const TOPIC = "topic";
   static const char *const MESSAGE = "message";
+  static const char *const SERVICE = "service";
   static const char *const QOS = "qos";
   static const char *const QOS_PROFILE = "qos.profile";
   static const char *const BUNDLE = "bundle";
+  static const char *const REQUEST = "request";
+  static const char *const RESPONSE = "response";
 }
 
 namespace qos {
@@ -53,8 +57,17 @@ struct TopicConfig {
   std::string bundle;
 };
 
+struct ServiceConfig {
+  std::string topic;
+  std::string service;
+  std::string qos;
+  std::string request;
+  std::string response;
+};
+
 struct ROS2Config {
   std::vector<TopicConfig> topics;
+  std::vector<ServiceConfig> services;
 };
 
 class Node : public rclcpp::Node
@@ -65,6 +78,7 @@ public:
 private:
   void protonCallback(proton::BundleHandle& bundle);
   void rosCallback(proton::BundleHandle& bundle);
+  proton::BundleHandle& serviceCallback(proton::BundleHandle & request);
   std::string config_file_;
   std::string target_;
   proton::Node proton_node_;
@@ -74,6 +88,7 @@ private:
 
   std::map<std::string, std::shared_ptr<IPublisher>> publishers_;
   std::map<std::string, std::shared_ptr<ISubscriber>> subscribers_;
+  std::map<std::string, std::shared_ptr<IService>> services_;
 };
 
 }

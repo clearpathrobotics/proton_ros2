@@ -28,9 +28,6 @@ struct IPublisher {
 };
 
 template <typename MsgT> struct TypedPublisher : public IPublisher {
-  typename rclcpp::Publisher<
-      rclcpp::TypeAdapter<proton::BundleHandle, MsgT>>::SharedPtr pub;
-
   TypedPublisher(rclcpp::Node *node, const std::string &topic, const rclcpp::QoS& qos) {
     pub =
         node->create_publisher<rclcpp::TypeAdapter<proton::BundleHandle, MsgT>>(
@@ -44,6 +41,8 @@ template <typename MsgT> struct TypedPublisher : public IPublisher {
   std::string getTopic() override{
     return std::string(pub->get_topic_name());
   }
+
+  typename rclcpp::Publisher<rclcpp::TypeAdapter<proton::BundleHandle, MsgT>>::SharedPtr pub;
 };
 
 struct ISubscriber {
@@ -52,13 +51,11 @@ struct ISubscriber {
 };
 
 template <typename MsgT> struct TypedSubscriber : public ISubscriber {
-  typename rclcpp::Subscription<MsgT>::SharedPtr sub;
-
   TypedSubscriber(rclcpp::Node *node, const std::string &topic, const rclcpp::QoS& qos,
                     proton::BundleHandle &bundle,
                     proton::BundleHandle::BundleCallback callback) {
     sub = node->create_subscription<MsgT>(
-        topic, qos, [this, &bundle, callback](const MsgT &msg) {
+        topic, qos, [&bundle, callback](const MsgT &msg) {
           rclcpp::TypeAdapter<proton::BundleHandle, MsgT>::convert_to_custom(
               msg, bundle);
           callback(bundle);
@@ -68,7 +65,108 @@ template <typename MsgT> struct TypedSubscriber : public ISubscriber {
   std::string getTopic() override{
     return std::string(sub->get_topic_name());
   }
+
+  typename rclcpp::Subscription<MsgT>::SharedPtr sub;
 };
+
+
+template<typename ServiceT>
+struct ServiceTypeAdapter
+{
+  using RequestROS = typename ServiceT::Request;
+  using ResponseROS = typename ServiceT::Response;
+
+  static void convert_to_ros(const proton::BundleHandle & source, RequestROS & destination);
+  static void convert_to_ros(const proton::BundleHandle & source, ResponseROS & destination);
+  static void convert_to_bundle(const RequestROS & source, proton::BundleHandle & destination);
+  static void convert_to_bundle(const ResponseROS & source, proton::BundleHandle & destination);
+};
+
+struct IService {
+  using CallbackT = std::function<void(proton::BundleHandle &)>;
+  using ResponseCallbackT = std::function<proton::BundleHandle& (proton::BundleHandle &)>;
+  virtual ~IService() = default;
+  virtual std::string getServiceName() = 0;
+};
+
+template<typename ServiceT>
+struct TypedService : public IService
+{
+  using RequestROS = typename ServiceT::Request;
+  using ResponseROS = typename ServiceT::Response;
+  using ResponseT = typename proton::BundleHandle;
+  using RequestT = typename proton::BundleHandle;
+
+  TypedService(
+    rclcpp::Node *node,
+    const std::string & service_name,
+    const rclcpp::QoS& qos,
+    proton::BundleHandle &request_bundle,
+    proton::BundleHandle &response_bundle,
+    ResponseCallbackT callback)
+  {
+    srv = node->create_service<ServiceT>(
+      service_name,
+      [&request_bundle, &response_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
+      {
+        // Convert ROS request to Bundle
+        ServiceTypeAdapter<ServiceT>::convert_to_bundle(*request, request_bundle);
+        // Send request bundle to Proton, receive response bundle
+        response_bundle = callback(request_bundle);
+        // Convert response bundle to ROS
+        ServiceTypeAdapter<ServiceT>::convert_to_ros(response_bundle, *response);
+      },
+      qos);
+  }
+
+  TypedService(
+    rclcpp::Node *node,
+    const std::string & service_name,
+    const rclcpp::QoS& qos,
+    proton::BundleHandle &request_bundle,
+    CallbackT callback)
+  {
+    srv = node->create_service<ServiceT>(
+      service_name,
+      [&request_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
+      {
+        RCL_UNUSED(response);
+        // Convert ROS request to Bundle
+        ServiceTypeAdapter<ServiceT>::convert_to_bundle(*request, request_bundle);
+        // Send request bundle to Proton
+        callback(request_bundle);
+      },
+      qos);
+  }
+
+  std::string getServiceName() override{
+    return std::string(srv->get_service_name());
+  }
+
+  typename rclcpp::Service<ServiceT>::SharedPtr srv;
+};
+
+class ServiceFactory
+{
+public:
+  static std::shared_ptr<IService> createTypedService(
+    const std::string& type,
+    rclcpp::Node * node,
+    const std::string& service_name,
+    const rclcpp::QoS & qos,
+    proton::BundleHandle & request_bundle,
+    proton::BundleHandle & response_bundle,
+    IService::ResponseCallbackT callback);
+
+  static std::shared_ptr<IService> createTypedService(
+    const std::string& type,
+    rclcpp::Node * node,
+    const std::string& service_name,
+    const rclcpp::QoS & qos,
+    proton::BundleHandle & request_bundle,
+    IService::CallbackT callback);
+};
+
 
 } // namespace proton::ros2
 

@@ -140,3 +140,5 @@ ros2:
     - {topic: platform/mcu/_cmd_fans,           message: clearpath_platform_msgs/msg/Fans,          qos.profile: sensor_data, bundle: cmd_fans}
     - {topic: platform/mcu/_cmd_lights,         message: clearpath_platform_msgs/msg/Lights,        qos.profile: sensor_data, bundle: cmd_lights}
     - {topic: platform/mcu/_cmd_pinout,         message: clearpath_platform_msgs/msg/PinoutCommand, qos.profile: sensor_data, bundle: pinout_command}
+  services:
+    - {topic: platform/mcu/cmd_shutdown,        service: std_srvs/srv/Empty, qos.profile: services, request: cmd_shutdown}
