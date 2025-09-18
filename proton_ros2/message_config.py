@@ -49,6 +49,7 @@ class ProtonROS2MessageConfig:
             ROS2_SUBPATH = "ros2.subpath"
             PROTON_SIGNAL = "proton.signal"
             PROTON_INDEX = "proton.index"
+            PROTON_SUBINDEX = "proton.subindex"
             TYPE = "type"
 
 
@@ -61,6 +62,8 @@ class ProtonROS2MessageConfig:
                 DYNAMIC_LIST = 5
                 FIXED_SUBMESSAGE = 6
                 DYNAMIC_SUBMESSAGE = 7
+                FIXED_SUBINDEX = 8
+                DYNAMIC_SUBINDEX = 9
 
 
             def __init__(self, config: dict):
@@ -79,6 +82,11 @@ class ProtonROS2MessageConfig:
                     self.proton_index = None
 
                 try:
+                    self.proton_subindex = config[self.PROTON_SUBINDEX]
+                except KeyError:
+                    self.proton_subindex = None
+
+                try:
                     self.ros_index = config[self.ROS2_INDEX]
                 except KeyError:
                     self.ros_index = None
@@ -93,54 +101,80 @@ class ProtonROS2MessageConfig:
                 except KeyError:
                     self.ros_subpath = None
 
+
+
                 # ros_msg.field = proton.signal
                 if (self.proton_index is None and
+                    self.proton_subindex is None and
                     self.ros_index is None and
                     self.ros_length is None and
                     self.ros_subpath is None):
                     self.mapping_type = self.MappingType.SCALAR
                 # ros_msg.field = proton.signal[proton_index]
                 elif(self.proton_index is not None and
+                    self.proton_subindex is None and
                     self.ros_index is None and
                     self.ros_length is None and
                     self.ros_subpath is None):
                     self.mapping_type = self.MappingType.PROTON_INDEXED
                 # ros_msg.field[ros_index] = proton.signal
                 elif(self.proton_index is None and
+                    self.proton_subindex is None and
                     self.ros_index is not None and
                     self.ros_length is None and
                     self.ros_subpath is None):
                     self.mapping_type = self.MappingType.ROS_INDEXED
                 # ros_msg.field[ros_index] = proton.signal[proton_index]
                 elif(self.proton_index is not None and
+                    self.proton_subindex is None and
                     self.ros_index is not None and
                     self.ros_length is None and
                     self.ros_subpath is None):
                     self.mapping_type = self.MappingType.BOTH_INDEXED
                 # ros_msg.field[n] = proton.signal[n]
                 elif(self.proton_index is None and
+                    self.proton_subindex is None and
                     self.ros_index is None and
                     self.ros_length > 0 and
                     self.ros_subpath is None):
                     self.mapping_type = self.MappingType.FIXED_LIST
                 # ros_msg.field[] = proton.signal[]
                 elif(self.proton_index is None and
+                    self.proton_subindex is None and
                     self.ros_index is None and
                     self.ros_length == 0 and
                     self.ros_subpath is None):
                     self.mapping_type = self.MappingType.DYNAMIC_LIST
                 # ros_msg.field[n].subfield = proton.signal[n]
                 elif(self.proton_index is None and
+                    self.proton_subindex is None and
                     self.ros_index is None and
                     self.ros_length > 0 and
                     self.ros_subpath is not None):
                     self.mapping_type = self.MappingType.FIXED_SUBMESSAGE
                 # ros_msg.field[].subfield = proton.signal[]
                 elif(self.proton_index is None and
+                    self.proton_subindex is None and
                     self.ros_index is None and
                     self.ros_length == 0 and
                     self.ros_subpath is not None):
                     self.mapping_type = self.MappingType.DYNAMIC_SUBMESSAGE
+                # ros_msg.field[n].subfield = proton.signal[n][proton_subindex]
+                elif(self.proton_index is None and
+                    self.proton_subindex is not None and
+                    self.ros_index is None and
+                    self.ros_length > 0 and
+                    self.ros_subpath is not None and
+                    self.data_type == "list_bytes"):
+                    self.mapping_type = self.MappingType.FIXED_SUBINDEX
+                # ros_msg.field[].subfield = proton.signal[n][proton_subindex]
+                elif(self.proton_index is None and
+                    self.proton_subindex is not None and
+                    self.ros_index is None and
+                    self.ros_length == 0 and
+                    self.ros_subpath is not None and
+                    self.data_type == "list_bytes"):
+                    self.mapping_type = self.MappingType.DYNAMIC_SUBINDEX
                 else:
                     raise KeyError(f"Invalid mapping configuration: {config}")
 

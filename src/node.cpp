@@ -66,7 +66,7 @@ using namespace proton::ros2;
 Node::Node() : rclcpp::Node("proton_ros2") {
   declare_parameter(
       "config_file",
-      "/home/rkreinin/proto_ws/src/proton_ros2/examples/j100/j100.yaml");
+      "/home/rkreinin/proto_ws/src/proton_ros2/examples/a300/a300.yaml");
   declare_parameter("target", "pc");
 
   config_file_ = get_parameter("config_file").as_string();

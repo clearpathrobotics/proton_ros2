@@ -49,18 +49,28 @@ class ProtonROS2AdapterGenerator:
         "bool": "bool",
         "string": "std::string",
         "bytes": "proton::bytes",
+        "list_double": "proton::list_double",
+        "list_float": "proton::list_float",
+        "list_int32": "proton::list_int32",
+        "list_int64": "proton::list_int64",
+        "list_uint32": "proton::list_uint32",
+        "list_uint64": "proton::list_uint64",
+        "list_bool": "proton::list_bool",
+        "list_string": "proton::list_string",
+        "list_bytes": "proton::list_bytes",
     }
 
     ListSignalMap = {
-        "double": "proton::list_double",
-        "float": "proton::list_float",
-        "int32": "proton::list_int32",
-        "int64": "proton::list_int64",
-        "uint32": "proton::list_uint32",
-        "uint64": "proton::list_uint64",
-        "bool": "proton::list_bool",
-        "string": "proton::list_string",
-        "bytes": "proton::bytes",
+        "bytes": "uint8_t",
+        "list_double": "double",
+        "list_float": "float",
+        "list_int32": "int32_t",
+        "list_int64": "int64_t",
+        "list_uint32": "uint32_t",
+        "list_uint64": "uint64_t",
+        "list_bool": "bool",
+        "list_string": "std::string",
+        "list_bytes": "proton::bytes",
     }
 
     PROTON_ROS2 = "proton_ros2"
@@ -149,17 +159,17 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.PROTON_INDEXED:
                     self.source_writer.write(
-                      f'destination.{map.ros_path} = source.getConstSignal("{map.proton_signal}").getValue<{self.ListSignalMap[map.data_type]}>().at({map.proton_index});',
+                      f'destination.{map.ros_path} = source.getConstSignal("{map.proton_signal}").getValue<{self.SignalMap[map.data_type]}>().at({map.proton_index});',
                       indent_level=2,
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.ROS_INDEXED:
                     self.source_writer.write(
-                      f'destination.{map.ros_path}.at({map.proton_index}) = source.getConstSignal("{map.proton_signal}").getValue<{self.SignalMap[map.data_type]}>();',
+                      f'destination.{map.ros_path}.at({map.ros_index}) = source.getConstSignal("{map.proton_signal}").getValue<{self.SignalMap[map.data_type]}>();',
                       indent_level=2,
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.BOTH_INDEXED:
                     self.source_writer.write(
-                      f'destination.{map.ros_path}.at({map.proton_index}) = source.getConstSignal("{map.proton_signal}").getValue<{self.SignalMap[map.data_type]}>().at({map.proton_index});',
+                      f'destination.{map.ros_path}.at({map.ros_index}) = source.getConstSignal("{map.proton_signal}").getValue<{self.SignalMap[map.data_type]}>().at({map.proton_index});',
                       indent_level=2,
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_LIST:
@@ -180,62 +190,45 @@ class ProtonROS2AdapterGenerator:
                       indent_level=2,
                     )
                     # Copy proton list to ROS array
-                    self.source_writer.write(f"auto {map.proton_signal} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.ListSignalMap[map.data_type]}>();", indent_level=2)
+                    self.source_writer.write(f"auto {map.proton_signal} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.SignalMap[map.data_type]}>();", indent_level=2)
                     self.source_writer.write(
                       f"std::copy({map.proton_signal}.begin(), {map.proton_signal}.begin() + n, destination.{map.ros_path}.begin());",
                       indent_level=2,
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_LIST:
                     # Copy proton list to ROS vector
-                    self.source_writer.write(f"destination.{map.ros_path} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.ListSignalMap[map.data_type]}>();", indent_level=2)
-                case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBMESSAGE:
-                    # Get signal list length
-                    if map.data_type == "bytes":
-                        self.source_writer.write(
-                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getCapacity();',
-                          indent_level=2,
-                        )
-                    else:
-                        self.source_writer.write(
-                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
-                          indent_level=2,
-                        )
+                    self.source_writer.write(f"destination.{map.ros_path} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.SignalMap[map.data_type]}>();", indent_level=2)
+                case (ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBMESSAGE | ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE):
+                    # Get signal value
+                    self.source_writer.write(f"{self.SignalMap[map.data_type]} {map.proton_signal} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.SignalMap[map.data_type]}>();", indent_level=2)
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
-                      f"int n = std::min(len, destination.{map.ros_path}.size());",
+                      f"int n = std::min({map.proton_signal}.size(), destination.{map.ros_path}.size());",
                       indent_level=2,
                     )
+                    if map.mapping_type == ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE:
+                        # Resize ROS array to n
+                        self.source_writer.write(
+                          f"destination.{map.ros_path}.resize(n);",
+                          indent_level=2,
+                        )
                     # Copy proton list to ROS array
-                    self.source_writer.write(f"{self.ListSignalMap[map.data_type]} {map.proton_signal} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.ListSignalMap[map.data_type]}>();", indent_level=2)
+
                     self.source_writer.write_for_loop_start("n",indent_level=2)
                     self.source_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = {map.proton_signal}.at(i);", indent_level=3)
                     self.source_writer.write_for_loop_end(indent_level=2)
-                case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE:
-                    # Get signal list length
-                    if map.data_type == "bytes":
-                        self.source_writer.write(
-                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getCapacity();',
-                          indent_level=2,
-                        )
-                    else:
-                        self.source_writer.write(
-                          f'std::size_t len = source.getConstSignal("{map.proton_signal}").getLength();',
-                          indent_level=2,
-                        )
-                    # Limit array size to the minimum of the ROS array length, and the signal length
-                    self.source_writer.write(
-                      f"int n = std::min(len, destination.{map.ros_path}.size());",
-                      indent_level=2,
-                    )
-                    # Resize ROS array to n
-                    self.source_writer.write(
-                      f"destination.{map.ros_path}.resize(n);",
-                      indent_level=2,
-                    )
-                    # Copy proton list to ROS array
+                case (ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBINDEX | ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBINDEX):
+                    # Get signal value
                     self.source_writer.write(f"{self.SignalMap[map.data_type]} {map.proton_signal} = source.getConstSignal(\"{map.proton_signal}\").getValue<{self.SignalMap[map.data_type]}>();", indent_level=2)
-                    self.source_writer.write_for_loop_start("n",indent_level=2)
-                    self.source_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = {map.proton_signal}.at(i);", indent_level=3)
+                    if map.mapping_type == ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBINDEX:
+                        # Resize ROS array to n
+                        self.source_writer.write(
+                          f"destination.{map.ros_path}.resize({map.proton_signal}.size());",
+                          indent_level=2,
+                        )
+                    # Copy proton subindex to ROS subpath
+                    self.source_writer.write_for_loop_start(f"static_cast<int>({map.proton_signal}.size())",indent_level=2)
+                    self.source_writer.write(f"destination.{map.ros_path}.at(i).{map.ros_subpath} = {map.proton_signal}.at(i).at({map.proton_subindex});", indent_level=3)
                     self.source_writer.write_for_loop_end(indent_level=2)
             self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_function_end()
@@ -254,16 +247,10 @@ class ProtonROS2AdapterGenerator:
                       indent_level=2,
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.PROTON_INDEXED:
-                    if map.data_type == "bytes":
-                        self.source_writer.write(
-                          f'destination.getSignal("{map.proton_signal}").setValue<uint8_t>({map.proton_index}, source.{map.ros_path});',
-                          indent_level=2,
-                        )
-                    else:
-                        self.source_writer.write(
-                          f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>({map.proton_index}, source.{map.ros_path});',
-                          indent_level=2,
-                        )
+                    self.source_writer.write(
+                      f'destination.getSignal("{map.proton_signal}").setValue<{self.ListSignalMap[map.data_type]}>({map.proton_index}, source.{map.ros_path});',
+                      indent_level=2,
+                    )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.ROS_INDEXED:
                     self.source_writer.write(
                       f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>(source.{map.ros_path}.at({map.ros_index}));',
@@ -271,10 +258,10 @@ class ProtonROS2AdapterGenerator:
                     )
                 case ProtonROS2MessageConfig.Message.Mapping.MappingType.BOTH_INDEXED:
                     self.source_writer.write(
-                      f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>({map.proton_index}, source.{map.ros_path}.at({map.ros_index}));',
+                      f'destination.getSignal("{map.proton_signal}").setValue<{self.ListSignalMap[map.data_type]}>({map.proton_index}, source.{map.ros_path}.at({map.ros_index}));',
                       indent_level=2,
                     )
-                case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_LIST:
+                case (ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_LIST | ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_LIST):
                     # Get signal list length
                     if map.data_type == "bytes":
                         self.source_writer.write(
@@ -293,7 +280,7 @@ class ProtonROS2AdapterGenerator:
                     )
                     # Create proton list type of n length
                     self.source_writer.write(
-                      f"{self.ListSignalMap[map.data_type]} {map.proton_signal}(n);",
+                      f"{self.SignalMap[map.data_type]} {map.proton_signal}(n);",
                       indent_level=2,
                     )
                     # Copy ROS array into proton list
@@ -303,10 +290,10 @@ class ProtonROS2AdapterGenerator:
                     )
                     # Set value
                     self.source_writer.write(
-                      f'destination.getSignal("{map.proton_signal}").setValue<{self.ListSignalMap[map.data_type]}>({map.proton_signal});',
+                      f'destination.getSignal("{map.proton_signal}").setValue<{self.SignalMap[map.data_type]}>({map.proton_signal});',
                       indent_level=2,
                     )
-                case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_LIST:
+                case (ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBMESSAGE | ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE):
                     # Get signal list length
                     if map.data_type == "bytes":
                         self.source_writer.write(
@@ -325,82 +312,27 @@ class ProtonROS2AdapterGenerator:
                     )
                     # Create proton list type of n length
                     self.source_writer.write(
-                      f"{self.ListSignalMap[map.data_type]} {map.proton_signal}(n);",
-                      indent_level=2,
-                    )
-                    # Copy ROS array into proton list
-                    self.source_writer.write(
-                      f"std::copy(source.{map.ros_path}.begin(), source.{map.ros_path}.begin() + n, {map.proton_signal}.begin());",
-                      indent_level=2,
-                    )
-                    # Set value
-                    self.source_writer.write(
-                      f'destination.getSignal("{map.proton_signal}").setValue<{self.ListSignalMap[map.data_type]}>({map.proton_signal});',
-                      indent_level=2,
-                    )
-                case ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBMESSAGE:
-                    # Get signal list length
-                    if map.data_type == "bytes":
-                        self.source_writer.write(
-                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getCapacity();',
-                          indent_level=2,
-                        )
-                    else:
-                        self.source_writer.write(
-                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
-                          indent_level=2,
-                        )
-                    # Limit array size to the minimum of the ROS array length, and the signal length
-                    self.source_writer.write(
-                      f"int n = std::min(len, source.{map.ros_path}.size());",
-                      indent_level=2,
-                    )
-                    # Create proton list type of n length
-                    self.source_writer.write(
-                      f"{self.ListSignalMap[map.data_type]} {map.proton_signal}(n);",
+                      f"{self.SignalMap[map.data_type]} {map.proton_signal}(n);",
                       indent_level=2,
                     )
                     self.source_writer.write_for_loop_start("n",indent_level=2)
-                    self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<{self.SignalMap[map.data_type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
+                    self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<{self.ListSignalMap[map.data_type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
                     self.source_writer.write_for_loop_end(indent_level=2)
-                    # Set value
-                    self.source_writer.write(
-                      f'destination.getSignal("{map.proton_signal}").setValue<{self.ListSignalMap[map.data_type]}>({map.proton_signal});',
-                      indent_level=2,
-                    )
-                case ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBMESSAGE:
-                    # Get signal list length
-                    if map.data_type == "bytes":
-                        self.source_writer.write(
-                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getCapacity();',
-                          indent_level=2,
-                        )
-                    else:
-                        self.source_writer.write(
-                          f'std::size_t len = destination.getSignal("{map.proton_signal}").getLength();',
-                          indent_level=2,
-                        )
+                case (ProtonROS2MessageConfig.Message.Mapping.MappingType.FIXED_SUBINDEX | ProtonROS2MessageConfig.Message.Mapping.MappingType.DYNAMIC_SUBINDEX):
                     # Limit array size to the minimum of the ROS array length, and the signal length
                     self.source_writer.write(
-                      f"int n = std::min(len, source.{map.ros_path}.size());",
+                      f'int n = std::min(static_cast<std::size_t>(destination.getSignal("{map.proton_signal}").getLength()), source.{map.ros_path}.size());',
                       indent_level=2,
                     )
                     # Create proton list type of n length
                     self.source_writer.write(
-                      f"{self.ListSignalMap[map.data_type]} {map.proton_signal}(n);",
+                      f"{self.SignalMap[map.data_type]} {map.proton_signal}(n);",
                       indent_level=2,
                     )
+                    # Iterate through each index, assign value to subindex
                     self.source_writer.write_for_loop_start("n",indent_level=2)
-                    if map.data_type == "bytes":
-                        self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<uint8_t>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
-                    else:
-                        self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<{self.SignalMap[map.data_type]}>(i, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
+                    self.source_writer.write(f"destination.getSignal(\"{map.proton_signal}\").setValue<uint8_t>(i, {map.proton_subindex}, source.{map.ros_path}.at(i).{map.ros_subpath});", indent_level=3)
                     self.source_writer.write_for_loop_end(indent_level=2)
-                    # Set value
-                    self.source_writer.write(
-                      f'destination.getSignal("{map.proton_signal}").setValue<{self.ListSignalMap[map.data_type]}>({map.proton_signal});',
-                      indent_level=2,
-                    )
             self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_function_end()
 

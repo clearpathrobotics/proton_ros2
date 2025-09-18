@@ -15,8 +15,8 @@ messages:
       - {ros2.path: power_supply_health, proton.signal: power_supply_health, type: uint32}
       - {ros2.path: power_supply_technology, proton.signal: power_supply_technology, type: uint32}
       - {ros2.path: present, proton.signal: present, type: bool}
-      - {ros2.path: cell_voltage, ros2.length: 0, proton.signal: cell_voltage, type: float}
-      - {ros2.path: cell_temperature, ros2.length: 0, proton.signal: cell_temperature, type: float}
+      - {ros2.path: cell_voltage, ros2.length: 0, proton.signal: cell_voltage, type: list_float}
+      - {ros2.path: cell_temperature, ros2.length: 0, proton.signal: cell_temperature, type: list_float}
       - {ros2.path: location, proton.signal: location, type: string}
       - {ros2.path: serial_number, proton.signal: serial_number, type: string}
   - name: Imu
@@ -24,25 +24,25 @@ messages:
     stamp: header.stamp
     mapping:
       - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
-      - {ros2.path: orientation.x, proton.signal: orientation, proton.index: 0, type: double}
-      - {ros2.path: orientation.y, proton.signal: orientation, proton.index: 1, type: double}
-      - {ros2.path: orientation.z, proton.signal: orientation, proton.index: 2, type: double}
-      - {ros2.path: orientation.w, proton.signal: orientation, proton.index: 3, type: double}
-      - {ros2.path: orientation_covariance, ros2.length: 9, proton.signal: orientation_covariance, type: double}
-      - {ros2.path: angular_velocity.x, proton.signal: angular_velocity, proton.index: 0, type: double}
-      - {ros2.path: angular_velocity.y, proton.signal: angular_velocity, proton.index: 1, type: double}
-      - {ros2.path: angular_velocity.z, proton.signal: angular_velocity, proton.index: 2, type: double}
-      - {ros2.path: angular_velocity_covariance, ros2.length: 9, proton.signal: angular_velocity_covariance, type: double}
-      - {ros2.path: linear_acceleration.x, proton.signal: linear_acceleration, proton.index: 0, type: double}
-      - {ros2.path: linear_acceleration.y, proton.signal: linear_acceleration, proton.index: 1, type: double}
-      - {ros2.path: linear_acceleration.z, proton.signal: linear_acceleration, proton.index: 2, type: double}
-      - {ros2.path: linear_acceleration_covariance, ros2.length: 9, proton.signal: linear_acceleration_covariance, type: double}
+      - {ros2.path: orientation.x, proton.signal: orientation, proton.index: 0, type: list_double}
+      - {ros2.path: orientation.y, proton.signal: orientation, proton.index: 1, type: list_double}
+      - {ros2.path: orientation.z, proton.signal: orientation, proton.index: 2, type: list_double}
+      - {ros2.path: orientation.w, proton.signal: orientation, proton.index: 3, type: list_double}
+      - {ros2.path: orientation_covariance, ros2.length: 9, proton.signal: orientation_covariance, type: list_double}
+      - {ros2.path: angular_velocity.x, proton.signal: angular_velocity, proton.index: 0, type: list_double}
+      - {ros2.path: angular_velocity.y, proton.signal: angular_velocity, proton.index: 1, type: list_double}
+      - {ros2.path: angular_velocity.z, proton.signal: angular_velocity, proton.index: 2, type: list_double}
+      - {ros2.path: angular_velocity_covariance, ros2.length: 9, proton.signal: angular_velocity_covariance, type: list_double}
+      - {ros2.path: linear_acceleration.x, proton.signal: linear_acceleration, proton.index: 0, type: list_double}
+      - {ros2.path: linear_acceleration.y, proton.signal: linear_acceleration, proton.index: 1, type: list_double}
+      - {ros2.path: linear_acceleration.z, proton.signal: linear_acceleration, proton.index: 2, type: list_double}
+      - {ros2.path: linear_acceleration_covariance, ros2.length: 9, proton.signal: linear_acceleration_covariance, type: list_double}
   - name: MagneticField
     path: msg
     stamp: header.stamp
     mapping:
       - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
-      - {ros2.path: magnetic_field.x, proton.signal: magnetic_field, proton.index: 0, type: double}
-      - {ros2.path: magnetic_field.y, proton.signal: magnetic_field, proton.index: 1, type: double}
-      - {ros2.path: magnetic_field.z, proton.signal: magnetic_field, proton.index: 2, type: double}
-      - {ros2.path: magnetic_field_covariance, ros2.length: 9, proton.signal: magnetic_field_covariance, type: double}
+      - {ros2.path: magnetic_field.x, proton.signal: magnetic_field, proton.index: 0, type: list_double}
+      - {ros2.path: magnetic_field.y, proton.signal: magnetic_field, proton.index: 1, type: list_double}
+      - {ros2.path: magnetic_field.z, proton.signal: magnetic_field, proton.index: 2, type: list_double}
+      - {ros2.path: magnetic_field_covariance, ros2.length: 9, proton.signal: magnetic_field_covariance, type: list_double}

@@ -9,7 +9,7 @@ messages:
     path: msg
     mapping:
       - {ros2.path: mode, proton.signal: mode, type: int32}
-      - {ros2.path: drivers, proton.signal: drivers, type: float, ros2.length: 2}
+      - {ros2.path: drivers, proton.signal: drivers, type: list_float, ros2.length: 2}
   - name: DriveFeedback
     path: msg
     mapping:
@@ -29,38 +29,35 @@ messages:
     stamp: header.stamp
     mapping:
       - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: current, proton.signal: current, type: float}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: duty_cycle, proton.signal: duty_cycle, type: float}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: bridge_temperature, proton.signal: bridge_temperature, type: float}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: motor_temperature, proton.signal: motor_temperature, type: float}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: measured_velocity, proton.signal: measured_velocity, type: float}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: measured_travel, proton.signal: measured_travel, type: float}
-      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: driver_fault, proton.signal: driver_fault, type: bool}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: current, proton.signal: current, type: list_float}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: duty_cycle, proton.signal: duty_cycle, type: list_float}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: bridge_temperature, proton.signal: bridge_temperature, type: list_float}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: motor_temperature, proton.signal: motor_temperature, type: list_float}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: measured_velocity, proton.signal: measured_velocity, type: list_float}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: measured_travel, proton.signal: measured_travel, type: list_float}
+      - {ros2.path: drivers, ros2.length: 2, ros2.subpath: driver_fault, proton.signal: driver_fault, type: list_bool}
       - {ros2.path: commanded_mode, proton.signal: commanded_mode, type: int32}
       - {ros2.path: actual_mode, proton.signal: actual_mode, type: int32}
   - name: Lights
     path: msg
     mapping:
-    #   - {ros.path: lights, ros.length: 0, ros.subpath: red, proton.proton.signal: lights, proton.subindex: 0, type: bytes}
-    #   - {ros.path: lights, ros.length: 0, ros.subpath: green, proton.proton.signal: lights, proton.subindex: 1, type: bytes}
-    #   - {ros.path: lights, ros.length: 0, ros.subpath: blue, proton.proton.signal: lights, proton.subindex: 2, type: bytes}
-      - {ros2.path: lights, ros2.subpath: red, ros2.length: 0, proton.signal: red, type: bytes}
-      - {ros2.path: lights, ros2.subpath: green, ros2.length: 0, proton.signal: green, type: bytes}
-      - {ros2.path: lights, ros2.subpath: blue, ros2.length: 0, proton.signal: blue, type: bytes}
+      - {ros2.path: lights, ros2.length: 0, ros2.subpath: red, proton.signal: lights, proton.subindex: 0, type: list_bytes}
+      - {ros2.path: lights, ros2.length: 0, ros2.subpath: green, proton.signal: lights, proton.subindex: 1, type: list_bytes}
+      - {ros2.path: lights, ros2.length: 0, ros2.subpath: blue, proton.signal: lights, proton.subindex: 2, type: list_bytes}
   - name: PinoutCommand
     path: msg
     mapping:
-      - {ros2.path: rails, proton.signal: rails, ros2.length: 0, type: bool}
-      - {ros2.path: outputs, proton.signal: outputs, ros2.length: 0, type: uint32}
+      - {ros2.path: rails, proton.signal: rails, ros2.length: 0, type: list_bool}
+      - {ros2.path: outputs, proton.signal: outputs, ros2.length: 0, type: list_uint32}
   - name: PinoutState
     path: msg
     stamp: header.stamp
     mapping:
       - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
-      - {ros2.path: rails, proton.signal: rails, ros2.length: 0, type: bool}
-      - {ros2.path: inputs, proton.signal: inputs, ros2.length: 0, type: bool}
-      - {ros2.path: outputs, proton.signal: outputs, ros2.length: 0, type: bool}
-      - {ros2.path: output_periods, proton.signal: output_periods, ros2.length: 0, type: uint32}
+      - {ros2.path: rails, proton.signal: rails, ros2.length: 0, type: list_bool}
+      - {ros2.path: inputs, proton.signal: inputs, ros2.length: 0, type: list_bool}
+      - {ros2.path: outputs, proton.signal: outputs, ros2.length: 0, type: list_bool}
+      - {ros2.path: output_periods, proton.signal: output_periods, ros2.length: 0, type: list_uint32}
   - name: Power
     path: msg
     stamp: header.stamp
@@ -71,8 +68,8 @@ messages:
       - {ros2.path: power_12v_user_nominal, proton.signal: power_12v_user_nominal, type: int32}
       - {ros2.path: charger_connected, proton.signal: charger_connected, type: int32}
       - {ros2.path: charging_complete, proton.signal: charging_complete, type: int32}
-      - {ros2.path: measured_voltages, proton.signal: measured_voltages, ros2.length: 0, type: float}
-      - {ros2.path: measured_currents, proton.signal: measured_currents, ros2.length: 0, type: float}
+      - {ros2.path: measured_voltages, proton.signal: measured_voltages, ros2.length: 0, type: list_float}
+      - {ros2.path: measured_currents, proton.signal: measured_currents, ros2.length: 0, type: list_float}
   - name: RGB
     path: msg
     mapping:
@@ -103,5 +100,5 @@ messages:
     stamp: header.stamp
     mapping:
       - {ros2.path: header.frame_id, proton.signal: frame_id, type: string}
-      - {ros2.path: temperatures, proton.signal: temperatures, ros2.length: 0, type: float}
+      - {ros2.path: temperatures, proton.signal: temperatures, ros2.length: 0, type: list_float}
 

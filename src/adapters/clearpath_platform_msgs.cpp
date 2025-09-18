@@ -125,63 +125,56 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     destination.header.frame_id = source.getConstSignal("frame_id").getValue<std::string>();
   }
   if (source.hasSignal("current")) {
-    std::size_t len = source.getConstSignal("current").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_float current = source.getConstSignal("current").getValue<proton::list_float>();
+    int n = std::min(current.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).current = current.at(i);
     }
   }
   if (source.hasSignal("duty_cycle")) {
-    std::size_t len = source.getConstSignal("duty_cycle").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_float duty_cycle = source.getConstSignal("duty_cycle").getValue<proton::list_float>();
+    int n = std::min(duty_cycle.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).duty_cycle = duty_cycle.at(i);
     }
   }
   if (source.hasSignal("bridge_temperature")) {
-    std::size_t len = source.getConstSignal("bridge_temperature").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_float bridge_temperature = source.getConstSignal("bridge_temperature").getValue<proton::list_float>();
+    int n = std::min(bridge_temperature.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).bridge_temperature = bridge_temperature.at(i);
     }
   }
   if (source.hasSignal("motor_temperature")) {
-    std::size_t len = source.getConstSignal("motor_temperature").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_float motor_temperature = source.getConstSignal("motor_temperature").getValue<proton::list_float>();
+    int n = std::min(motor_temperature.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).motor_temperature = motor_temperature.at(i);
     }
   }
   if (source.hasSignal("measured_velocity")) {
-    std::size_t len = source.getConstSignal("measured_velocity").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_float measured_velocity = source.getConstSignal("measured_velocity").getValue<proton::list_float>();
+    int n = std::min(measured_velocity.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).measured_velocity = measured_velocity.at(i);
     }
   }
   if (source.hasSignal("measured_travel")) {
-    std::size_t len = source.getConstSignal("measured_travel").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_float measured_travel = source.getConstSignal("measured_travel").getValue<proton::list_float>();
+    int n = std::min(measured_travel.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).measured_travel = measured_travel.at(i);
     }
   }
   if (source.hasSignal("driver_fault")) {
-    std::size_t len = source.getConstSignal("driver_fault").getLength();
-    int n = std::min(len, destination.drivers.size());
     proton::list_bool driver_fault = source.getConstSignal("driver_fault").getValue<proton::list_bool>();
+    int n = std::min(driver_fault.size(), destination.drivers.size());
     for (int i = 0; i < n; i += 1)
     {
       destination.drivers.at(i).driver_fault = driver_fault.at(i);
@@ -207,7 +200,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("current").setValue<float>(i, source.drivers.at(i).current);
     }
-    destination.getSignal("current").setValue<proton::list_float>(current);
   }
   if (destination.hasSignal("duty_cycle")) {
     std::size_t len = destination.getSignal("duty_cycle").getLength();
@@ -217,7 +209,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("duty_cycle").setValue<float>(i, source.drivers.at(i).duty_cycle);
     }
-    destination.getSignal("duty_cycle").setValue<proton::list_float>(duty_cycle);
   }
   if (destination.hasSignal("bridge_temperature")) {
     std::size_t len = destination.getSignal("bridge_temperature").getLength();
@@ -227,7 +218,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("bridge_temperature").setValue<float>(i, source.drivers.at(i).bridge_temperature);
     }
-    destination.getSignal("bridge_temperature").setValue<proton::list_float>(bridge_temperature);
   }
   if (destination.hasSignal("motor_temperature")) {
     std::size_t len = destination.getSignal("motor_temperature").getLength();
@@ -237,7 +227,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("motor_temperature").setValue<float>(i, source.drivers.at(i).motor_temperature);
     }
-    destination.getSignal("motor_temperature").setValue<proton::list_float>(motor_temperature);
   }
   if (destination.hasSignal("measured_velocity")) {
     std::size_t len = destination.getSignal("measured_velocity").getLength();
@@ -247,7 +236,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("measured_velocity").setValue<float>(i, source.drivers.at(i).measured_velocity);
     }
-    destination.getSignal("measured_velocity").setValue<proton::list_float>(measured_velocity);
   }
   if (destination.hasSignal("measured_travel")) {
     std::size_t len = destination.getSignal("measured_travel").getLength();
@@ -257,7 +245,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("measured_travel").setValue<float>(i, source.drivers.at(i).measured_travel);
     }
-    destination.getSignal("measured_travel").setValue<proton::list_float>(measured_travel);
   }
   if (destination.hasSignal("driver_fault")) {
     std::size_t len = destination.getSignal("driver_fault").getLength();
@@ -267,7 +254,6 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
     {
       destination.getSignal("driver_fault").setValue<bool>(i, source.drivers.at(i).driver_fault);
     }
-    destination.getSignal("driver_fault").setValue<proton::list_bool>(driver_fault);
   }
   if (destination.hasSignal("commanded_mode")) {
     destination.getSignal("commanded_mode").setValue<int32_t>(source.commanded_mode);
@@ -278,68 +264,56 @@ void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Fee
 }
 
 void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lights>::convert_to_ros_message(const custom_type & source, ros_message_type & destination) {
-  if (source.hasSignal("red")) {
-    std::size_t len = source.getConstSignal("red").getCapacity();
-    int n = std::min(len, destination.lights.size());
-    destination.lights.resize(n);
-    proton::bytes red = source.getConstSignal("red").getValue<proton::bytes>();
-    for (int i = 0; i < n; i += 1)
+  if (source.hasSignal("lights")) {
+    proton::list_bytes lights = source.getConstSignal("lights").getValue<proton::list_bytes>();
+    destination.lights.resize(lights.size());
+    for (int i = 0; i < static_cast<int>(lights.size()); i += 1)
     {
-      destination.lights.at(i).red = red.at(i);
+      destination.lights.at(i).red = lights.at(i).at(0);
     }
   }
-  if (source.hasSignal("green")) {
-    std::size_t len = source.getConstSignal("green").getCapacity();
-    int n = std::min(len, destination.lights.size());
-    destination.lights.resize(n);
-    proton::bytes green = source.getConstSignal("green").getValue<proton::bytes>();
-    for (int i = 0; i < n; i += 1)
+  if (source.hasSignal("lights")) {
+    proton::list_bytes lights = source.getConstSignal("lights").getValue<proton::list_bytes>();
+    destination.lights.resize(lights.size());
+    for (int i = 0; i < static_cast<int>(lights.size()); i += 1)
     {
-      destination.lights.at(i).green = green.at(i);
+      destination.lights.at(i).green = lights.at(i).at(1);
     }
   }
-  if (source.hasSignal("blue")) {
-    std::size_t len = source.getConstSignal("blue").getCapacity();
-    int n = std::min(len, destination.lights.size());
-    destination.lights.resize(n);
-    proton::bytes blue = source.getConstSignal("blue").getValue<proton::bytes>();
-    for (int i = 0; i < n; i += 1)
+  if (source.hasSignal("lights")) {
+    proton::list_bytes lights = source.getConstSignal("lights").getValue<proton::list_bytes>();
+    destination.lights.resize(lights.size());
+    for (int i = 0; i < static_cast<int>(lights.size()); i += 1)
     {
-      destination.lights.at(i).blue = blue.at(i);
+      destination.lights.at(i).blue = lights.at(i).at(2);
     }
   }
 }
 
 void rclcpp::TypeAdapter<proton::BundleHandle, clearpath_platform_msgs::msg::Lights>::convert_to_custom(const ros_message_type & source, custom_type & destination) {
-  if (destination.hasSignal("red")) {
-    std::size_t len = destination.getSignal("red").getCapacity();
-    int n = std::min(len, source.lights.size());
-    proton::bytes red(n);
+  if (destination.hasSignal("lights")) {
+    int n = std::min(static_cast<std::size_t>(destination.getSignal("lights").getLength()), source.lights.size());
+    proton::list_bytes lights(n);
     for (int i = 0; i < n; i += 1)
     {
-      destination.getSignal("red").setValue<uint8_t>(i, source.lights.at(i).red);
+      destination.getSignal("lights").setValue<uint8_t>(i, 0, source.lights.at(i).red);
     }
-    destination.getSignal("red").setValue<proton::bytes>(red);
   }
-  if (destination.hasSignal("green")) {
-    std::size_t len = destination.getSignal("green").getCapacity();
-    int n = std::min(len, source.lights.size());
-    proton::bytes green(n);
+  if (destination.hasSignal("lights")) {
+    int n = std::min(static_cast<std::size_t>(destination.getSignal("lights").getLength()), source.lights.size());
+    proton::list_bytes lights(n);
     for (int i = 0; i < n; i += 1)
     {
-      destination.getSignal("green").setValue<uint8_t>(i, source.lights.at(i).green);
+      destination.getSignal("lights").setValue<uint8_t>(i, 1, source.lights.at(i).green);
     }
-    destination.getSignal("green").setValue<proton::bytes>(green);
   }
-  if (destination.hasSignal("blue")) {
-    std::size_t len = destination.getSignal("blue").getCapacity();
-    int n = std::min(len, source.lights.size());
-    proton::bytes blue(n);
+  if (destination.hasSignal("lights")) {
+    int n = std::min(static_cast<std::size_t>(destination.getSignal("lights").getLength()), source.lights.size());
+    proton::list_bytes lights(n);
     for (int i = 0; i < n; i += 1)
     {
-      destination.getSignal("blue").setValue<uint8_t>(i, source.lights.at(i).blue);
+      destination.getSignal("lights").setValue<uint8_t>(i, 2, source.lights.at(i).blue);
     }
-    destination.getSignal("blue").setValue<proton::bytes>(blue);
   }
 }
 
