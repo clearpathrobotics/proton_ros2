@@ -163,6 +163,7 @@ void run_stats_thread()
 
 void clear_needs_reset_callback(proton::BundleHandle& bundle)
 {
+  static int i = 0;
   needs_reset = false;
 
   std::cout << "Received request " << std::endl;
@@ -170,7 +171,7 @@ void clear_needs_reset_callback(proton::BundleHandle& bundle)
 
   auto& response = node.getBundle("clear_needs_reset_response");
   response.getSignal("success").setValue<bool>(true);
-  response.getSignal("message").setValue<std::string>("Needs Reset Cleared");
+  response.getSignal("message").setValue<std::string>("Needs Reset Cleared " + std::to_string(i++));
 
   std::cout << "Sent response " << std::endl;
   response.printBundleVerbose();
@@ -214,15 +215,15 @@ int main()
   node.registerCallback("empty_srv", empty_callback);
 
   //std::thread stats_thread(run_stats_thread);
-  std::thread send_1hz_thread(run_1hz_thread);
-  std::thread send_10hz_thread(run_10hz_thread);
+  //std::thread send_1hz_thread(run_1hz_thread);
+  //std::thread send_10hz_thread(run_10hz_thread);
 
   node.startStatsThread();
   node.spin();
 
   //stats_thread.join();
-  send_1hz_thread.join();
-  send_10hz_thread.join();
+  //send_1hz_thread.join();
+  //send_10hz_thread.join();
 
   return 0;
 }

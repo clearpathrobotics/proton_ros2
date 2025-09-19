@@ -85,31 +85,33 @@ struct ServiceTypeAdapter
 };
 
 struct IService {
-  using CallbackT = std::function<void(proton::BundleHandle &)>;
-  using ResponseCallbackT = std::function<proton::BundleHandle& (proton::BundleHandle &)>;
+  using CallbackT = proton::BundleHandle::BundleCallback;
   virtual ~IService() = default;
   virtual std::string getServiceName() = 0;
 
   void responseCallback(proton::BundleHandle& handle)
   {
-    auto now = std::chrono::system_clock::now().time_since_epoch();
-    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-    std::cout << "Response: " << std::to_string(millis) << std::endl;
     response_promise.set_value(handle);
   }
 
-  proton::BundleHandle& waitForFuture()
+  bool waitForFuture(proton::BundleHandle& handle)
   {
     // Get future
     std::future<proton::BundleHandle&> response_future = response_promise.get_future();
+
     // Wait for future
-    response_future.wait();
-    // Get response
-    proton::BundleHandle& response = response_future.get();
-    // Reset promise
-    response_promise = std::promise<proton::BundleHandle&>();
-    // Return response
-    return response;
+    if (response_future.wait_for(std::chrono::milliseconds(1000)) == std::future_status::ready)
+    {
+      // Get response
+      handle = response_future.get();
+      // Reset promise
+      response_promise = std::promise<proton::BundleHandle&>();
+
+      return true;
+    }
+
+    // Timed out
+    return false;
   }
 
   std::promise<proton::BundleHandle&> response_promise;
@@ -120,8 +122,6 @@ struct TypedService : public IService
 {
   using RequestROS = typename ServiceT::Request;
   using ResponseROS = typename ServiceT::Response;
-  using ResponseT = typename proton::BundleHandle;
-  using RequestT = typename proton::BundleHandle;
 
   TypedService(
     rclcpp::Node *node,
@@ -133,18 +133,29 @@ struct TypedService : public IService
   {
     srv = node->create_service<ServiceT>(
       service_name,
-      [this, &request_bundle, &response_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
+      [this, node, service_name, &request_bundle, &response_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
       {
+        auto start_millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
         // Convert ROS request to Bundle
         ServiceTypeAdapter<ServiceT>::convert_to_bundle(*request, request_bundle);
+
         // Send request bundle to Proton
         callback(request_bundle);
 
         // Wait for future response
-        response_bundle = waitForFuture();
+        if (waitForFuture(response_bundle))
+        {
+          // Convert response bundle to ROS
+          ServiceTypeAdapter<ServiceT>::convert_to_ros(response_bundle, *response);
+        }
+        else
+        {
+          RCLCPP_ERROR(node->get_logger(), "Service %s timed out waiting for a response", service_name.c_str());
+        }
 
-        // Convert response bundle to ROS
-        ServiceTypeAdapter<ServiceT>::convert_to_ros(response_bundle, *response);
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - start_millis;
+        std::cout << "Service execution time: " << delta << std::endl;
       },
       qos);
   }
@@ -172,6 +183,7 @@ struct TypedService : public IService
   std::string getServiceName() override{
     return std::string(srv->get_service_name());
   }
+
   typename rclcpp::Service<ServiceT>::SharedPtr srv;
 };
 

@@ -162,14 +162,14 @@ Node::Node() : rclcpp::Node("proton_ros2") {
       if (request_handle.getProducer() == proton_node_.getTarget() &&
           response_handle.getConsumer() == proton_node_.getTarget())
       {
-        auto srv = ServiceFactory::createTypedService(
+        auto srv = Factory::createTypedService(
           config.service,
           this,
           config.topic,
           proton::ros2::qos::profiles.at(config.qos),
           request_handle,
           response_handle,
-          std::bind(&Node::serviceCallback, this, std::placeholders::_1));
+          std::bind(&Node::rosCallback, this, std::placeholders::_1));
         // Register the response callback
         proton_node_.registerCallback(config.response, std::bind(&IService::responseCallback, srv, std::placeholders::_1));
         services_.emplace(config.request, srv);
@@ -193,7 +193,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
     else {
       if (request_handle.getProducer() == proton_node_.getTarget())
       {
-        auto srv = ServiceFactory::createTypedService(
+        auto srv = Factory::createTypedService(
           config.service,
           this,
           config.topic,
@@ -240,15 +240,4 @@ void Node::protonCallback(proton::BundleHandle &bundle) {
  */
 void Node::rosCallback(proton::BundleHandle &bundle) {
   proton_node_.sendBundle(bundle);
-}
-
-proton::BundleHandle& Node::serviceCallback(proton::BundleHandle & request)
-{
-  auto now = std::chrono::system_clock::now().time_since_epoch();
-  auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-  std::cout << "Request: " << std::to_string(millis) << std::endl;
-  // Send request bundle
-  proton_node_.sendBundle(request);
-  // Wait for receive bundle
-  return request;
 }

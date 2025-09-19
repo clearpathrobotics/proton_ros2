@@ -18,7 +18,7 @@
 #include "protoncpp/proton.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "proton_ros2/typed.hpp"
-#include "proton_ros2/adapters/factory.hpp"
+#include "proton_ros2/factory.hpp"
 
 namespace proton::ros2 {
 
