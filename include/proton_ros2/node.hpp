@@ -85,6 +85,7 @@ private:
   ROS2Config ros2_config_;
 
   rclcpp::TimerBase::SharedPtr proton_timer_;
+  std::thread proton_thread_;
 
   std::map<std::string, std::shared_ptr<IPublisher>> publishers_;
   std::map<std::string, std::shared_ptr<ISubscriber>> subscribers_;

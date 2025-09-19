@@ -170,7 +170,8 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           request_handle,
           response_handle,
           std::bind(&Node::serviceCallback, this, std::placeholders::_1));
-
+        // Register the response callback
+        proton_node_.registerCallback(config.response, std::bind(&IService::responseCallback, srv, std::placeholders::_1));
         services_.emplace(config.request, srv);
 
         RCLCPP_INFO(get_logger(), "Created service %s",
@@ -217,38 +218,9 @@ Node::Node() : rclcpp::Node("proton_ros2") {
         // Error
       }
     }
-
-    // // Proton node consumes this bundle, so the ROS node should publish it.
-    // if (handle.getConsumer() == proton_node_.getTarget()) {
-    //   auto pub = Factory::createTypedServiceServer(config.service, this, config.topic, proton::ros2::qos::profiles.at(config.qos));
-    //   publishers_.emplace(config.bundle, pub);
-    //   proton_node_.registerCallback(
-    //       config.bundle, std::bind(&Node::protonCallback, this, std::placeholders::_1));
-
-    //   RCLCPP_INFO(get_logger(), "Created publisher %s",
-    //     rclcpp::expand_topic_or_service_name(
-    //       pub->getTopic(),
-    //       get_name(),
-    //       get_namespace()).c_str());
-    // }
-    // // Proton node produces this bundle, so the ROS node should subscribe to it.
-    // else if (handle.getProducer() == proton_node_.getTarget()) {
-    //   auto sub = Factory::createTypedSubscriber(
-    //               config.message, this, config.topic,
-    //               proton::ros2::qos::profiles.at(config.qos), handle,
-    //               std::bind(&Node::rosCallback, this, std::placeholders::_1));
-    //   subscribers_.emplace(config.bundle, sub);
-    //   RCLCPP_INFO(get_logger(), "Created subscriber %s",
-    //     rclcpp::expand_topic_or_service_name(
-    //       sub->getTopic(),
-    //       get_name(),
-    //       get_namespace()).c_str());
-    // }
   }
 
-  proton_timer_ =
-      create_wall_timer(std::chrono::milliseconds(1),
-                        [this]() -> void { proton_node_.spinOnce(); });
+  proton_thread_ = std::thread(std::bind(&proton::Node::spin, &proton_node_));
 }
 
 /**
@@ -272,7 +244,9 @@ void Node::rosCallback(proton::BundleHandle &bundle) {
 
 proton::BundleHandle& Node::serviceCallback(proton::BundleHandle & request)
 {
-  std::cout << "Callback" << std::endl;
+  auto now = std::chrono::system_clock::now().time_since_epoch();
+  auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+  std::cout << "Request: " << std::to_string(millis) << std::endl;
   // Send request bundle
   proton_node_.sendBundle(request);
   // Wait for receive bundle

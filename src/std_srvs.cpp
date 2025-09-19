@@ -97,7 +97,7 @@ std::shared_ptr<IService> ServiceFactory::createTypedService(
     const rclcpp::QoS & qos,
     proton::BundleHandle & request_bundle,
     proton::BundleHandle & response_bundle,
-    IService::ResponseCallbackT callback)
+    IService::CallbackT callback)
 {
   if (type == "std_srvs/srv/Empty")
   {

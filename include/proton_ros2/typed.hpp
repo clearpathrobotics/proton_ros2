@@ -18,6 +18,8 @@
 #include "rclcpp/type_adapter.hpp"
 #include <map>
 #include <string>
+#include <future>
+#include <chrono>
 
 namespace proton::ros2 {
 
@@ -87,6 +89,30 @@ struct IService {
   using ResponseCallbackT = std::function<proton::BundleHandle& (proton::BundleHandle &)>;
   virtual ~IService() = default;
   virtual std::string getServiceName() = 0;
+
+  void responseCallback(proton::BundleHandle& handle)
+  {
+    auto now = std::chrono::system_clock::now().time_since_epoch();
+    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+    std::cout << "Response: " << std::to_string(millis) << std::endl;
+    response_promise.set_value(handle);
+  }
+
+  proton::BundleHandle& waitForFuture()
+  {
+    // Get future
+    std::future<proton::BundleHandle&> response_future = response_promise.get_future();
+    // Wait for future
+    response_future.wait();
+    // Get response
+    proton::BundleHandle& response = response_future.get();
+    // Reset promise
+    response_promise = std::promise<proton::BundleHandle&>();
+    // Return response
+    return response;
+  }
+
+  std::promise<proton::BundleHandle&> response_promise;
 };
 
 template<typename ServiceT>
@@ -103,16 +129,20 @@ struct TypedService : public IService
     const rclcpp::QoS& qos,
     proton::BundleHandle &request_bundle,
     proton::BundleHandle &response_bundle,
-    ResponseCallbackT callback)
+    CallbackT callback)
   {
     srv = node->create_service<ServiceT>(
       service_name,
-      [&request_bundle, &response_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
+      [this, &request_bundle, &response_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
       {
         // Convert ROS request to Bundle
         ServiceTypeAdapter<ServiceT>::convert_to_bundle(*request, request_bundle);
-        // Send request bundle to Proton, receive response bundle
-        response_bundle = callback(request_bundle);
+        // Send request bundle to Proton
+        callback(request_bundle);
+
+        // Wait for future response
+        response_bundle = waitForFuture();
+
         // Convert response bundle to ROS
         ServiceTypeAdapter<ServiceT>::convert_to_ros(response_bundle, *response);
       },
@@ -128,7 +158,7 @@ struct TypedService : public IService
   {
     srv = node->create_service<ServiceT>(
       service_name,
-      [&request_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
+      [this, &request_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
       {
         RCL_UNUSED(response);
         // Convert ROS request to Bundle
@@ -142,7 +172,6 @@ struct TypedService : public IService
   std::string getServiceName() override{
     return std::string(srv->get_service_name());
   }
-
   typename rclcpp::Service<ServiceT>::SharedPtr srv;
 };
 
@@ -156,7 +185,7 @@ public:
     const rclcpp::QoS & qos,
     proton::BundleHandle & request_bundle,
     proton::BundleHandle & response_bundle,
-    IService::ResponseCallbackT callback);
+    IService::CallbackT callback);
 
   static std::shared_ptr<IService> createTypedService(
     const std::string& type,

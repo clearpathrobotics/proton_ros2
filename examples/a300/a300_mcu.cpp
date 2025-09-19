@@ -64,19 +64,15 @@ void update_power()
   auto& power_bundle = node.getBundle("power");
 
   auto& measured_voltages = power_bundle.getSignal("measured_voltages");
-  proton::list_float voltages(measured_voltages.getLength());
-
   for (auto i = 0; i < measured_voltages.getLength(); i++)
   {
-    voltages.at(i) = static_cast<float>(rand());
+    measured_voltages.setValue<float>(i, static_cast<float>(rand()));
   }
 
   auto& measured_currents = power_bundle.getSignal("measured_currents");
-  proton::list_float currents(measured_currents.getLength());
-
   for (auto i = 0; i < measured_currents.getLength(); i++)
   {
-    currents.at(i) = static_cast<float>(rand());
+    measured_currents.setValue<float>(i, static_cast<float>(rand()));
   }
 
   node.sendBundle(power_bundle);
@@ -87,11 +83,10 @@ void update_temperature()
   auto& temperature_bundle = node.getBundle("temperature");
 
   auto& temperatures_signal = temperature_bundle.getSignal("temperatures");
-  proton::list_float temperatures(temperatures_signal.getLength());
 
   for (auto i = 0; i < temperatures_signal.getLength(); i++)
   {
-    temperatures.at(i) = static_cast<float>(rand());
+    temperatures_signal.setValue<float>(i, static_cast<float>(rand()));
   }
 
   node.sendBundle(temperature_bundle);
@@ -169,6 +164,17 @@ void run_stats_thread()
 void clear_needs_reset_callback(proton::BundleHandle& bundle)
 {
   needs_reset = false;
+
+  std::cout << "Received request " << std::endl;
+  bundle.printBundleVerbose();
+
+  auto& response = node.getBundle("clear_needs_reset_response");
+  response.getSignal("success").setValue<bool>(true);
+  response.getSignal("message").setValue<std::string>("Needs Reset Cleared");
+
+  std::cout << "Sent response " << std::endl;
+  response.printBundleVerbose();
+  node.sendBundle(response);
 }
 
 void cmd_lights_callback(proton::BundleHandle& bundle)
@@ -178,7 +184,24 @@ void cmd_lights_callback(proton::BundleHandle& bundle)
 
 void cmd_shutdown_callback(proton::BundleHandle& bundle)
 {
+  std::cout << "Received request " << std::endl;
   bundle.printBundleVerbose();
+
+  auto& response = node.getBundle("cmd_shutdown_response");
+  response.getSignal("success").setValue<bool>(true);
+  response.getSignal("message").setValue<std::string>("Shutting Down");
+
+  std::cout << "Sent response " << std::endl;
+  response.printBundleVerbose();
+  node.sendBundle(response);
+}
+
+void empty_callback(proton::BundleHandle& bundle)
+{
+  std::cout << "Received request " << std::endl;
+  bundle.printBundleVerbose();
+
+  needs_reset = true;
 }
 
 int main()
@@ -188,15 +211,16 @@ int main()
   node.registerCallback("clear_needs_reset", clear_needs_reset_callback);
   node.registerCallback("cmd_lights", cmd_lights_callback);
   node.registerCallback("cmd_shutdown", cmd_shutdown_callback);
+  node.registerCallback("empty_srv", empty_callback);
 
-  std::thread stats_thread(run_stats_thread);
+  //std::thread stats_thread(run_stats_thread);
   std::thread send_1hz_thread(run_1hz_thread);
   std::thread send_10hz_thread(run_10hz_thread);
 
   node.startStatsThread();
   node.spin();
 
-  stats_thread.join();
+  //stats_thread.join();
   send_1hz_thread.join();
   send_10hz_thread.join();
 
