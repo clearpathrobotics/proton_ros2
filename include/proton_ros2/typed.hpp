@@ -96,6 +96,7 @@ struct IService {
 
   bool waitForFuture(proton::BundleHandle& handle)
   {
+    bool ret = false;
     // Get future
     std::future<proton::BundleHandle&> response_future = response_promise.get_future();
 
@@ -104,14 +105,12 @@ struct IService {
     {
       // Get response
       handle = response_future.get();
-      // Reset promise
-      response_promise = std::promise<proton::BundleHandle&>();
-
-      return true;
+      ret = true;
     }
 
-    // Timed out
-    return false;
+    // Reset promise
+    response_promise = std::promise<proton::BundleHandle&>();
+    return ret;
   }
 
   std::promise<proton::BundleHandle&> response_promise;

@@ -81,9 +81,10 @@ class ProtonROS2AdapterGenerator:
         self.config_file = config_file
         if is_message:
             self.header_path = os.path.join(destination_header, self.MESSAGES)
+            self.source_path = os.path.join(destination_source, self.MESSAGES)
         else:
             self.header_path = os.path.join(destination_header, self.SERVICES)
-        self.source_path = destination_source
+            self.source_path = os.path.join(destination_source, self.SERVICES)
         self.is_message = is_message
         assert os.path.exists(self.config_file)
         if not os.path.exists(self.header_path):

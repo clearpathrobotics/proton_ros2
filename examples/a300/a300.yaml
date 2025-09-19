@@ -128,7 +128,7 @@ bundles:
     consumer: pc
     signals:
       - {name: success, type: bool}
-      - {name: message, type: string}
+      - {name: message, type: string, capacity: 64}
   - name: clear_needs_reset
     id: 0x302
     producer: pc
@@ -139,7 +139,7 @@ bundles:
     consumer: pc
     signals:
       - {name: success, type: bool}
-      - {name: message, type: string}
+      - {name: message, type: string, capacity: 64}
   - name: empty_srv
     id: 0x304
     producer: pc

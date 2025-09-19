@@ -166,15 +166,10 @@ void clear_needs_reset_callback(proton::BundleHandle& bundle)
   static int i = 0;
   needs_reset = false;
 
-  std::cout << "Received request " << std::endl;
-  bundle.printBundleVerbose();
-
   auto& response = node.getBundle("clear_needs_reset_response");
   response.getSignal("success").setValue<bool>(true);
   response.getSignal("message").setValue<std::string>("Needs Reset Cleared " + std::to_string(i++));
 
-  std::cout << "Sent response " << std::endl;
-  response.printBundleVerbose();
   node.sendBundle(response);
 }
 
@@ -185,23 +180,15 @@ void cmd_lights_callback(proton::BundleHandle& bundle)
 
 void cmd_shutdown_callback(proton::BundleHandle& bundle)
 {
-  std::cout << "Received request " << std::endl;
-  bundle.printBundleVerbose();
-
   auto& response = node.getBundle("cmd_shutdown_response");
   response.getSignal("success").setValue<bool>(true);
   response.getSignal("message").setValue<std::string>("Shutting Down");
 
-  std::cout << "Sent response " << std::endl;
-  response.printBundleVerbose();
   node.sendBundle(response);
 }
 
 void empty_callback(proton::BundleHandle& bundle)
 {
-  std::cout << "Received request " << std::endl;
-  bundle.printBundleVerbose();
-
   needs_reset = true;
 }
 
@@ -214,16 +201,16 @@ int main()
   node.registerCallback("cmd_shutdown", cmd_shutdown_callback);
   node.registerCallback("empty_srv", empty_callback);
 
-  //std::thread stats_thread(run_stats_thread);
-  //std::thread send_1hz_thread(run_1hz_thread);
-  //std::thread send_10hz_thread(run_10hz_thread);
+  std::thread stats_thread(run_stats_thread);
+  std::thread send_1hz_thread(run_1hz_thread);
+  std::thread send_10hz_thread(run_10hz_thread);
 
   node.startStatsThread();
   node.spin();
 
-  //stats_thread.join();
-  //send_1hz_thread.join();
-  //send_10hz_thread.join();
+  stats_thread.join();
+  send_1hz_thread.join();
+  send_10hz_thread.join();
 
   return 0;
 }
