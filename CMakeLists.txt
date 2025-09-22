@@ -17,7 +17,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nmea_msgs REQUIRED)
 find_package(proton REQUIRED)
 
-ament_python_install_package(${PROJECT_NAME})
+
 
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
@@ -71,7 +71,7 @@ add_custom_command(
   OUTPUT ${GENERATED_OUTPUT}
   COMMAND ${CMAKE_COMMAND} -E env
     PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}
-    ${Python3_EXECUTABLE} ${PROTON_ROS2_GENERATOR}
+    ${PROTON_ROS2_GENERATOR}
       -c ${ADAPTER_CONFIG_PATH}
       -d ${GENERATED_ADAPTER_HEADER_PATH}
       -s ${GENERATED_SOURCE_PATH}
@@ -137,7 +137,7 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
-
+ament_python_install_package(${PROJECT_NAME})
 
 ament_export_include_directories(include)
 ament_export_libraries(${PROTON_ROS2_LIB})

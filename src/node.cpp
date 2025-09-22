@@ -183,7 +183,27 @@ Node::Node() : rclcpp::Node("proton_ros2") {
       else if (request_handle.getConsumer() == proton_node_.getTarget() &&
                response_handle.getProducer() == proton_node_.getTarget())
       {
-        // Client
+        auto client = Factory::createTypedClient(
+          config.service,
+          this,
+          config.topic,
+          proton::ros2::qos::profiles.at(config.qos),
+          response_handle,
+          std::bind(&Node::rosCallback, this, std::placeholders::_1)
+        );
+
+        // Add request bundle to clients list
+        clients_.emplace(config.request, client);
+
+        // Register request bundle to proton callbacks
+        proton_node_.registerCallback(
+          config.request, std::bind(&Node::protonCallback, this, std::placeholders::_1));
+
+        RCLCPP_INFO(get_logger(), "Created client %s",
+          rclcpp::expand_topic_or_service_name(
+            client->getServiceName(),
+            get_name(),
+            get_namespace()).c_str());
       }
       else
       {
@@ -211,7 +231,25 @@ Node::Node() : rclcpp::Node("proton_ros2") {
       }
       else if (request_handle.getConsumer() == proton_node_.getTarget())
       {
-        // Client
+        auto client = Factory::createTypedClient(
+          config.service,
+          this,
+          config.topic,
+          proton::ros2::qos::profiles.at(config.qos)
+        );
+
+        // Add request bundle to clients list
+        clients_.emplace(config.request, client);
+
+        // Register request bundle to proton callbacks
+        proton_node_.registerCallback(
+          config.request, std::bind(&Node::protonCallback, this, std::placeholders::_1));
+
+        RCLCPP_INFO(get_logger(), "Created client %s",
+        rclcpp::expand_topic_or_service_name(
+          client->getServiceName(),
+          get_name(),
+          get_namespace()).c_str());
       }
       else
       {
@@ -229,7 +267,18 @@ Node::Node() : rclcpp::Node("proton_ros2") {
  * @param bundle
  */
 void Node::protonCallback(proton::BundleHandle &bundle) {
-  publishers_.at(bundle.getName())->publish(bundle);
+  if (publishers_.find(bundle.getName()) != publishers_.end())
+  {
+    publishers_.at(bundle.getName())->publish(bundle);
+  }
+  else if (clients_.find(bundle.getName()) != clients_.end())
+  {
+    clients_.at(bundle.getName())->sendRequest(bundle);
+  }
+  else
+  {
+    RCLCPP_ERROR(get_logger(), "Invalid bundle in protonCallback %s", bundle.getName().c_str());
+  }
 }
 
 /**

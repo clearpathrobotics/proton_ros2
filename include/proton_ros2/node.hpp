@@ -90,6 +90,7 @@ private:
   std::map<std::string, std::shared_ptr<IPublisher>> publishers_;
   std::map<std::string, std::shared_ptr<ISubscriber>> subscribers_;
   std::map<std::string, std::shared_ptr<IService>> services_;
+  std::map<std::string, std::shared_ptr<IClient>> clients_;
 };
 
 }

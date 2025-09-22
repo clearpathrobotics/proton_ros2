@@ -124,6 +124,13 @@ void update_pinout_state()
   node.sendBundle(pinout_state_bundle);
 }
 
+void send_request()
+{
+  node.getBundle("set_bool_request").getSignal("data").setValue<bool>(true);
+
+  node.sendBundle("set_bool_request");
+}
+
 void run_1hz_thread()
 {
   uint32_t i = 0;
@@ -134,6 +141,7 @@ void run_1hz_thread()
     update_emergency_stop();
     update_stop_status();
     update_alerts();
+    send_request();
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
@@ -189,7 +197,7 @@ void cmd_shutdown_callback(proton::BundleHandle& bundle)
 
 void empty_callback(proton::BundleHandle& bundle)
 {
-  needs_reset = true;
+  bundle.printBundleVerbose();
 }
 
 int main()
@@ -199,7 +207,7 @@ int main()
   node.registerCallback("clear_needs_reset", clear_needs_reset_callback);
   node.registerCallback("cmd_lights", cmd_lights_callback);
   node.registerCallback("cmd_shutdown", cmd_shutdown_callback);
-  node.registerCallback("empty_srv", empty_callback);
+  node.registerCallback("set_bool_response", empty_callback);
 
   std::thread stats_thread(run_stats_thread);
   std::thread send_1hz_thread(run_1hz_thread);

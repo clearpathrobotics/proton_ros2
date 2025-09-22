@@ -634,6 +634,68 @@ class ProtonROS2FactoryGenerator:
         self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_function_end(indent_level=0)
 
+    def generate_client_factory(self):
+        request_parameters: List[Variable] = [
+            Variable("type", "const std::string&"),
+            Variable("node", "rclcpp::Node *"),
+            Variable("service_name", "const std::string&"),
+            Variable("qos", "const rclcpp::QoS &")
+        ]
+
+        request_response_parameters: List[Variable] = [
+            Variable("type", "const std::string&"),
+            Variable("node", "rclcpp::Node *"),
+            Variable("service_name", "const std::string&"),
+            Variable("qos", "const rclcpp::QoS &"),
+            Variable("response_bundle", "proton::BundleHandle &"),
+            Variable("callback", "proton::BundleHandle::BundleCallback"),
+        ]
+
+        request_function = Function("createTypedClient", request_parameters, "static std::shared_ptr<IClient>")
+        request_response_function = Function("createTypedClient", request_response_parameters, "static std::shared_ptr<IClient>")
+        self.header_writer.write_function_prototype(request_function, indent_level=1)
+        self.header_writer.write_function_prototype(request_response_function, indent_level=1)
+
+        # Request function definition
+        self.source_writer.write("std::shared_ptr<IClient> Factory::createTypedClient(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos) {", indent_level=0)
+        first = True
+        for c in self.conversions:
+            # Skip messages
+            if c.is_message:
+                continue
+            for s in c.config.services:
+                if first:
+                    self.source_writer.write_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
+                    first = False
+                else:
+                    self.source_writer.write_else_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
+                self.source_writer.write(f"return std::make_shared<TypedClient<{s.ros_type}>>(node, service_name, qos);", indent_level=2)
+                self.source_writer.write_if_statement_end(indent_level=1)
+        self.source_writer.write_else_statement_start(indent_level=1)
+        self.source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=2)
+        self.source_writer.write_if_statement_end(indent_level=1)
+        self.source_writer.write_function_end(indent_level=0)
+
+        # Request response function definition
+        self.source_writer.write("std::shared_ptr<IClient> Factory::createTypedClient(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, proton::BundleHandle & response_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
+        first = True
+        for c in self.conversions:
+            # Skip messages
+            if c.is_message:
+                continue
+            for s in c.config.services:
+                if first:
+                    self.source_writer.write_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
+                    first = False
+                else:
+                    self.source_writer.write_else_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
+                self.source_writer.write(f"return std::make_shared<TypedClient<{s.ros_type}>>(node, service_name, qos, &response_bundle, callback);", indent_level=2)
+                self.source_writer.write_if_statement_end(indent_level=1)
+        self.source_writer.write_else_statement_start(indent_level=1)
+        self.source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=2)
+        self.source_writer.write_if_statement_end(indent_level=1)
+        self.source_writer.write_function_end(indent_level=0)
+
     def generate(self):
         self.header_writer = CPPWriter(
             self.header_path,
@@ -663,6 +725,7 @@ class ProtonROS2FactoryGenerator:
         self.generate_publisher_factory()
         self.generate_subscriber_factory()
         self.generate_services_factory()
+        self.generate_client_factory()
 
         self.header_writer.write("};", indent_level=0)
         self.header_writer.write_newline()

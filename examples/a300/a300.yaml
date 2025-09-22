@@ -140,10 +140,19 @@ bundles:
     signals:
       - {name: success, type: bool}
       - {name: message, type: string, capacity: 64}
-  - name: empty_srv
+  - name: set_bool_request
     id: 0x304
+    producer: mcu
+    consumer: pc
+    signals:
+      - {name: data, type: bool}
+  - name: set_bool_response
+    id: 0x305
     producer: pc
     consumer: mcu
+    signals:
+      - {name: success, type: bool}
+      - {name: message, type: string, capacity: 64}
 
 ros2:
   topics:
@@ -163,4 +172,4 @@ ros2:
   services:
     - {topic: platform/mcu/cmd_shutdown,            service: std_srvs/srv/SetBool, qos.profile: services, request: cmd_shutdown, response: cmd_shutdown_response}
     - {topic: platform/mcu/clear_estop_needs_reset, service: std_srvs/srv/Trigger, qos.profile: services, request: clear_needs_reset, response: clear_needs_reset_response}
-    - {topic: platform/mcu/empty,                   service: std_srvs/srv/Empty,   qos.profile: services, request: empty_srv}
+    - {topic: platform/mcu/set_bool,                service: std_srvs/srv/SetBool,   qos.profile: services, request: set_bool_request, response: set_bool_response}

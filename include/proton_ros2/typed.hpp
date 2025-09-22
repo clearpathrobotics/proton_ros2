@@ -186,27 +186,81 @@ struct TypedService : public IService
   typename rclcpp::Service<ServiceT>::SharedPtr srv;
 };
 
-class ServiceFactory
-{
-public:
-  static std::shared_ptr<IService> createTypedService(
-    const std::string& type,
-    rclcpp::Node * node,
-    const std::string& service_name,
-    const rclcpp::QoS & qos,
-    proton::BundleHandle & request_bundle,
-    proton::BundleHandle & response_bundle,
-    IService::CallbackT callback);
-
-  static std::shared_ptr<IService> createTypedService(
-    const std::string& type,
-    rclcpp::Node * node,
-    const std::string& service_name,
-    const rclcpp::QoS & qos,
-    proton::BundleHandle & request_bundle,
-    IService::CallbackT callback);
+struct IClient {
+  using CallbackT = proton::BundleHandle::BundleCallback;
+  virtual ~IClient() = default;
+  virtual bool sendRequest(const proton::BundleHandle &bundle) = 0;
+  virtual std::string getServiceName() = 0;
 };
 
+template<typename ServiceT>
+struct TypedClient : public IClient
+{
+  using RequestROS = typename ServiceT::Request;
+  using ResponseROS = typename ServiceT::Response;
+  using ResponseFuture = typename rclcpp::Client<ServiceT>::SharedFuture;
+
+  TypedClient(
+    rclcpp::Node *node,
+    const std::string & service_name,
+    const rclcpp::QoS& qos,
+    proton::BundleHandle * response_bundle,
+    CallbackT callback)
+  {
+    client_ = node->create_client<ServiceT>(service_name, qos);
+    response_bundle_ = response_bundle;
+    callback_ = callback;
+  }
+
+  TypedClient(
+    rclcpp::Node *node,
+    const std::string & service_name,
+    const rclcpp::QoS& qos)
+  {
+    client_ = node->create_client<ServiceT>(service_name, qos);
+    callback_ = nullptr;
+  }
+
+  bool sendRequest(const proton::BundleHandle &bundle)
+  {
+    if (!client_->wait_for_service(std::chrono::milliseconds(1000)))
+    {
+      std::cout << "Timed out waiting for service" << std::endl;
+      return false;
+    }
+
+    auto request = std::make_shared<RequestROS>();
+
+    ServiceTypeAdapter<ServiceT>::convert_to_ros(bundle, *request);
+
+    if (callback_)
+    {
+      client_->async_send_request(request,
+        [this](ResponseFuture future) {
+          auto response = future.get();
+
+          ServiceTypeAdapter<ServiceT>::convert_to_bundle(*response, *response_bundle_);
+
+          callback_(*response_bundle_);
+        }
+      );
+    }
+    else
+    {
+      client_->async_send_request(request);
+    }
+
+    return true;
+  }
+
+  std::string getServiceName() override{
+    return std::string(client_->get_service_name());
+  }
+
+  typename rclcpp::Client<ServiceT>::SharedPtr client_;
+  proton::BundleHandle * response_bundle_;
+  CallbackT callback_;
+};
 
 } // namespace proton::ros2
 
