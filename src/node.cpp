@@ -73,6 +73,16 @@ struct convert<proton::ros2::ServiceConfig> {
       rhs.qos = proton::ros2::qos::SERVICES;
     }
 
+    auto timeout_node = node[proton::ros2::keys::TIMEOUT];
+    if (timeout_node.IsDefined() && !timeout_node.IsNull())
+    {
+      rhs.timeout = timeout_node.as<uint32_t>();
+    }
+    else
+    {
+      rhs.timeout = proton::ros2::Node::DEFAULT_TIMEOUT_MS;
+    }
+
     return true;
   }
 };
@@ -167,6 +177,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           this,
           config.topic,
           proton::ros2::qos::profiles.at(config.qos),
+          config.timeout,
           request_handle,
           response_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1));
@@ -188,6 +199,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           this,
           config.topic,
           proton::ros2::qos::profiles.at(config.qos),
+          config.timeout,
           response_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1)
         );
@@ -207,7 +219,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
       }
       else
       {
-        // Error
+        throw std::runtime_error("Invalid request and response bundle for service " + config.service);
       }
     }
     else {
@@ -218,6 +230,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           this,
           config.topic,
           proton::ros2::qos::profiles.at(config.qos),
+          config.timeout,
           request_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1));
 
@@ -235,7 +248,8 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           config.service,
           this,
           config.topic,
-          proton::ros2::qos::profiles.at(config.qos)
+          proton::ros2::qos::profiles.at(config.qos),
+          config.timeout
         );
 
         // Add request bundle to clients list
@@ -253,7 +267,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
       }
       else
       {
-        // Error
+        throw std::runtime_error("Invalid request bundle for service " + config.service);
       }
     }
   }

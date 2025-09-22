@@ -97,23 +97,24 @@ struct IService {
   bool waitForFuture(proton::BundleHandle& handle)
   {
     bool ret = false;
+    // Reset promise
+    response_promise = std::promise<proton::BundleHandle&>();
     // Get future
     std::future<proton::BundleHandle&> response_future = response_promise.get_future();
 
     // Wait for future
-    if (response_future.wait_for(std::chrono::milliseconds(1000)) == std::future_status::ready)
+    if (response_future.wait_for(std::chrono::milliseconds(timeout_ms_)) == std::future_status::ready)
     {
       // Get response
       handle = response_future.get();
       ret = true;
     }
 
-    // Reset promise
-    response_promise = std::promise<proton::BundleHandle&>();
     return ret;
   }
 
   std::promise<proton::BundleHandle&> response_promise;
+  uint32_t timeout_ms_;
 };
 
 template<typename ServiceT>
@@ -126,10 +127,13 @@ struct TypedService : public IService
     rclcpp::Node *node,
     const std::string & service_name,
     const rclcpp::QoS& qos,
+    const uint32_t timeout_ms,
     proton::BundleHandle &request_bundle,
     proton::BundleHandle &response_bundle,
     CallbackT callback)
   {
+    timeout_ms_ = timeout_ms;
+
     srv = node->create_service<ServiceT>(
       service_name,
       [this, node, service_name, &request_bundle, &response_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
@@ -163,9 +167,12 @@ struct TypedService : public IService
     rclcpp::Node *node,
     const std::string & service_name,
     const rclcpp::QoS& qos,
+    const uint32_t timeout_ms,
     proton::BundleHandle &request_bundle,
     CallbackT callback)
   {
+    timeout_ms_ = timeout_ms;
+
     srv = node->create_service<ServiceT>(
       service_name,
       [this, &request_bundle, callback](const std::shared_ptr<RequestROS> request, std::shared_ptr<ResponseROS> response)
@@ -204,10 +211,12 @@ struct TypedClient : public IClient
     rclcpp::Node *node,
     const std::string & service_name,
     const rclcpp::QoS& qos,
+    const uint32_t timeout_ms,
     proton::BundleHandle * response_bundle,
     CallbackT callback)
   {
     client_ = node->create_client<ServiceT>(service_name, qos);
+    timeout_ms_ = timeout_ms;
     response_bundle_ = response_bundle;
     callback_ = callback;
   }
@@ -215,17 +224,20 @@ struct TypedClient : public IClient
   TypedClient(
     rclcpp::Node *node,
     const std::string & service_name,
-    const rclcpp::QoS& qos)
+    const rclcpp::QoS& qos,
+    const uint32_t timeout_ms)
   {
     client_ = node->create_client<ServiceT>(service_name, qos);
+    timeout_ms_ = timeout_ms;
     callback_ = nullptr;
   }
 
   bool sendRequest(const proton::BundleHandle &bundle)
   {
-    if (!client_->wait_for_service(std::chrono::milliseconds(1000)))
+    auto start_millis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    if (!client_->wait_for_service(std::chrono::milliseconds(timeout_ms_)))
     {
-      std::cout << "Timed out waiting for service" << std::endl;
+      std::cout << "Timed out waiting for service " << getServiceName() << std::endl;
       return false;
     }
 
@@ -236,12 +248,15 @@ struct TypedClient : public IClient
     if (callback_)
     {
       client_->async_send_request(request,
-        [this](ResponseFuture future) {
+        [this, start_millis](ResponseFuture future) {
           auto response = future.get();
 
           ServiceTypeAdapter<ServiceT>::convert_to_bundle(*response, *response_bundle_);
 
           callback_(*response_bundle_);
+
+          auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - start_millis;
+          std::cout << "Client execution time: " << delta << std::endl;
         }
       );
     }
@@ -258,6 +273,7 @@ struct TypedClient : public IClient
   }
 
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
+  uint32_t timeout_ms_;
   proton::BundleHandle * response_bundle_;
   CallbackT callback_;
 };

@@ -575,6 +575,7 @@ class ProtonROS2FactoryGenerator:
             Variable("node", "rclcpp::Node *"),
             Variable("service_name", "const std::string&"),
             Variable("qos", "const rclcpp::QoS &"),
+            Variable("timeout_ms", "const uint32_t"),
             Variable("request_bundle", "proton::BundleHandle &"),
             Variable("callback", "proton::BundleHandle::BundleCallback"),
         ]
@@ -584,6 +585,7 @@ class ProtonROS2FactoryGenerator:
             Variable("node", "rclcpp::Node *"),
             Variable("service_name", "const std::string&"),
             Variable("qos", "const rclcpp::QoS &"),
+            Variable("timeout_ms", "const uint32_t"),
             Variable("request_bundle", "proton::BundleHandle &"),
             Variable("response_bundle", "proton::BundleHandle &"),
             Variable("callback", "proton::BundleHandle::BundleCallback"),
@@ -595,7 +597,7 @@ class ProtonROS2FactoryGenerator:
         self.header_writer.write_function_prototype(request_response_function, indent_level=1)
 
         # Request function definition
-        self.source_writer.write("std::shared_ptr<IService> Factory::createTypedService(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, proton::BundleHandle & request_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
+        self.source_writer.write("std::shared_ptr<IService> Factory::createTypedService(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, const uint32_t timeout_ms, proton::BundleHandle & request_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
         first = True
         for c in self.conversions:
             # Skip messages
@@ -607,7 +609,7 @@ class ProtonROS2FactoryGenerator:
                     first = False
                 else:
                     self.source_writer.write_else_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
-                self.source_writer.write(f"return std::make_shared<TypedService<{s.ros_type}>>(node, service_name, qos, request_bundle, callback);", indent_level=2)
+                self.source_writer.write(f"return std::make_shared<TypedService<{s.ros_type}>>(node, service_name, qos, timeout_ms, request_bundle, callback);", indent_level=2)
                 self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_else_statement_start(indent_level=1)
         self.source_writer.write("throw std::runtime_error(\"Invalid service message type \" + type);", indent_level=2)
@@ -615,7 +617,7 @@ class ProtonROS2FactoryGenerator:
         self.source_writer.write_function_end(indent_level=0)
 
         # Request response function definition
-        self.source_writer.write("std::shared_ptr<IService> Factory::createTypedService(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, proton::BundleHandle & request_bundle, proton::BundleHandle & response_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
+        self.source_writer.write("std::shared_ptr<IService> Factory::createTypedService(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, const uint32_t timeout_ms, proton::BundleHandle & request_bundle, proton::BundleHandle & response_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
         first = True
         for c in self.conversions:
             # Skip messages
@@ -627,7 +629,7 @@ class ProtonROS2FactoryGenerator:
                     first = False
                 else:
                     self.source_writer.write_else_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
-                self.source_writer.write(f"return std::make_shared<TypedService<{s.ros_type}>>(node, service_name, qos, request_bundle, response_bundle, callback);", indent_level=2)
+                self.source_writer.write(f"return std::make_shared<TypedService<{s.ros_type}>>(node, service_name, qos, timeout_ms, request_bundle, response_bundle, callback);", indent_level=2)
                 self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_else_statement_start(indent_level=1)
         self.source_writer.write("throw std::runtime_error(\"Invalid service message type \" + type);", indent_level=2)
@@ -639,7 +641,8 @@ class ProtonROS2FactoryGenerator:
             Variable("type", "const std::string&"),
             Variable("node", "rclcpp::Node *"),
             Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &")
+            Variable("qos", "const rclcpp::QoS &"),
+            Variable("timeout_ms", "const uint32_t"),
         ]
 
         request_response_parameters: List[Variable] = [
@@ -647,6 +650,7 @@ class ProtonROS2FactoryGenerator:
             Variable("node", "rclcpp::Node *"),
             Variable("service_name", "const std::string&"),
             Variable("qos", "const rclcpp::QoS &"),
+            Variable("timeout_ms", "const uint32_t"),
             Variable("response_bundle", "proton::BundleHandle &"),
             Variable("callback", "proton::BundleHandle::BundleCallback"),
         ]
@@ -657,7 +661,7 @@ class ProtonROS2FactoryGenerator:
         self.header_writer.write_function_prototype(request_response_function, indent_level=1)
 
         # Request function definition
-        self.source_writer.write("std::shared_ptr<IClient> Factory::createTypedClient(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos) {", indent_level=0)
+        self.source_writer.write("std::shared_ptr<IClient> Factory::createTypedClient(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, const uint32_t timeout_ms) {", indent_level=0)
         first = True
         for c in self.conversions:
             # Skip messages
@@ -669,7 +673,7 @@ class ProtonROS2FactoryGenerator:
                     first = False
                 else:
                     self.source_writer.write_else_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
-                self.source_writer.write(f"return std::make_shared<TypedClient<{s.ros_type}>>(node, service_name, qos);", indent_level=2)
+                self.source_writer.write(f"return std::make_shared<TypedClient<{s.ros_type}>>(node, service_name, qos, timeout_ms);", indent_level=2)
                 self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_else_statement_start(indent_level=1)
         self.source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=2)
@@ -677,7 +681,7 @@ class ProtonROS2FactoryGenerator:
         self.source_writer.write_function_end(indent_level=0)
 
         # Request response function definition
-        self.source_writer.write("std::shared_ptr<IClient> Factory::createTypedClient(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, proton::BundleHandle & response_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
+        self.source_writer.write("std::shared_ptr<IClient> Factory::createTypedClient(const std::string& type, rclcpp::Node * node, const std::string& service_name, const rclcpp::QoS & qos, const uint32_t timeout_ms, proton::BundleHandle & response_bundle, proton::BundleHandle::BundleCallback callback) {", indent_level=0)
         first = True
         for c in self.conversions:
             # Skip messages
@@ -689,7 +693,7 @@ class ProtonROS2FactoryGenerator:
                     first = False
                 else:
                     self.source_writer.write_else_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
-                self.source_writer.write(f"return std::make_shared<TypedClient<{s.ros_type}>>(node, service_name, qos, &response_bundle, callback);", indent_level=2)
+                self.source_writer.write(f"return std::make_shared<TypedClient<{s.ros_type}>>(node, service_name, qos, timeout_ms, &response_bundle, callback);", indent_level=2)
                 self.source_writer.write_if_statement_end(indent_level=1)
         self.source_writer.write_else_statement_start(indent_level=1)
         self.source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=2)

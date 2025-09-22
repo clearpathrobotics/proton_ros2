@@ -170,6 +170,6 @@ ros2:
     - {topic: platform/mcu/_cmd_lights,         message: clearpath_platform_msgs/msg/Lights,        qos.profile: sensor_data, bundle: cmd_lights}
     - {topic: platform/mcu/_cmd_pinout,         message: clearpath_platform_msgs/msg/PinoutCommand, qos.profile: sensor_data, bundle: pinout_command}
   services:
-    - {topic: platform/mcu/cmd_shutdown,            service: std_srvs/srv/SetBool, qos.profile: services, request: cmd_shutdown, response: cmd_shutdown_response}
-    - {topic: platform/mcu/clear_estop_needs_reset, service: std_srvs/srv/Trigger, qos.profile: services, request: clear_needs_reset, response: clear_needs_reset_response}
-    - {topic: platform/mcu/set_bool,                service: std_srvs/srv/SetBool,   qos.profile: services, request: set_bool_request, response: set_bool_response}
+    - {topic: platform/mcu/cmd_shutdown,            service: std_srvs/srv/SetBool, qos.profile: services, request: cmd_shutdown, response: cmd_shutdown_response, timeout: 100}
+    - {topic: platform/mcu/clear_estop_needs_reset, service: std_srvs/srv/Trigger, qos.profile: services, request: clear_needs_reset, response: clear_needs_reset_response, timeout: 100}
+    - {topic: platform/mcu/set_bool,                service: std_srvs/srv/SetBool,   qos.profile: services, request: set_bool_request, response: set_bool_response, timeout: 100}

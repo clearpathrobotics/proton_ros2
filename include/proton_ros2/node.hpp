@@ -34,6 +34,7 @@ namespace keys {
   static const char *const BUNDLE = "bundle";
   static const char *const REQUEST = "request";
   static const char *const RESPONSE = "response";
+  static const char *const TIMEOUT = "timeout";
 }
 
 namespace qos {
@@ -63,6 +64,7 @@ struct ServiceConfig {
   std::string qos;
   std::string request;
   std::string response;
+  uint32_t timeout;
 };
 
 struct ROS2Config {
@@ -73,6 +75,9 @@ struct ROS2Config {
 class Node : public rclcpp::Node
 {
 public:
+  // Default services timeout in milliseconds
+  static constexpr uint32_t DEFAULT_TIMEOUT_MS = 1000;
+
   Node();
 
 private:
