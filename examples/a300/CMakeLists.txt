@@ -14,6 +14,7 @@ target_link_libraries(a300_mcu_cpp
 )
 
 target_compile_definitions(a300_mcu_cpp PRIVATE CONFIG_FILE="${CONFIG_FILE}")
+target_compile_options(a300_mcu_cpp PRIVATE -Wno-narrowing)
 
 # Install
 install(TARGETS a300_mcu_cpp RUNTIME DESTINATION bin)

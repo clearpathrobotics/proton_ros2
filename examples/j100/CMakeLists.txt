@@ -14,6 +14,7 @@ target_link_libraries(j100_mcu_cpp
 )
 
 target_compile_definitions(j100_mcu_cpp PRIVATE CONFIG_FILE="${CONFIG_FILE}")
+target_compile_options(j100_mcu_cpp PRIVATE -Wno-narrowing)
 
 # Install
 install(TARGETS j100_mcu_cpp RUNTIME DESTINATION bin)

@@ -6,6 +6,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
+find_package(proton REQUIRED)
+
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(builtin_interfaces REQUIRED)
@@ -15,9 +17,6 @@ find_package(rclcpp REQUIRED)
 find_package(clearpath_platform_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nmea_msgs REQUIRED)
-find_package(proton REQUIRED)
-
-
 
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
@@ -86,17 +85,20 @@ set(PROTON_ROS2_SOURCES
 )
 
 # Proton ROS2 lib
-add_library(${PROTON_ROS2_LIB}
-  STATIC
-  ${PROTON_ROS2_SOURCES}
-)
-target_link_libraries(${PROTON_ROS2_LIB} proton::protoncpp)
-target_include_directories(${PROTON_ROS2_LIB} PRIVATE include ${GENERATED_HEADER_PATH})
-ament_target_dependencies(${PROTON_ROS2_LIB} ${PROTON_ROS2_DEPENDENCIES})
+# add_library(${PROTON_ROS2_LIB}
+#   STATIC
+#   ${PROTON_ROS2_SOURCES}
+# )
+# target_link_libraries(${PROTON_ROS2_LIB} proton::protoncpp)
+# target_include_directories(${PROTON_ROS2_LIB} PRIVATE include ${GENERATED_HEADER_PATH})
+# ament_target_dependencies(${PROTON_ROS2_LIB} ${PROTON_ROS2_DEPENDENCIES})
 
 # Proton ROS2 node
-add_executable(${PROTON_ROS2_EXECUTABLE} src/main.cpp)
-target_link_libraries(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_LIB})
+add_executable(${PROTON_ROS2_EXECUTABLE}
+  src/main.cpp
+  ${PROTON_ROS2_SOURCES}
+)
+target_link_libraries(${PROTON_ROS2_EXECUTABLE} proton::protoncpp)
 target_include_directories(${PROTON_ROS2_EXECUTABLE} PRIVATE include ${GENERATED_HEADER_PATH})
 ament_target_dependencies(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_DEPENDENCIES})
 
@@ -104,7 +106,7 @@ ament_target_dependencies(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_DEPENDENCIES})
 add_subdirectory(examples)
 
 install(
-  TARGETS ${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_LIB}
+  TARGETS ${PROTON_ROS2_EXECUTABLE} #${PROTON_ROS2_LIB}
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
@@ -140,7 +142,7 @@ install(DIRECTORY launch
 ament_python_install_package(${PROJECT_NAME})
 
 ament_export_include_directories(include)
-ament_export_libraries(${PROTON_ROS2_LIB})
+#ament_export_libraries(${PROTON_ROS2_LIB})
 ament_export_dependencies(${PROTON_ROS2_DEPENDENCIES})
 
 if(BUILD_TESTING)

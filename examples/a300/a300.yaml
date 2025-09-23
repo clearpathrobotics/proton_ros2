@@ -2,12 +2,12 @@ nodes:
   - name: pc
     transport:
       type: udp4
-      ip: 127.0.0.1
-      port: 11417
+      ip: 192.168.131.1
+      port: 11416
   - name: mcu
     transport:
       type: udp4
-      ip: 127.0.0.1
+      ip: 192.168.131.2
       port: 11416
 bundles:
   - name: log
