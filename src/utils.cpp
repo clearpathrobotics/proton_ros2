@@ -17,10 +17,5 @@ using namespace proton::ros2;
 builtin_interfaces::msg::Time Utils::getTimeStamp()
 {
   static rclcpp::Clock clock(RCL_ROS_TIME);
-  builtin_interfaces::msg::Time time;
-
-  time.set__sec(clock.now().seconds());
-  time.set__nanosec(clock.now().nanoseconds());
-
-  return time;
+  return clock.now();
 }
