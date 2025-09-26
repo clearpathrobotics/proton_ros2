@@ -33,6 +33,8 @@
 from typing import List
 import os
 
+from requests import head
+
 
 class Variable:
     def __init__(self, name, type, length=0, capacity=0):
@@ -55,10 +57,13 @@ class Function:
 class CPPWriter:
     tab = "  "
 
-    def __init__(self, path: str, name: str):
+    def __init__(self, path: str, name: str, header_guard: str = None):
         self.file_path = path
         self.name = name
-        self.header_guard = self.name.upper().replace('.', '_')
+        if header_guard is None:
+            self.header_guard = self.name.upper().replace('.', '_')
+        else:
+            self.header_guard = header_guard
         self.file_name = os.path.join(self.file_path, name)
         self.file = open(self.file_name, "w")
         self.initialize_file()

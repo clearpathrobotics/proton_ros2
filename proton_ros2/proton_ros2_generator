@@ -36,6 +36,7 @@ from typing import List
 
 from proton_ros2.message_config import ProtonROS2Config
 from proton_ros2.source_writer import CPPWriter, Function, Variable
+from proton_ros2.flatten import get_package_config
 
 
 class ProtonROS2AdapterGenerator:
@@ -77,8 +78,7 @@ class ProtonROS2AdapterGenerator:
     MESSAGES = "messages"
     SERVICES = "services"
 
-    def __init__(self, config_file: str, destination_header: str, destination_source: str, is_message: bool=True):
-        self.config_file = config_file
+    def __init__(self, config: dict, destination_header: str, destination_source: str, is_message: bool=True):
         if is_message:
             self.header_path = os.path.join(destination_header, self.MESSAGES)
             self.source_path = os.path.join(destination_source, self.MESSAGES)
@@ -86,20 +86,21 @@ class ProtonROS2AdapterGenerator:
             self.header_path = os.path.join(destination_header, self.SERVICES)
             self.source_path = os.path.join(destination_source, self.SERVICES)
         self.is_message = is_message
-        assert os.path.exists(self.config_file)
         if not os.path.exists(self.header_path):
             os.mkdir(self.header_path)
         if not os.path.exists(self.source_path):
             os.mkdir(self.source_path)
 
-        self.dictionary = self.read_yaml()
+        self.dictionary = config
         self.config = ProtonROS2Config(self.dictionary)
-        self.generated_header_name = f"{self.config.package}.hpp"
-        self.generated_source_name = f"{self.config.package}.cpp"
         if is_message:
+            self.generated_header_name = f"{self.config.package}_msg.hpp"
             self.generated_include = f"{self.PROTON_ROS2}/{self.MESSAGES}/{self.generated_header_name}"
+            self.generated_source_name = f"{self.config.package}_msg.cpp"
         else:
+            self.generated_header_name = f"{self.config.package}_srv.hpp"
             self.generated_include = f"{self.PROTON_ROS2}/{self.SERVICES}/{self.generated_header_name}"
+            self.generated_source_name = f"{self.config.package}_srv.cpp"
 
     def read_yaml(self):
         # Check YAML can be Opened
@@ -341,14 +342,26 @@ class ProtonROS2AdapterGenerator:
                 f"destination.{config.stamp} = proton::ros2::Utils::getTimeStamp();",
                 indent_level=1,
             )
-        for map in config.mappings:
-            self.generate_mapping_to_ros(map)
+
+        if len(config.mappings) == 0:
+            self.source_writer.write("RCL_UNUSED(source);")
+            self.source_writer.write("RCL_UNUSED(destination);")
+        else:
+            for map in config.mappings:
+                self.generate_mapping_to_ros(map)
+
         self.source_writer.write_function_end()
 
         # Convert to Custom
         self.source_writer.write(f"void rclcpp::TypeAdapter<proton::BundleHandle, {config.ros_type}>::convert_to_custom(const ros_message_type & source, custom_type & destination) {{", indent_level=0)
-        for map in config.mappings:
-            self.generate_mapping_to_bundle(map)
+
+        if len(config.mappings) == 0:
+            self.source_writer.write("RCL_UNUSED(source);")
+            self.source_writer.write("RCL_UNUSED(destination);")
+        else:
+            for map in config.mappings:
+                self.generate_mapping_to_bundle(map)
+
         self.source_writer.write_function_end()
 
     def generate_service_type_adapter(self, config: ProtonROS2Config.Service):
@@ -447,6 +460,7 @@ class ProtonROS2AdapterGenerator:
         self.header_writer = CPPWriter(
             self.header_path,
             self.generated_header_name,
+            f"{self.generated_header_name.upper().replace('.', '_')}_{"MSG" if self.is_message else "SRV"}"
         )
 
         self.source_writer = CPPWriter(
@@ -462,9 +476,13 @@ class ProtonROS2AdapterGenerator:
 
         if self.is_message:
             for m in self.config.messages:
+                if m.skip:
+                    continue
                 self.header_writer.write_include(m.hpp_header)
         else:
             for s in self.config.services:
+                if s.skip:
+                    continue
                 self.header_writer.write_include(s.hpp_header)
             self.header_writer.write_newline()
             self.header_writer.write("namespace proton::ros2 {", indent_level=0)
@@ -479,10 +497,14 @@ class ProtonROS2AdapterGenerator:
 
         if self.is_message:
             for m in self.config.messages:
+                if m.skip:
+                    continue
                 self.generate_message_type_adapter(m)
                 self.header_writer.write_newline()
         else:
             for s in self.config.services:
+                if s.skip:
+                    continue
                 self.generate_service_type_adapter(s)
                 self.header_writer.write_newline()
 
@@ -526,6 +548,8 @@ class ProtonROS2FactoryGenerator:
             if not c.is_message:
                 continue
             for m in c.config.messages:
+                if m.skip:
+                    continue
                 if first:
                     self.source_writer.write_if_statement_start(f"type == \"{m.full_name}\"", indent_level=1)
                     first = False
@@ -557,6 +581,8 @@ class ProtonROS2FactoryGenerator:
             if not c.is_message:
                 continue
             for m in c.config.messages:
+                if m.skip:
+                    continue
                 if first:
                     self.source_writer.write_if_statement_start(f"type == \"{m.full_name}\"", indent_level=1)
                     first = False
@@ -604,6 +630,8 @@ class ProtonROS2FactoryGenerator:
             if c.is_message:
                 continue
             for s in c.config.services:
+                if s.skip:
+                    continue
                 if first:
                     self.source_writer.write_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
                     first = False
@@ -624,6 +652,8 @@ class ProtonROS2FactoryGenerator:
             if c.is_message:
                 continue
             for s in c.config.services:
+                if s.skip:
+                    continue
                 if first:
                     self.source_writer.write_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
                     first = False
@@ -668,6 +698,8 @@ class ProtonROS2FactoryGenerator:
             if c.is_message:
                 continue
             for s in c.config.services:
+                if s.skip:
+                    continue
                 if first:
                     self.source_writer.write_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
                     first = False
@@ -688,6 +720,8 @@ class ProtonROS2FactoryGenerator:
             if c.is_message:
                 continue
             for s in c.config.services:
+                if s.skip:
+                    continue
                 if first:
                     self.source_writer.write_if_statement_start(f"type == \"{s.full_name}\"", indent_level=1)
                     first = False
@@ -766,33 +800,71 @@ def main():
         "--destination_source",
         type=str,
         action="store",
-        default="/home/rkreinin/proto_ws/src/proton_ros2/test/",
+        default="/home/rkreinin/proto_ws/src/proton_ros2/test/src",
         help="Destination folder path for generated source files.",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--packages",
+        type=str,
+        action="append",
+        help="Message packages",
     )
 
     args = parser.parse_args()
 
     folder = args.config_folder
+
     messages_folder = os.path.join(folder, "messages")
     services_folder = os.path.join(folder, "services")
     header = args.destination_header
     source = args.destination_source
+    packages = args.packages
+    packages = [p.strip() for p in packages]
+
+    package_configs = {}
+
+    for p in packages:
+        package_configs[p] = get_package_config(p)
 
     message_files = os.listdir(messages_folder)
     service_files = os.listdir(services_folder)
     generators: List[ProtonROS2AdapterGenerator] = []
+
+    # Update message configs from config file
     for f in message_files:
-        _, ext = os.path.splitext(f)
+        name, ext = os.path.splitext(f)
         if ext == ".yaml":
-            generator = ProtonROS2AdapterGenerator(os.path.join(messages_folder, f), header, source, is_message=True)
+            #raise Exception(f"{name.strip()} in packages: {name.strip() in packages} [{packages}]")
+            if name in packages:
+                overwrite_config = yaml.load(open(os.path.join(messages_folder, f)), Loader=yaml.SafeLoader)
+                package_config = package_configs[name]
+                for overwrite_message in overwrite_config[ProtonROS2Config.MESSAGES]:
+                    for i, package_message in enumerate(package_config[ProtonROS2Config.MESSAGES]):
+                        if overwrite_message[ProtonROS2Config.Message.NAME] == package_message[ProtonROS2Config.Message.NAME]:
+                            package_configs[name][ProtonROS2Config.MESSAGES][i] = overwrite_message
+
+    for p, config in package_configs.items():
+        if len(config[ProtonROS2Config.MESSAGES]) > 0:
+            generator = ProtonROS2AdapterGenerator(package_configs[p], header, source, is_message=True)
             generator.generate()
             generators.append(generator)
 
     for f in service_files:
-        print(f)
-        _, ext = os.path.splitext(f)
+        name, ext = os.path.splitext(f)
         if ext == ".yaml":
-            generator = ProtonROS2AdapterGenerator(os.path.join(services_folder, f), header, source, is_message=False)
+            if name in package_configs:
+                overwrite_config = yaml.load(open(os.path.join(services_folder, f)), Loader=yaml.SafeLoader)
+                package_config = package_configs[name]
+                for overwrite_service in overwrite_config[ProtonROS2Config.SERVICES]:
+                    for i, package_service in enumerate(package_config[ProtonROS2Config.SERVICES]):
+                        if overwrite_service[ProtonROS2Config.Service.NAME] == package_service[ProtonROS2Config.Service.NAME]:
+                            package_config[ProtonROS2Config.SERVICES][i] = overwrite_service
+
+    for p, config in package_configs.items():
+        if len(config[ProtonROS2Config.SERVICES]) > 0:
+            generator = ProtonROS2AdapterGenerator(package_configs[p], header, source, is_message=False)
             generator.generate()
             generators.append(generator)
 

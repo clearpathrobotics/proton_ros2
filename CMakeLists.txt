@@ -18,6 +18,7 @@ find_package(clearpath_platform_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nmea_msgs REQUIRED)
 
+
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
 set(PROTON_ROS2_MESSAGES
@@ -30,6 +31,7 @@ set(PROTON_ROS2_MESSAGES
 
 set(PROTON_ROS2_SERVICES
   std_srvs
+  clearpath_platform_msgs
 )
 
 set(PROTON_ROS2_DEPENDENCIES
@@ -46,34 +48,38 @@ set(GENERATED_HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(GENERATED_ADAPTER_HEADER_PATH ${GENERATED_HEADER_PATH}/${PROJECT_NAME})
 set(GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory.cpp)
 set(GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/factory.hpp)
+set(GENERATOR_PACKAGES "")
 
 file(MAKE_DIRECTORY ${GENERATED_SOURCE_PATH})
 file(MAKE_DIRECTORY ${GENERATED_ADAPTER_HEADER_PATH})
 
 foreach(name IN LISTS PROTON_ROS2_MESSAGES)
-    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/messages/${name}.cpp)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/messages/${name}_msg.cpp)
     list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/messages/${name}.hpp)
+    list(APPEND GENERATOR_PACKAGES "-p ${name}")
 endforeach()
 
 foreach(name IN LISTS PROTON_ROS2_SERVICES)
-    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/services/${name}.cpp)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/services/${name}_srv.cpp)
     list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/services/${name}.hpp)
+    list(APPEND GENERATOR_PACKAGES "-p ${name}")
 endforeach()
 
 set(GENERATED_OUTPUT ${GENERATED_SOURCES} ${GENERATED_HEADERS})
 
-message(STATUS ${GENERATED_OUTPUT})
+set(ENV{PYTHONPATH} "/opt/ros/jazzy/lib/python3.12/site-packages:${CMAKE_CURRENT_SOURCE_DIR}:$ENV{PYTHONPATH}")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 add_custom_command(
   OUTPUT ${GENERATED_OUTPUT}
   COMMAND ${CMAKE_COMMAND} -E env
-    PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}
+    PYTHONPATH=/opt/ros/jazzy/lib/python3.12/site-packages:${CMAKE_CURRENT_SOURCE_DIR}:$ENV{PYTHONPATH}
     ${PROTON_ROS2_GENERATOR}
       -c ${ADAPTER_CONFIG_PATH}
       -d ${GENERATED_ADAPTER_HEADER_PATH}
       -s ${GENERATED_SOURCE_PATH}
+      ${GENERATOR_PACKAGES}
   COMMENT "Generating ROS 2 message Type Adapters"
 )
 

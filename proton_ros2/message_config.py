@@ -28,6 +28,7 @@
 
 from typing import List
 from enum import Enum
+import re
 
 class ProtonROS2Config:
     # Top level keys
@@ -173,6 +174,7 @@ class ProtonROS2Config:
         # Message keys
         NAME = "name"
         PATH = "path"
+        SKIP = "skip"
         MAPPING = "mapping"
         STAMP = "stamp"
 
@@ -181,10 +183,15 @@ class ProtonROS2Config:
             self.config = config
             self.name = config[self.NAME]
             self.path = config[self.PATH]
-            self.snakecase_name = ProtonROS2Config.camelcase_to_snakecase(self.name)
+            self.snakecase_name = ProtonROS2Config.camel_to_snake(self.name)
             self.full_name = f'{package}/{self.path}/{self.name}'
             self.ros_type = f'{package}::{self.path}::{self.name}'
             self.hpp_header = f'{package}/{self.path}/{self.snakecase_name}.hpp'
+
+            try:
+                self.skip = config[self.SKIP]
+            except KeyError:
+                self.skip = False
 
             try:
                 self.stamp = config[self.STAMP]
@@ -199,6 +206,7 @@ class ProtonROS2Config:
         # Message keys
         NAME = "name"
         PATH = "path"
+        SKIP = "skip"
         MAPPING = "mapping"
         REQUEST = "request"
         RESPONSE = "response"
@@ -208,7 +216,7 @@ class ProtonROS2Config:
             self.config = config
             self.name = config[self.NAME]
             self.path = config[self.PATH]
-            self.snakecase_name = ProtonROS2Config.camelcase_to_snakecase(self.name)
+            self.snakecase_name = ProtonROS2Config.camel_to_snake(self.name)
             self.full_name = f'{package}/{self.path}/{self.name}'
             self.ros_type = f'{package}::{self.path}::{self.name}'
             self.hpp_header = f'{package}/{self.path}/{self.snakecase_name}.hpp'
@@ -216,6 +224,12 @@ class ProtonROS2Config:
 
             self.request_mappings: List[ProtonROS2Config.Mapping] = []
             self.response_mappings: List[ProtonROS2Config.Mapping] = []
+
+            try:
+                self.skip = config[self.SKIP]
+            except KeyError:
+                self.skip = False
+
             try:
                 for m in config[self.MAPPING][self.REQUEST]:
                     self.request_mappings.append(ProtonROS2Config.Mapping(m))
@@ -228,23 +242,26 @@ class ProtonROS2Config:
             except KeyError:
                 pass
 
+    def camel_to_snake(name):
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-    def camelcase_to_snakecase(string: str):
-        scase: str = ""
-        i = 0
-        if string.isupper():
-            return string.lower()
+    # def camelcase_to_snakecase(string: str):
+    #     scase: str = ""
+    #     i = 0
+    #     if string.isupper():
+    #         return string.lower()
 
-        for c in string:
-            if c.isupper():
-                if i == 0:
-                    scase += c.lower()
-                else:
-                    scase += "_" + c.lower()
-            else:
-                scase += c
-            i += 1
-        return scase
+    #     for c in string:
+    #         if c.isupper():
+    #             if i == 0:
+    #                 scase += c.lower()
+    #             else:
+    #                 scase += "_" + c.lower()
+    #         else:
+    #             scase += c
+    #         i += 1
+    #     return scase
 
     def __init__(self, config: dict):
         self.config = config

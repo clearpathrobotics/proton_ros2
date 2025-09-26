@@ -1,15 +1,75 @@
 package: std_msgs
-
 messages:
-  - name: String
+  - name: ByteMultiArray
     path: msg
     mapping:
-      - {ros2.path: data, proton.signal: data, type: string}
-  - name: Bool
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: bytes}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: Float32MultiArray
     path: msg
     mapping:
-      - {ros2.path: data, proton.signal: data, type: bool}
-  - name: UInt8
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: list_float}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: Float64MultiArray
     path: msg
     mapping:
-      - {ros2.path: data, proton.signal: data, type: uint32}
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: list_double}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: Int8MultiArray
+    path: msg
+    skip: true
+  - name: Int16MultiArray
+    path: msg
+    skip: true
+  - name: Int32MultiArray
+    path: msg
+    mapping:
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: list_int32}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: Int64MultiArray
+    path: msg
+    mapping:
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: list_int64}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: UInt8MultiArray
+    path: msg
+    mapping:
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: bytes}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: UInt16MultiArray
+    path: msg
+    skip: true
+  - name: UInt32MultiArray
+    path: msg
+    mapping:
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: list_uint32}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
+  - name: UInt64MultiArray
+    path: msg
+    mapping:
+      - {ros2.path: data, ros2.length: 0, proton.signal: data, type: list_uint64}
+      - {ros2.path: layout.data_offset, proton.signal: data_offset, type: uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: label, proton.signal: layout_dim_label, type: list_string}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: size, proton.signal: layout_dim_size, type: list_uint32}
+      - {ros2.path: layout.dim, ros2.length: 0, ros2.subpath: stride, proton.signal: layout_dim_stride, type: list_uint32}
