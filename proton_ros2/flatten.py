@@ -5,6 +5,7 @@ import yaml
 from rosidl_runtime_py.utilities import get_message
 from rosidl_parser.definition import (
     BasicType,
+    NamedType,
     NamespacedType,
     UnboundedSequence,
     BoundedSequence,
@@ -62,9 +63,12 @@ def ros_type_to_proton_type(field_type):
                 'boolean': 'list_bool',
                 'string': 'list_string',
                 'byte': 'bytes',
-                'octet': 'list_int32'
+                'octet': 'bytes'
             }
             return mapping.get(elem_type.typename, 'list_unknown_map')
+        elif isinstance(elem_type, NamedType):
+            print(elem_type)
+            return 'bytes'
         elif isinstance(elem_type, (UnboundedString, BoundedString)):
             return 'list_string'
         elif isinstance(elem_type, NamespacedType):

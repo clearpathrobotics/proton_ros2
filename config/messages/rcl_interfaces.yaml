@@ -1,0 +1,11 @@
+package: rcl_interfaces
+messages:
+  - name: ParameterEvent
+    path: msg
+    skip: true
+  - name: ParameterDescriptor
+    path: msg
+    skip: true
+  - name: ParameterEventDescriptors
+    path: msg
+    skip: true

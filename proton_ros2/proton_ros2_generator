@@ -93,6 +93,7 @@ class ProtonROS2AdapterGenerator:
 
         self.dictionary = config
         self.config = ProtonROS2Config(self.dictionary)
+
         if is_message:
             self.generated_header_name = f"{self.config.package}_msg.hpp"
             self.generated_include = f"{self.PROTON_ROS2}/{self.MESSAGES}/{self.generated_header_name}"
@@ -778,7 +779,6 @@ class ProtonROS2FactoryGenerator:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-c",
         "--config_folder",
         type=str,
         action="store",
@@ -787,7 +787,6 @@ def main():
     )
 
     parser.add_argument(
-        "-d",
         "--destination_header",
         type=str,
         action="store",
@@ -796,7 +795,6 @@ def main():
     )
 
     parser.add_argument(
-        "-s",
         "--destination_source",
         type=str,
         action="store",
@@ -805,11 +803,27 @@ def main():
     )
 
     parser.add_argument(
-        "-p",
-        "--packages",
+        "--destination_config",
+        type=str,
+        action="store",
+        default="/home/rkreinin/proto_ws/src/proton_ros2/test/config",
+        help="Destination folder path for generated config files.",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--msgs",
         type=str,
         action="append",
         help="Message packages",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--srvs",
+        type=str,
+        action="append",
+        help="Service packages",
     )
 
     args = parser.parse_args()
@@ -820,13 +834,24 @@ def main():
     services_folder = os.path.join(folder, "services")
     header = args.destination_header
     source = args.destination_source
-    packages = args.packages
-    packages = [p.strip() for p in packages]
 
-    package_configs = {}
+    config_folder = args.destination_config
+    config_messages_folder = os.path.join(config_folder, "messages")
+    config_services_folder = os.path.join(config_folder, "services")
 
-    for p in packages:
-        package_configs[p] = get_package_config(p)
+    message_packages = args.msgs
+    message_packages = [m.strip() for m in message_packages]
+    service_packages = args.srvs
+    service_packages = [s.strip() for s in service_packages]
+
+    message_package_configs = {}
+    service_package_configs = {}
+
+    for m in message_packages:
+        message_package_configs[m] = get_package_config(m)
+
+    for s in service_packages:
+        service_package_configs[s] = get_package_config(s)
 
     message_files = os.listdir(messages_folder)
     service_files = os.listdir(services_folder)
@@ -836,37 +861,40 @@ def main():
     for f in message_files:
         name, ext = os.path.splitext(f)
         if ext == ".yaml":
-            #raise Exception(f"{name.strip()} in packages: {name.strip() in packages} [{packages}]")
-            if name in packages:
+            if name in message_packages:
                 overwrite_config = yaml.load(open(os.path.join(messages_folder, f)), Loader=yaml.SafeLoader)
-                package_config = package_configs[name]
+                package_config = message_package_configs[name]
                 for overwrite_message in overwrite_config[ProtonROS2Config.MESSAGES]:
                     for i, package_message in enumerate(package_config[ProtonROS2Config.MESSAGES]):
                         if overwrite_message[ProtonROS2Config.Message.NAME] == package_message[ProtonROS2Config.Message.NAME]:
-                            package_configs[name][ProtonROS2Config.MESSAGES][i] = overwrite_message
+                            message_package_configs[name][ProtonROS2Config.MESSAGES][i] = overwrite_message
 
-    for p, config in package_configs.items():
+    for p, config in message_package_configs.items():
         if len(config[ProtonROS2Config.MESSAGES]) > 0:
-            generator = ProtonROS2AdapterGenerator(package_configs[p], header, source, is_message=True)
+            generator = ProtonROS2AdapterGenerator(message_package_configs[p], header, source, is_message=True)
             generator.generate()
             generators.append(generator)
+            with open(os.path.join(config_messages_folder, f'{p}.yaml'), 'w') as f:
+                yaml.dump(config[ProtonROS2Config.MESSAGES], f)
 
     for f in service_files:
         name, ext = os.path.splitext(f)
         if ext == ".yaml":
-            if name in package_configs:
+            if name in service_packages:
                 overwrite_config = yaml.load(open(os.path.join(services_folder, f)), Loader=yaml.SafeLoader)
-                package_config = package_configs[name]
+                package_config = service_package_configs[name]
                 for overwrite_service in overwrite_config[ProtonROS2Config.SERVICES]:
                     for i, package_service in enumerate(package_config[ProtonROS2Config.SERVICES]):
                         if overwrite_service[ProtonROS2Config.Service.NAME] == package_service[ProtonROS2Config.Service.NAME]:
-                            package_config[ProtonROS2Config.SERVICES][i] = overwrite_service
+                            service_package_configs[ProtonROS2Config.SERVICES][i] = overwrite_service
 
-    for p, config in package_configs.items():
+    for p, config in service_package_configs.items():
         if len(config[ProtonROS2Config.SERVICES]) > 0:
-            generator = ProtonROS2AdapterGenerator(package_configs[p], header, source, is_message=False)
+            generator = ProtonROS2AdapterGenerator(service_package_configs[p], header, source, is_message=False)
             generator.generate()
             generators.append(generator)
+            with open(os.path.join(config_services_folder, f'{p}.yaml'), 'w') as f:
+                yaml.dump(config[ProtonROS2Config.SERVICES], f)
 
     factory_generator = ProtonROS2FactoryGenerator(generators, header, source)
     factory_generator.generate()

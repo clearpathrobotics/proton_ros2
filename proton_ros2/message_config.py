@@ -246,38 +246,20 @@ class ProtonROS2Config:
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-    # def camelcase_to_snakecase(string: str):
-    #     scase: str = ""
-    #     i = 0
-    #     if string.isupper():
-    #         return string.lower()
-
-    #     for c in string:
-    #         if c.isupper():
-    #             if i == 0:
-    #                 scase += c.lower()
-    #             else:
-    #                 scase += "_" + c.lower()
-    #         else:
-    #             scase += c
-    #         i += 1
-    #     return scase
-
     def __init__(self, config: dict):
         self.config = config
         self.package = config[self.PACKAGE]
 
         self.messages: List[ProtonROS2Config.Message] = []
         self.services: List[ProtonROS2Config.Service] = []
-        try:
-            for m in config[self.MESSAGES]:
+        for m in config[self.MESSAGES]:
+            try:
                 self.messages.append(self.Message(self.package, m))
-        except KeyError:
-            pass
+            except KeyError:
+                continue
 
-        try:
-            for s in config[self.SERVICES]:
-                print(s)
+        for s in config[self.SERVICES]:
+            try:
                 self.services.append(self.Service(self.package, s))
-        except KeyError:
-            pass
+            except KeyError:
+                continue

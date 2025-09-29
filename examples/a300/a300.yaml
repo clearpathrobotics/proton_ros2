@@ -26,19 +26,19 @@ bundles:
     producer: mcu
     consumer: pc
     signals:
-      - {name: frame_id, type: string, value: mcu_link}
+      - {name: header_frame_id, type: string, value: mcu_link}
       - {name: hardware_id, type: string, capacity: 10}
       - {name: firmware_version, type: string, capacity: 10}
-      - {name: mcu_uptime_s, type: int32}
-      - {name: mcu_uptime_ns, type: uint32}
-      - {name: connection_uptime_s, type: int32}
-      - {name: connection_uptime_ns, type: uint32}
+      - {name: mcu_uptime_sec, type: int32}
+      - {name: mcu_uptime_nanosec, type: uint32}
+      - {name: connection_uptime_sec, type: int32}
+      - {name: connection_uptime_nanosec, type: uint32}
   - name: power
     id: 0x102
     producer: mcu
     consumer: pc
     signals:
-      - {name: frame_id, type: string, value: mcu_link}
+      - {name: header_frame_id, type: string, value: mcu_link}
       - {name: shore_power_connected, type: int32, value: -1}
       - {name: battery_connected, type: int32, value: 1}
       - {name: power_12v_user_nominal, type: int32, value: -1}
@@ -57,14 +57,14 @@ bundles:
     producer: mcu
     consumer: pc
     signals:
-      - {name: frame_id, type: string, value: mcu_link}
+      - {name: header_frame_id, type: string, value: mcu_link}
       - {name: temperatures, type: list_float, length: 18}
   - name: stop_status
     id: 0x105
     producer: mcu
     consumer: pc
     signals:
-      - {name: frame_id, type: string, value: mcu_link}
+      - {name: header_frame_id, type: string, value: mcu_link}
       - {name: stop_power_status, type: bool, value: True}
       - {name: external_stop_present, type: bool, value: False}
       - {name: needs_reset, type: bool}
@@ -73,7 +73,7 @@ bundles:
     producer: mcu
     consumer: pc
     signals:
-      - {name: frame_id, type: string, value: mcu_link}
+      - {name: header_frame_id, type: string, value: mcu_link}
       - {name: rails, type: list_bool, length: 1}
       - {name: inputs, type: list_bool, length: 7}
       - {name: outputs, type: list_bool, length: 7}
@@ -140,19 +140,6 @@ bundles:
     signals:
       - {name: success, type: bool}
       - {name: message, type: string, capacity: 64}
-  - name: set_bool_request
-    id: 0x304
-    producer: mcu
-    consumer: pc
-    signals:
-      - {name: data, type: bool}
-  - name: set_bool_response
-    id: 0x305
-    producer: pc
-    consumer: mcu
-    signals:
-      - {name: success, type: bool}
-      - {name: message, type: string, capacity: 64}
 
 ros2:
   topics:
@@ -172,4 +159,3 @@ ros2:
   services:
     - {topic: platform/mcu/cmd_shutdown,            service: std_srvs/srv/SetBool, qos.profile: services, request: cmd_shutdown, response: cmd_shutdown_response, timeout: 100}
     - {topic: platform/mcu/clear_estop_needs_reset, service: std_srvs/srv/Trigger, qos.profile: services, request: clear_needs_reset, response: clear_needs_reset_response, timeout: 100}
-    - {topic: platform/mcu/set_bool,                service: std_srvs/srv/SetBool,   qos.profile: services, request: set_bool_request, response: set_bool_response, timeout: 100}

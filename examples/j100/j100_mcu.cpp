@@ -51,10 +51,10 @@ void update_status()
   auto& status_bundle = node.getBundle("status");
   status_bundle.getSignal("hardware_id").setValue<std::string>("J100_MCU");
   status_bundle.getSignal("firmware_version").setValue<std::string>("3.0.0");
-  status_bundle.getSignal("mcu_uptime_s").setValue<int32_t>(rand());
-  status_bundle.getSignal("mcu_uptime_ns").setValue<uint32_t>(rand());
-  status_bundle.getSignal("connection_uptime_s").setValue<int32_t>(rand());
-  status_bundle.getSignal("connection_uptime_ns").setValue<uint32_t>(rand());
+  status_bundle.getSignal("mcu_uptime_sec").setValue<int32_t>(rand());
+  status_bundle.getSignal("mcu_uptime_nanosec").setValue<uint32_t>(rand());
+  status_bundle.getSignal("connection_uptime_sec").setValue<int32_t>(rand());
+  status_bundle.getSignal("connection_uptime_nanosec").setValue<uint32_t>(rand());
 
   node.sendBundle(status_bundle);
 }
@@ -113,8 +113,13 @@ void update_imu()
 {
   auto& imu_bundle = node.getBundle("imu");
 
-  imu_bundle.getSignal("linear_acceleration").setValue<proton::list_double>({static_cast<double>(rand()), static_cast<double>(rand()), static_cast<double>(rand())});
-  imu_bundle.getSignal("angular_velocity").setValue<proton::list_double>({static_cast<double>(rand()), static_cast<double>(rand()), static_cast<double>(rand())});
+  imu_bundle.getSignal("linear_acceleration_x").setValue<double>(static_cast<double>(rand()));
+  imu_bundle.getSignal("linear_acceleration_y").setValue<double>(static_cast<double>(rand()));
+  imu_bundle.getSignal("linear_acceleration_z").setValue<double>(static_cast<double>(rand()));
+
+  imu_bundle.getSignal("angular_velocity_x").setValue<double>(static_cast<double>(rand()));
+  imu_bundle.getSignal("angular_velocity_y").setValue<double>(static_cast<double>(rand()));
+  imu_bundle.getSignal("angular_velocity_z").setValue<double>(static_cast<double>(rand()));
 
   node.sendBundle(imu_bundle);
 }
@@ -123,7 +128,9 @@ void update_magnetometer()
 {
   auto& mag_bundle = node.getBundle("magnetometer");
 
-  mag_bundle.getSignal("magnetic_field").setValue<proton::list_double>({static_cast<double>(rand()), static_cast<double>(rand()), static_cast<double>(rand())});
+  mag_bundle.getSignal("magnetic_field_x").setValue<double>(static_cast<double>(rand()));
+  mag_bundle.getSignal("magnetic_field_y").setValue<double>(static_cast<double>(rand()));
+  mag_bundle.getSignal("magnetic_field_z").setValue<double>(static_cast<double>(rand()));
 
   node.sendBundle(mag_bundle);
 }
@@ -156,13 +163,13 @@ void update_motor_feedback()
 {
   auto& feedback_bundle = node.getBundle("motor_feedback");
 
-  feedback_bundle.getSignal("current").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("bridge_temperature").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("motor_temperature").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("driver_fault").setValue<proton::list_bool>({static_cast<bool>(rand() % 2), static_cast<bool>(rand() % 2)});
-  feedback_bundle.getSignal("duty_cycle").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("measured_velocity").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("measured_travel").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_current").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_bridge_temperature").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_motor_temperature").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_driver_fault").setValue<proton::list_bool>({static_cast<bool>(rand() % 2), static_cast<bool>(rand() % 2)});
+  feedback_bundle.getSignal("drivers_duty_cycle").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_measured_velocity").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_measured_travel").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
 
   node.sendBundle(feedback_bundle);
 }
