@@ -18,6 +18,67 @@
 namespace YAML {
 
 template<>
+struct convert<proton::ros2::QosConfig> {
+  static bool decode(const Node& node, proton::ros2::QosConfig& rhs) {
+    if(!node.IsDefined() || node.IsNull()) {
+      rhs.profile = proton::ros2::qos::profiles::SERVICES;
+      return true;
+    }
+
+    // String representing a standard QoS profile
+    if (node.IsScalar())
+    {
+      rhs.profile = node.as<std::string>();
+    }
+    // Map representing a custome QoS profile
+    else if (node.IsMap())
+    {
+      // History
+      if (node[proton::ros2::keys::HISTORY])
+      {
+        rhs.history = node[proton::ros2::keys::HISTORY].as<std::string>();
+      }
+      else
+      {
+        rhs.history = proton::ros2::qos::history::SYSTEM_DEFAULT;
+      }
+
+      // Depth
+      if (node[proton::ros2::keys::DEPTH])
+      {
+        rhs.depth = node[proton::ros2::keys::DEPTH].as<size_t>();
+      }
+      else
+      {
+        rhs.depth = 10U;
+      }
+
+      // Reliability
+      if (node[proton::ros2::keys::RELIABILITY])
+      {
+        rhs.reliability = node[proton::ros2::keys::RELIABILITY].as<std::string>();
+      }
+      else
+      {
+        rhs.reliability = proton::ros2::qos::reliability::SYSTEM_DEFAULT;
+      }
+
+      // Durability
+      if (node[proton::ros2::keys::DURABILITY])
+      {
+        rhs.durability = node[proton::ros2::keys::DURABILITY].as<std::string>();
+      }
+      else
+      {
+        rhs.durability = proton::ros2::qos::durability::SYSTEM_DEFAULT;
+      }
+    }
+
+    return true;
+  }
+};
+
+template<>
 struct convert<proton::ros2::TopicConfig> {
   static bool decode(const Node& node, proton::ros2::TopicConfig& rhs) {
     if(!node.IsDefined() || node.IsNull()) {
@@ -27,16 +88,7 @@ struct convert<proton::ros2::TopicConfig> {
     rhs.topic = node[proton::ros2::keys::TOPIC].as<std::string>();
     rhs.message = node[proton::ros2::keys::MESSAGE].as<std::string>();
     rhs.bundle = node[proton::ros2::keys::BUNDLE].as<std::string>();
-
-    auto qos_profile_node = node[proton::ros2::keys::QOS_PROFILE];
-    if (qos_profile_node.IsDefined() && !qos_profile_node.IsNull())
-    {
-      rhs.qos = qos_profile_node.as<std::string>();
-    }
-    else
-    {
-      rhs.qos = proton::ros2::qos::SYSTEM_DEFAULT;
-    }
+    rhs.qos = node[proton::ros2::keys::QOS].as<proton::ros2::QosConfig>();
 
     return true;
   }
@@ -52,6 +104,7 @@ struct convert<proton::ros2::ServiceConfig> {
     rhs.topic = node[proton::ros2::keys::TOPIC].as<std::string>();
     rhs.service = node[proton::ros2::keys::SERVICE].as<std::string>();
     rhs.request = node[proton::ros2::keys::REQUEST].as<std::string>();
+    rhs.qos = node[proton::ros2::keys::QOS].as<proton::ros2::QosConfig>();
 
     auto response_node = node[proton::ros2::keys::RESPONSE];
     if (response_node.IsDefined() && !response_node.IsNull())
@@ -61,16 +114,6 @@ struct convert<proton::ros2::ServiceConfig> {
     else
     {
       rhs.response = "";
-    }
-
-    auto qos_profile_node = node[proton::ros2::keys::QOS_PROFILE];
-    if (qos_profile_node.IsDefined() && !qos_profile_node.IsNull())
-    {
-      rhs.qos = qos_profile_node.as<std::string>();
-    }
-    else
-    {
-      rhs.qos = proton::ros2::qos::SERVICES;
     }
 
     auto timeout_node = node[proton::ros2::keys::TIMEOUT];
@@ -113,6 +156,8 @@ struct convert<proton::ros2::ROS2Config> {
 
 using namespace proton::ros2;
 
+
+
 Node::Node() : rclcpp::Node("proton_ros2") {
   declare_parameter(
       "config_file",
@@ -135,7 +180,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
 
     // Proton node consumes this bundle, so the ROS node should publish it.
     if (handle.getConsumer() == proton_node_.getTarget()) {
-      auto pub = Factory::createTypedPublisher(config.message, this, config.topic, proton::ros2::qos::profiles.at(config.qos));
+      auto pub = Factory::createTypedPublisher(config.message, this, config.topic, getQoS(config.qos));
       publishers_.emplace(config.bundle, pub);
       proton_node_.registerCallback(
           config.bundle, std::bind(&Node::protonCallback, this, std::placeholders::_1));
@@ -150,7 +195,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
     else if (handle.getProducer() == proton_node_.getTarget()) {
       auto sub = Factory::createTypedSubscriber(
                   config.message, this, config.topic,
-                  proton::ros2::qos::profiles.at(config.qos), handle,
+                  getQoS(config.qos), handle,
                   std::bind(&Node::rosCallback, this, std::placeholders::_1));
       subscribers_.emplace(config.bundle, sub);
       RCLCPP_INFO(get_logger(), "Created subscriber %s",
@@ -176,7 +221,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           config.service,
           this,
           config.topic,
-          proton::ros2::qos::profiles.at(config.qos),
+          getQoS(config.qos),
           config.timeout,
           request_handle,
           response_handle,
@@ -198,7 +243,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           config.service,
           this,
           config.topic,
-          proton::ros2::qos::profiles.at(config.qos),
+          getQoS(config.qos),
           config.timeout,
           response_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1)
@@ -229,7 +274,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           config.service,
           this,
           config.topic,
-          proton::ros2::qos::profiles.at(config.qos),
+          getQoS(config.qos),
           config.timeout,
           request_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1));
@@ -248,7 +293,7 @@ Node::Node() : rclcpp::Node("proton_ros2") {
           config.service,
           this,
           config.topic,
-          proton::ros2::qos::profiles.at(config.qos),
+          getQoS(config.qos),
           config.timeout
         );
 
@@ -303,4 +348,34 @@ void Node::protonCallback(proton::BundleHandle &bundle) {
  */
 void Node::rosCallback(proton::BundleHandle &bundle) {
   proton_node_.sendBundle(bundle);
+}
+
+/**
+ * @brief Get QoS profile from config
+ *
+ * @param config
+ * @return rclcpp::QoS
+ */
+rclcpp::QoS Node::getQoS(QosConfig config)
+{
+  if (config.profile != "")
+  {
+    return proton::ros2::qos::profiles::profiles.at(config.profile);
+  }
+  else
+  {
+    rmw_qos_profile_t profile = {
+      proton::ros2::qos::history::policies.at(config.history),
+      config.depth,
+      proton::ros2::qos::reliability::policies.at(config.reliability),
+      proton::ros2::qos::durability::policies.at(config.durability),
+      RMW_QOS_DEADLINE_DEFAULT,
+      RMW_QOS_LIFESPAN_DEFAULT,
+      RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+      RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
+      false
+    };
+
+    return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(profile), profile);
+  }
 }
