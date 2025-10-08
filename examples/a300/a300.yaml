@@ -144,7 +144,7 @@ bundles:
 ros2:
   topics:
     - {topic: /rosout,                          message: rcl_interfaces/msg/Log,                    qos: rosout,      bundle: log}
-    - {topic: platform/mcu/status,              message: clearpath_platform_msgs/msg/Status,        qos: system_default, bundle: status}
+    - {topic: platform/mcu/status,              message: clearpath_platform_msgs/msg/Status,        qos: sensor_data, bundle: status}
     - {topic: platform/mcu/status/power,        message: clearpath_platform_msgs/msg/Power,         qos: sensor_data, bundle: power}
     - {topic: platform/mcu/status/stop,         message: clearpath_platform_msgs/msg/StopStatus,    qos: sensor_data, bundle: stop_status}
     - {topic: platform/mcu/status/temperature,  message: clearpath_platform_msgs/msg/Temperature,   qos: sensor_data, bundle: temperature}
