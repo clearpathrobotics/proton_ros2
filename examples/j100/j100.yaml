@@ -150,16 +150,16 @@ bundles:
 
 ros2:
   topics:
-    - {topic: /rosout,                          message: rcl_interfaces/msg/Log,                    qos.profile: rosout,       bundle: log}
-    - {topic: platform/mcu/status,              message: clearpath_platform_msgs/msg/Status,        qos.profile: sensor_data,  bundle: status}
-    - {topic: platform/mcu/status/power,        message: clearpath_platform_msgs/msg/Power,         qos.profile: sensor_data,  bundle: power}
-    - {topic: platform/mcu/status/temperature,  message: clearpath_platform_msgs/msg/Temperature,   qos.profile: sensor_data,  bundle: temperature}
-    - {topic: platform/mcu/status/stop,         message: clearpath_platform_msgs/msg/StopStatus,    qos.profile: sensor_data,  bundle: stop_status}
-    - {topic: platform/emergency_stop,          message: std_msgs/msg/Bool,                         qos.profile: sensor_data,  bundle: emergency_stop}
-    - {topic: platform/motors/feedback,         message: clearpath_platform_msgs/msg/Feedback,      qos.profile: sensor_data,  bundle: motor_feedback}
-    - {topic: sensors/imu_0/data_raw,           message: sensor_msgs/msg/Imu,                       qos.profile: sensor_data,  bundle: imu}
-    - {topic: sensors/imu_0/mag,                message: sensor_msgs/msg/MagneticField,             qos.profile: sensor_data,  bundle: magnetometer}
-    - {topic: sensors/gps_0/nmea_sentence,      message: nmea_msgs/msg/Sentence,                    qos.profile: sensor_data,  bundle: nmea}
-    - {topic: platform/wifi_connected,          message: std_msgs/msg/Bool,                         qos.profile: sensor_data,  bundle: wifi_connected}
-    - {topic: platform/mcu/_hmi,                message: std_msgs/msg/UInt8,                        qos.profile: sensor_data,  bundle: hmi}
-    - {topic: platform/motors/cmd_drive,        message: clearpath_platform_msgs/msg/Drive,         qos.profile: sensor_data,  bundle: motor_command}
+    - {topic: /rosout,                          message: rcl_interfaces/msg/Log,                    qos: rosout,       bundle: log}
+    - {topic: platform/mcu/status,              message: clearpath_platform_msgs/msg/Status,        qos: sensor_data,  bundle: status}
+    - {topic: platform/mcu/status/power,        message: clearpath_platform_msgs/msg/Power,         qos: sensor_data,  bundle: power}
+    - {topic: platform/mcu/status/temperature,  message: clearpath_platform_msgs/msg/Temperature,   qos: sensor_data,  bundle: temperature}
+    - {topic: platform/mcu/status/stop,         message: clearpath_platform_msgs/msg/StopStatus,    qos: sensor_data,  bundle: stop_status}
+    - {topic: platform/emergency_stop,          message: std_msgs/msg/Bool,                         qos: sensor_data,  bundle: emergency_stop}
+    - {topic: platform/motors/feedback,         message: clearpath_platform_msgs/msg/Feedback,      qos: sensor_data,  bundle: motor_feedback}
+    - {topic: sensors/imu_0/data_raw,           message: sensor_msgs/msg/Imu,                       qos: sensor_data,  bundle: imu}
+    - {topic: sensors/imu_0/mag,                message: sensor_msgs/msg/MagneticField,             qos: sensor_data,  bundle: magnetometer}
+    - {topic: sensors/gps_0/nmea_sentence,      message: nmea_msgs/msg/Sentence,                    qos: sensor_data,  bundle: nmea}
+    - {topic: platform/wifi_connected,          message: std_msgs/msg/Bool,                         qos: sensor_data,  bundle: wifi_connected}
+    - {topic: platform/mcu/_hmi,                message: std_msgs/msg/UInt8,                        qos: sensor_data,  bundle: hmi}
+    - {topic: platform/motors/cmd_drive,        message: clearpath_platform_msgs/msg/Drive,         qos: sensor_data,  bundle: motor_command}

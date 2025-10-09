@@ -51,7 +51,7 @@ namespace qos {
 
     const std::map<std::string, rclcpp::QoS> profiles = {
       {DEFAULT, rclcpp::QoS(10)},
-      {SYSTEM_DEFAULT, rclcpp::SystemDefaultsQoS()},
+      {SYSTEM_DEFAULTS, rclcpp::SystemDefaultsQoS()},
       {SENSOR_DATA, rclcpp::SensorDataQoS()},
       {SERVICES, rclcpp::ServicesQoS()},
       {ROSOUT, rclcpp::RosoutQoS()},

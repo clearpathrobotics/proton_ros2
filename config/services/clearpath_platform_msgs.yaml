@@ -1,0 +1,5 @@
+package: clearpath_platform_msgs
+services:
+  - name: ConfigureMcu
+    path: srv
+    skip: true
