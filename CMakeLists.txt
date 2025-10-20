@@ -18,6 +18,9 @@ find_package(clearpath_platform_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nmea_msgs REQUIRED)
 
+find_package(diagnostic_updater REQUIRED)
+
+
 
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
@@ -37,6 +40,7 @@ set(PROTON_ROS2_SERVICES
 set(PROTON_ROS2_DEPENDENCIES
   proton
   rclcpp
+  diagnostic_updater
   ${PROTON_ROS2_MESSAGES}
   ${PROTON_ROS2_SERVICES}
 )

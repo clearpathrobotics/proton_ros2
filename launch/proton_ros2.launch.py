@@ -56,8 +56,11 @@ def generate_launch_description():
         package='proton_ros2',
         namespace=LaunchConfiguration('namespace'),
         parameters=[
-            {'target': LaunchConfiguration('target')},
-            {'config_file': LaunchConfiguration('config_file')},
+          {'target': LaunchConfiguration('target')},
+          {'config_file': LaunchConfiguration('config_file')},
+        ],
+        remappings=[
+          ('/diagnostics', 'diagnostics')
         ],
         output='screen'
     )

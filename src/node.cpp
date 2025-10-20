@@ -158,7 +158,7 @@ using namespace proton::ros2;
 
 
 
-Node::Node() : rclcpp::Node("proton_ros2") {
+Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
   declare_parameter(
       "config_file",
       "/home/rkreinin/proto_ws/src/proton_ros2/examples/j100/j100.yaml");
@@ -317,6 +317,20 @@ Node::Node() : rclcpp::Node("proton_ros2") {
     }
   }
 
+  // Setup diagnostics
+  updater_.setHardwareID(target_);
+
+  // Proton node diagnostics
+  updater_.add("Proton Statistics", this, &Node::nodeDiagnostic);
+
+  // Bundle diagnostics
+  for (auto &[name, handle]: proton_node_.getBundleMap())
+  {
+    updater_.add(name, std::bind(&Node::bundleDiagnostic, this, std::placeholders::_1, handle.getName()));
+  }
+
+  proton_node_.startStatsThread();
+
   proton_thread_ = std::thread(std::bind(&proton::Node::spin, &proton_node_));
 }
 
@@ -378,4 +392,33 @@ rclcpp::QoS Node::getQoS(QosConfig config)
 
     return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(profile), profile);
   }
+}
+
+void Node::nodeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  stat.summary(diagnostic_updater::DiagnosticStatusWrapper::OK, "Proton Node statistics");
+  stat.add("Config", proton_node_.getConfig().getName());
+  stat.add("Target", target_);
+  stat.add("Rx", proton_node_.getRxKbps());
+  stat.add("Tx", proton_node_.getTxKbps());
+}
+
+void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& bundle_name)
+{
+  auto & handle = proton_node_.getBundle(bundle_name);
+
+  stat.add("Bundle", handle.getName());
+  stat.add("Producer", handle.getProducer());
+  stat.add("Consumer", handle.getConsumer());
+
+  if (handle.getConsumer() == target_)
+  {
+    stat.add("Frequency", static_cast<double>(handle.getRxps()));
+  }
+  else if (handle.getProducer() == target_)
+  {
+    stat.add("Frequency", static_cast<double>(handle.getTxps()));
+  }
+
+  stat.summary(diagnostic_updater::DiagnosticStatusWrapper::OK, handle.getName() + " statistics");
 }
