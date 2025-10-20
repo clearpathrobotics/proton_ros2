@@ -9,6 +9,14 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>proton</depend>
+  <depend>rclcpp</depend>
+  <depend>rosidl_runtime_py</depend>
+  <depend>rosidl_parser</depend>
+
+  <depend>clearpath_platform_msgs</depend>
+  <depend>sensor_msgs</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

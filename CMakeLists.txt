@@ -6,105 +6,158 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
+find_package(proton REQUIRED)
+
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(clearpath_platform_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nmea_msgs REQUIRED)
 
-find_package(Protobuf REQUIRED)
 
-# Protobuf compiler
-find_program(PROTOC_EXECUTABLE protoc)
-if(NOT PROTOC_EXECUTABLE)
-  message(FATAL_ERROR "Could not find protoc")
-endif()
+set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
+set(PROTON_ROS2_LIB proton_ros2)
+set(PROTON_ROS2_MESSAGES
+  std_msgs
+  rcl_interfaces
+  clearpath_platform_msgs
+  sensor_msgs
+  nmea_msgs
+)
 
-# Fetch .proto files from main proton repo
-include(FetchContent)
-FetchContent_Declare(
+set(PROTON_ROS2_SERVICES
+  std_srvs
+  clearpath_platform_msgs
+)
+
+set(PROTON_ROS2_DEPENDENCIES
   proton
-  GIT_REPOSITORY https://gitlab.clearpathrobotics.com/research/proton.git
-  GIT_TAG        milestone-2
-  SOURCE_SUBDIR proto
+  rclcpp
+  ${PROTON_ROS2_MESSAGES}
+  ${PROTON_ROS2_SERVICES}
 )
 
-# Get repo contents without building it.
-FetchContent_GetProperties(proton)
-if(NOT proton_POPULATED)
-  FetchContent_Populate(proton)
-endif()
+set(PROTON_ROS2_GENERATOR ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}/proton_ros2_generator)
+set(ADAPTER_CONFIG_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config)
+set(GENERATED_SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(GENERATED_HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include)
+set(GENERATED_ADAPTER_HEADER_PATH ${GENERATED_HEADER_PATH}/${PROJECT_NAME})
+set(GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory.cpp)
+set(GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/factory.hpp)
+set(GENERATOR_MSGS_PACKAGES "")
+set(GENERATOR_SRVS_PACKAGES "")
+set(GENERATED_CONFIGS ${CMAKE_CURRENT_BINARY_DIR}/config)
+set(GENERATED_MESSAGES_CONFIGS ${GENERATED_CONFIGS}/messages)
+set(GENERATED_SERVICES_CONFIGS ${GENERATED_CONFIGS}/services)
 
-# Path to proto directory in proton repo
-set(PROTON_PROTO_DIR ${proton_SOURCE_DIR}/proto)
+file(MAKE_DIRECTORY ${GENERATED_SOURCE_PATH})
+file(MAKE_DIRECTORY ${GENERATED_ADAPTER_HEADER_PATH})
+file(MAKE_DIRECTORY ${GENERATED_MESSAGES_CONFIGS})
+file(MAKE_DIRECTORY ${GENERATED_SERVICES_CONFIGS})
 
-# Path to generate python files
-set(GENERATED_PY_DIR "${CMAKE_BINARY_DIR}/generated_py")
+foreach(name IN LISTS PROTON_ROS2_MESSAGES)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/messages/${name}_msg.cpp)
+    list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/messages/${name}.hpp)
+    list(APPEND GENERATOR_MSGS_PACKAGES "-m ${name}")
+endforeach()
 
-# Create the directory
-file(MAKE_DIRECTORY "${GENERATED_PY_DIR}")
-file(TOUCH "${GENERATED_PY_DIR}/__init__.py")
+foreach(name IN LISTS PROTON_ROS2_SERVICES)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/services/${name}_srv.cpp)
+    list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/services/${name}.hpp)
+    list(APPEND GENERATOR_SRVS_PACKAGES "-s ${name}")
+endforeach()
 
-# Protobuf files
-file(GLOB PROTO_FILES "${PROTON_PROTO_DIR}/proton/*.proto")
+set(GENERATED_OUTPUT ${GENERATED_SOURCES} ${GENERATED_HEADERS})
 
-set(GENERATED_PY_FILES
-  "${GENERATED_PY_DIR}/signal_pb2.py"
-  "${GENERATED_PY_DIR}/bundle_pb2.py"
-)
+set(ENV{PYTHONPATH} "/opt/ros/jazzy/lib/python3.12/site-packages:${CMAKE_CURRENT_SOURCE_DIR}:$ENV{PYTHONPATH}")
 
-set(GENERATED_PYI_FILES
-  "${GENERATED_PY_DIR}/signal_pb2.pyi"
-  "${GENERATED_PY_DIR}/bundle_pb2.pyi"
-)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-# Generate python pb2 files
 add_custom_command(
-  OUTPUT ${GENERATED_PY_FILES}
-  COMMAND ${PROTOC_EXECUTABLE}
-    -I ${PROTON_PROTO_DIR}
-    --python_out=${GENERATED_PY_DIR} signal.proto bundle.proto
-    ${PROTO_FILES}
-  # Fix import statement in bundle_pb2.py
-  COMMAND sed -i "s|import signal_pb2 as signal__pb2|from ${PROJECT_NAME} import signal_pb2 as signal__pb2|"
-          ${GENERATED_PY_DIR}/bundle_pb2.py
-  DEPENDS ${PROTO_FILES}
-  VERBATIM
-  COMMENT "Generating Python proto: ${PROTO_FILES}"
+  OUTPUT ${GENERATED_OUTPUT}
+  COMMAND ${CMAKE_COMMAND} -E env
+    PYTHONPATH=/opt/ros/jazzy/lib/python3.12/site-packages:${CMAKE_CURRENT_SOURCE_DIR}:$ENV{PYTHONPATH}
+    ${PROTON_ROS2_GENERATOR}
+      --config_folder ${ADAPTER_CONFIG_PATH}
+      --destination_header ${GENERATED_ADAPTER_HEADER_PATH}
+      --destination_source ${GENERATED_SOURCE_PATH}
+      --destination_config ${GENERATED_CONFIGS}
+      ${GENERATOR_MSGS_PACKAGES}
+      ${GENERATOR_SRVS_PACKAGES}
+  COMMENT "Generating ROS 2 message Type Adapters"
 )
 
-# Generate python stub files
-add_custom_command(
-  OUTPUT ${GENERATED_PYI_FILES}
-  COMMAND ${PROTOC_EXECUTABLE}
-    -I ${PROTON_PROTO_DIR}
-    --pyi_out=${GENERATED_PY_DIR} signal.proto bundle.proto
-    ${PROTO_FILES}
-  DEPENDS ${PROTO_FILES}
-  COMMENT "Generating Python proto: ${PROTO_FILES}"
+set(PROTON_ROS2_SOURCES
+  src/node.cpp
+  src/utils.cpp
+  ${GENERATED_SOURCES}
+  ${GENERATED_HEADERS}
 )
 
-# Add target so that files are built
-add_custom_target(generate_proto_py ALL
-  DEPENDS
-  ${GENERATED_PY_DIR}/__init__.py
-  ${GENERATED_PY_FILES}
-  ${GENERATED_PYI_FILES}
+# Proton ROS2 lib
+# add_library(${PROTON_ROS2_LIB}
+#   STATIC
+#   ${PROTON_ROS2_SOURCES}
+# )
+# target_link_libraries(${PROTON_ROS2_LIB} proton::protoncpp)
+# target_include_directories(${PROTON_ROS2_LIB} PRIVATE include ${GENERATED_HEADER_PATH})
+# ament_target_dependencies(${PROTON_ROS2_LIB} ${PROTON_ROS2_DEPENDENCIES})
+
+# Proton ROS2 node
+add_executable(${PROTON_ROS2_EXECUTABLE}
+  src/main.cpp
+  ${PROTON_ROS2_SOURCES}
+)
+target_link_libraries(${PROTON_ROS2_EXECUTABLE} proton::protoncpp)
+target_include_directories(${PROTON_ROS2_EXECUTABLE} PRIVATE include ${GENERATED_HEADER_PATH})
+ament_target_dependencies(${PROTON_ROS2_EXECUTABLE} ${PROTON_ROS2_DEPENDENCIES})
+
+# Make examples subdirectory
+add_subdirectory(examples)
+
+install(
+  TARGETS ${PROTON_ROS2_EXECUTABLE} #${PROTON_ROS2_LIB}
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
-  PROGRAMS ${PROJECT_NAME}/a300_ros2_bridge
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  PROGRAMS
+    ${PROJECT_NAME}/proton_ros2_generator
   DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    ${CMAKE_BINARY_DIR}/examples/a300/a300_mcu_cpp
+    ${CMAKE_BINARY_DIR}/examples/j100/j100_mcu_cpp
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(FILES
+  examples/a300/a300.yaml
+  examples/j100/j100.yaml
+  DESTINATION share/${PROJECT_NAME}/examples/a300/
 )
 
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
-ament_python_install_package(${PROJECT_NAME}
-  PACKAGE_DIR ${GENERATED_PY_DIR}
-)
+ament_python_install_package(${PROJECT_NAME})
+
+ament_export_include_directories(include)
+#ament_export_libraries(${PROTON_ROS2_LIB})
+ament_export_dependencies(${PROTON_ROS2_DEPENDENCIES})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

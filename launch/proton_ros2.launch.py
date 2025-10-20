@@ -28,24 +28,44 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import  LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import  Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    pkg_proton_ros2 = FindPackageShare('proton_ros2')
+
     arg_namespace = DeclareLaunchArgument(
       'namespace',
       default_value='')
 
-    node_a300_ros2_bridge = Node(
-        executable='a300_ros2_bridge',
+    arg_config_file = DeclareLaunchArgument(
+      'config_file',
+      default_value=PathJoinSubstitution([pkg_proton_ros2, 'examples/a300/a300.yaml'])
+    )
+
+    arg_target = DeclareLaunchArgument(
+      'target',
+      default_value='pc'
+    )
+
+    node_a300_proton_ros2 = Node(
+        name='proton_ros2',
+        executable='proton_ros2_node',
         package='proton_ros2',
         namespace=LaunchConfiguration('namespace'),
+        parameters=[
+            {'target': LaunchConfiguration('target')},
+            {'config_file': LaunchConfiguration('config_file')},
+        ],
         output='screen'
     )
 
     ld = LaunchDescription()
 
     ld.add_action(arg_namespace)
-    ld.add_action(node_a300_ros2_bridge)
+    ld.add_action(arg_config_file)
+    ld.add_action(arg_target)
+    ld.add_action(node_a300_proton_ros2)
     return ld

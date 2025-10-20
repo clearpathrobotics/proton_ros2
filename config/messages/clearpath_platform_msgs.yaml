@@ -1,0 +1,8 @@
+package: clearpath_platform_msgs
+messages:
+  - name: Lights
+    path: msg
+    mapping:
+      - {ros2.path: lights, ros2.length: 0, ros2.subpath: red, proton.signal: lights, proton.subindex: 0, type: list_bytes}
+      - {ros2.path: lights, ros2.length: 0, ros2.subpath: green, proton.signal: lights, proton.subindex: 1, type: list_bytes}
+      - {ros2.path: lights, ros2.length: 0, ros2.subpath: blue, proton.signal: lights, proton.subindex: 2, type: list_bytes}

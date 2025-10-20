@@ -1,0 +1,11 @@
+package: sensor_msgs
+messages:
+  - name: MultiDOFJointState
+    path: msg
+    skip: true
+  - name: MultiEchoLaserScan
+    path: msg
+    skip: true
+  - name: PointCloud
+    path: msg
+    skip: true
