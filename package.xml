@@ -13,6 +13,7 @@
   <depend>rclcpp</depend>
   <depend>rosidl_runtime_py</depend>
   <depend>rosidl_parser</depend>
+  <depend>diagnostic_updater</depend>
 
   <depend>clearpath_platform_msgs</depend>
   <depend>sensor_msgs</depend>
