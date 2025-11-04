@@ -140,10 +140,11 @@ private:
   proton::BundleHandle& serviceCallback(proton::BundleHandle & request);
   void nodeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
   void bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& bundle_name);
+  void heartbeatDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& producer);
 
   std::string config_file_;
   std::string target_;
-  proton::Node proton_node_;
+  std::unique_ptr<proton::Node> proton_node_;
   ROS2Config ros2_config_;
 
   rclcpp::TimerBase::SharedPtr proton_timer_;
