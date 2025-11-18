@@ -165,7 +165,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
   target_ = get_parameter("target").as_string();
 
   // Create Proton Node
-  proton_node_ = std::make_unique<proton::Node>(config_file_, target_);
+  proton_node_ = std::make_unique<proton::Node>(config_file_, target_, true, false);
 
   // Parse ROS 2 config
   YAML::Node yaml_node = proton_node_->getConfig().getYamlNode();
@@ -176,7 +176,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
     auto& handle = proton_node_->getBundle(config.bundle);
 
     // Proton node consumes this bundle, so the ROS node should publish it.
-    if (handle.getConsumer() == proton_node_->getTarget()) {
+    if (handle.getConsumer() == proton_node_->getName()) {
       auto pub = Factory::createTypedPublisher(config.message, this, config.topic, getQoS(config.qos));
       publishers_.emplace(config.bundle, pub);
       proton_node_->registerCallback(
@@ -189,7 +189,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           get_namespace()).c_str());
     }
     // Proton node produces this bundle, so the ROS node should subscribe to it.
-    else if (handle.getProducer() == proton_node_->getTarget()) {
+    else if (handle.getProducer() == proton_node_->getName()) {
       auto sub = Factory::createTypedSubscriber(
                   config.message, this, config.topic,
                   getQoS(config.qos), handle,
@@ -211,8 +211,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
     {
       auto &response_handle = proton_node_->getBundle(config.response);
 
-      if (request_handle.getProducer() == proton_node_->getTarget() &&
-          response_handle.getConsumer() == proton_node_->getTarget())
+      if (request_handle.getProducer() == proton_node_->getName() &&
+          response_handle.getConsumer() == proton_node_->getName())
       {
         auto srv = Factory::createTypedService(
           config.service,
@@ -233,8 +233,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           get_name(),
           get_namespace()).c_str());
       }
-      else if (request_handle.getConsumer() == proton_node_->getTarget() &&
-               response_handle.getProducer() == proton_node_->getTarget())
+      else if (request_handle.getConsumer() == proton_node_->getName() &&
+               response_handle.getProducer() == proton_node_->getName())
       {
         auto client = Factory::createTypedClient(
           config.service,
@@ -265,7 +265,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
       }
     }
     else {
-      if (request_handle.getProducer() == proton_node_->getTarget())
+      if (request_handle.getProducer() == proton_node_->getName())
       {
         auto srv = Factory::createTypedService(
           config.service,
@@ -284,7 +284,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           get_name(),
           get_namespace()).c_str());
       }
-      else if (request_handle.getConsumer() == proton_node_->getTarget())
+      else if (request_handle.getConsumer() == proton_node_->getName())
       {
         auto client = Factory::createTypedClient(
           config.service,
@@ -327,7 +327,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
   }
 
   // Heartbeat diagnostics
-  for (auto& node: proton_node_->getConfig().getNodes())
+  for (auto& [name, node]: proton_node_->getConfig().getNodes())
   {
     if (node.name != target_ && node.heartbeat.enabled)
     {
@@ -335,6 +335,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
     }
   }
 
+  proton_node_->activate();
   proton_node_->startStatsThread();
 
   proton_thread_ = std::thread(std::bind(&proton::Node::spin, proton_node_.get()));
@@ -434,15 +435,7 @@ void Node::heartbeatDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & sta
   auto& handle = proton_node_->getHeartbeat(producer);
   uint32_t hz = handle.getRxps();
 
-  proton::NodeConfig node_config;
-  for (auto& node: proton_node_->getConfig().getNodes())
-  {
-    if (node.name == producer)
-    {
-      node_config = node;
-      break;
-    }
-  }
+  proton::NodeConfig node_config = proton_node_->getConfig().getNodes().at(producer);
 
   if (hz != (1000 / node_config.heartbeat.period))
   {
