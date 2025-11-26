@@ -460,7 +460,7 @@ void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, 
       consumers_string += c + "]";
     }
   }
-  stat.add("Consumer", consumers_string);
+  stat.add("Consumers", consumers_string);
 
   if (std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end())
   {
