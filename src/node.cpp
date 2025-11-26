@@ -429,8 +429,8 @@ void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, 
   auto & handle = proton_node_->getBundle(bundle_name);
   auto consumers = handle.getConsumers();
   auto producers = handle.getProducers();
-  std::stringstream producer_ss("[");
-  std::stringstream consumer_ss("[");
+  std::string producers_string = "[";
+  std::string consumers_string = "[";
 
   stat.add("Bundle", handle.getName());
 
@@ -439,28 +439,28 @@ void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, 
   {
     if (i++ < producers.size() - 1)
     {
-      producer_ss << p << ",";
+      producers_string += p + ", ";
     }
     else
     {
-      producer_ss << p << "]";
+      producers_string += p + "]";
     }
   }
-  stat.add("Producers", producer_ss.str());
+  stat.add("Producers", producers_string);
 
   i = 0;
   for (auto& c: consumers)
   {
     if (i++ < consumers.size() - 1)
     {
-      consumer_ss << c << ",";
+      consumers_string += c + ", ";
     }
     else
     {
-      consumer_ss << c << "]";
+      consumers_string += c + "]";
     }
   }
-  stat.add("Consumer", consumer_ss.str());
+  stat.add("Consumer", consumers_string);
 
   if (std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end())
   {
