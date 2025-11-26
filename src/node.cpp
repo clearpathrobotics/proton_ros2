@@ -174,9 +174,14 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
   // Create publishers and subscribers
   for (auto config : ros2_config_.topics) {
     auto& handle = proton_node_->getBundle(config.bundle);
+    auto consumers = handle.getConsumers();
+    auto producers = handle.getProducers();
+
+    bool handle_consumer = std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end();
+    bool handle_producer = std::find(producers.begin(), producers.end(), proton_node_->getName()) != producers.end();
 
     // Proton node consumes this bundle, so the ROS node should publish it.
-    if (handle.getConsumer() == proton_node_->getName()) {
+    if (handle_consumer) {
       auto pub = Factory::createTypedPublisher(config.message, this, config.topic, getQoS(config.qos));
       publishers_.emplace(config.bundle, pub);
       proton_node_->registerCallback(
@@ -189,7 +194,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           get_namespace()).c_str());
     }
     // Proton node produces this bundle, so the ROS node should subscribe to it.
-    else if (handle.getProducer() == proton_node_->getName()) {
+    else if (handle_producer) {
       auto sub = Factory::createTypedSubscriber(
                   config.message, this, config.topic,
                   getQoS(config.qos), handle,
@@ -206,13 +211,20 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
   // Create services
   for (auto config : ros2_config_.services) {
     auto& request_handle = proton_node_->getBundle(config.request);
+    auto request_consumers = request_handle.getConsumers();
+    auto request_producers = request_handle.getProducers();
+    bool request_consumer = std::find(request_consumers.begin(), request_consumers.end(), proton_node_->getName()) != request_consumers.end();
+    bool request_producer = std::find(request_producers.begin(), request_producers.end(), proton_node_->getName()) != request_producers.end();
 
     if (config.response != "")
     {
       auto &response_handle = proton_node_->getBundle(config.response);
+      auto response_consumers = response_handle.getConsumers();
+      auto response_producers = response_handle.getProducers();
+      bool response_consumer = std::find(response_consumers.begin(), response_consumers.end(), proton_node_->getName()) != response_consumers.end();
+      bool response_producer = std::find(response_consumers.begin(), response_consumers.end(), proton_node_->getName()) != response_producers.end();
 
-      if (request_handle.getProducer() == proton_node_->getName() &&
-          response_handle.getConsumer() == proton_node_->getName())
+      if (request_producer && response_consumer)
       {
         auto srv = Factory::createTypedService(
           config.service,
@@ -233,8 +245,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           get_name(),
           get_namespace()).c_str());
       }
-      else if (request_handle.getConsumer() == proton_node_->getName() &&
-               response_handle.getProducer() == proton_node_->getName())
+      else if (request_consumer && response_producer)
       {
         auto client = Factory::createTypedClient(
           config.service,
@@ -265,7 +276,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
       }
     }
     else {
-      if (request_handle.getProducer() == proton_node_->getName())
+      if (request_producer)
       {
         auto srv = Factory::createTypedService(
           config.service,
@@ -284,7 +295,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           get_name(),
           get_namespace()).c_str());
       }
-      else if (request_handle.getConsumer() == proton_node_->getName())
+      else if (request_consumer)
       {
         auto client = Factory::createTypedClient(
           config.service,
@@ -405,24 +416,57 @@ void Node::nodeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   stat.summary(diagnostic_updater::DiagnosticStatusWrapper::OK, "Proton Node statistics");
   stat.add("Config", proton_node_->getConfig().getName());
-  stat.add("Target", target_);
-  stat.add("Rx", proton_node_->getRxKbps());
-  stat.add("Tx", proton_node_->getTxKbps());
+  stat.add("Node", target_);
+  for (auto& [name, connection] : proton_node_->getConnections())
+  {
+    stat.add(name + " Rx", connection.getRxKbps());
+    stat.add(name + " Tx", connection.getTxKbps());
+  }
 }
 
 void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& bundle_name)
 {
   auto & handle = proton_node_->getBundle(bundle_name);
+  auto consumers = handle.getConsumers();
+  auto producers = handle.getProducers();
+  std::stringstream producer_ss("[");
+  std::stringstream consumer_ss("[");
 
   stat.add("Bundle", handle.getName());
-  stat.add("Producer", handle.getProducer());
-  stat.add("Consumer", handle.getConsumer());
 
-  if (handle.getConsumer() == target_)
+  std::size_t i = 0;
+  for (auto& p: producers)
+  {
+    if (i++ < producers.size() - 1)
+    {
+      producer_ss << p << ",";
+    }
+    else
+    {
+      producer_ss << p << "]";
+    }
+  }
+  stat.add("Producers", producer_ss.str());
+
+  i = 0;
+  for (auto& c: consumers)
+  {
+    if (i++ < consumers.size() - 1)
+    {
+      consumer_ss << c << ",";
+    }
+    else
+    {
+      consumer_ss << c << "]";
+    }
+  }
+  stat.add("Consumer", consumer_ss.str());
+
+  if (std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end())
   {
     stat.add("Frequency", handle.getRxps());
   }
-  else if (handle.getProducer() == target_)
+  else if (std::find(producers.begin(), producers.end(), proton_node_->getName()) != producers.end())
   {
     stat.add("Frequency", handle.getTxps());
   }
