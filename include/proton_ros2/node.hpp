@@ -17,6 +17,7 @@
 
 #include "protoncpp/proton.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
 #include "proton_ros2/typed.hpp"
 #include "proton_ros2/factory.hpp"
 
@@ -137,9 +138,13 @@ private:
   void protonCallback(proton::BundleHandle& bundle);
   void rosCallback(proton::BundleHandle& bundle);
   proton::BundleHandle& serviceCallback(proton::BundleHandle & request);
+  void nodeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& bundle_name);
+  void heartbeatDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& producer);
+
   std::string config_file_;
   std::string target_;
-  proton::Node proton_node_;
+  std::unique_ptr<proton::Node> proton_node_;
   ROS2Config ros2_config_;
 
   rclcpp::TimerBase::SharedPtr proton_timer_;
@@ -149,6 +154,9 @@ private:
   std::map<std::string, std::shared_ptr<ISubscriber>> subscribers_;
   std::map<std::string, std::shared_ptr<IService>> services_;
   std::map<std::string, std::shared_ptr<IClient>> clients_;
+
+  // Diagnostic Updater
+  diagnostic_updater::Updater updater_;
 };
 
 }
