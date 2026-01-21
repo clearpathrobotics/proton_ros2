@@ -1,0 +1,14 @@
+package: geometry_msgs
+messages:
+  - name: PoseArray
+    path: msg
+    skip: true
+  - name: PolygonInstance
+    path: msg
+    skip: true
+  - name: PolygonInstanceStamped
+    path: msg
+    skip: true
+  - name: PolygonStamped
+    path: msg
+    skip: true

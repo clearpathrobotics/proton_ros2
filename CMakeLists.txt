@@ -11,12 +11,16 @@ find_package(proton REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(builtin_interfaces REQUIRED)
+find_package(rclcpp REQUIRED)
+
+find_package(clearpath_platform_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nmea_msgs REQUIRED)
+find_package(rcl_interfaces REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(clearpath_platform_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(nmea_msgs REQUIRED)
+
 
 find_package(diagnostic_updater REQUIRED)
 find_program(CCACHE_PROGRAM ccache)
@@ -29,16 +33,17 @@ endif()
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
 set(PROTON_ROS2_MESSAGES
-  std_msgs
-  rcl_interfaces
   clearpath_platform_msgs
-  sensor_msgs
+  geometry_msgs
   nmea_msgs
+  rcl_interfaces
+  sensor_msgs
+  std_msgs
 )
 
 set(PROTON_ROS2_SERVICES
-  std_srvs
   clearpath_platform_msgs
+  std_srvs
 )
 
 set(PROTON_ROS2_DEPENDENCIES
