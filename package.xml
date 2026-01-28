@@ -9,7 +9,12 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>proton</depend>
+  <!-- <depend>proton</depend> -->
+
+  <depend>protobuf-dev</depend>
+  <depend>python3-protobuf</depend>
+  <depend>asio</depend>
+
   <depend>rclcpp</depend>
   <depend>rosidl_runtime_py</depend>
   <depend>rosidl_parser</depend>
