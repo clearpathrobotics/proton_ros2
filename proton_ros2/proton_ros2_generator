@@ -521,6 +521,48 @@ class ProtonROS2FactoryGenerator:
         self.source_file = 'factory.cpp'
         self.generated_include = f"{ProtonROS2AdapterGenerator.PROTON_ROS2}/{self.header_file}"
 
+    def generate_instantiation_files(self):
+        # Group conversions by package name
+        packages = {}
+        for c in self.conversions:
+            if c.is_message:
+                for m in c.config.messages:
+                    if m.skip:
+                        continue
+                    pkg = m.ros_type.split('::')[0]
+                    if pkg not in packages:
+                        packages[pkg] = {'messages': [], 'services': []}
+                    packages[pkg]['messages'].append(m)
+            else:
+                for s in c.config.services:
+                    if s.skip:
+                        continue
+                    pkg = s.ros_type.split('::')[0]
+                    if pkg not in packages:
+                        packages[pkg] = {'messages': [], 'services': []}
+                    packages[pkg]['services'].append(s)
+
+        # Generate one instantiation file per package
+        for pkg_name, items in packages.items():
+            inst_filename = f"factory_{pkg_name}_inst.cpp"
+            inst_writer = CPPWriter(self.source_path, inst_filename)
+
+            inst_writer.write_include(self.generated_include)
+            inst_writer.write_newline()
+            inst_writer.write("// Explicit template instantiations to reduce memory usage during compilation", indent_level=0)
+            inst_writer.write("// This file is compiled separately to parallelize the build", indent_level=0)
+            inst_writer.write_newline()
+
+            for m in items['messages']:
+                inst_writer.write(f"template class proton::ros2::TypedPublisher<{m.ros_type}>;", indent_level=0)
+                inst_writer.write(f"template class proton::ros2::TypedSubscriber<{m.ros_type}>;", indent_level=0)
+
+            for s in items['services']:
+                inst_writer.write(f"template class proton::ros2::TypedService<{s.ros_type}>;", indent_level=0)
+                inst_writer.write(f"template class proton::ros2::TypedClient<{s.ros_type}>;", indent_level=0)
+
+            inst_writer.close_file()
+
     def generate_publisher_factory(self):
         parameters: List[Variable] = [
             Variable("type", "const std::string&"),
@@ -741,13 +783,19 @@ class ProtonROS2FactoryGenerator:
         self.header_writer.write_newline()
         self.header_writer.write("namespace proton::ros2 {", indent_level=0)
         self.header_writer.write_newline()
-        self.header_writer.write("class Factory {", indent_level=0)
-        self.header_writer.write("public:", indent_level=0)
 
         self.source_writer.write_include(self.generated_include)
         self.source_writer.write_newline()
+        self.source_writer.write("#include <string_view>", indent_level=0)
+        self.source_writer.write("#include <unordered_map>", indent_level=0)
+        self.source_writer.write_newline()
         self.source_writer.write("using namespace proton::ros2;", indent_level=0)
         self.source_writer.write_newline()
+
+        self.generate_instantiation_files()
+
+        self.header_writer.write("class Factory {", indent_level=0)
+        self.header_writer.write("public:", indent_level=0)
 
         self.generate_publisher_factory()
         self.generate_subscriber_factory()

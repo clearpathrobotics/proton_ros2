@@ -61,6 +61,7 @@ set(GENERATED_HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(GENERATED_ADAPTER_HEADER_PATH ${GENERATED_HEADER_PATH}/${PROJECT_NAME})
 set(GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory.cpp)
 set(GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/factory.hpp)
+set(GENERATED_INSTANTIATION_SOURCES "")
 set(GENERATOR_MSGS_PACKAGES "")
 set(GENERATOR_SRVS_PACKAGES "")
 set(GENERATED_CONFIGS ${CMAKE_CURRENT_BINARY_DIR}/config)
@@ -74,15 +75,24 @@ file(MAKE_DIRECTORY ${GENERATED_SERVICES_CONFIGS})
 
 foreach(name IN LISTS PROTON_ROS2_MESSAGES)
     list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/messages/${name}_msg.cpp)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory_${name}_inst.cpp)
+    list(APPEND GENERATED_INSTANTIATION_SOURCES ${GENERATED_SOURCE_PATH}/factory_${name}_inst.cpp)
     list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/messages/${name}.hpp)
     list(APPEND GENERATOR_MSGS_PACKAGES "-m ${name}")
 endforeach()
 
 foreach(name IN LISTS PROTON_ROS2_SERVICES)
     list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/services/${name}_srv.cpp)
+    list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory_${name}_inst.cpp)
+    list(APPEND GENERATED_INSTANTIATION_SOURCES ${GENERATED_SOURCE_PATH}/factory_${name}_inst.cpp)
     list(APPEND GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/services/${name}.hpp)
     list(APPEND GENERATOR_SRVS_PACKAGES "-s ${name}")
 endforeach()
+
+# Services and messages can overlap packages (e.g., clearpath_platform_msgs).
+# Avoid compiling the same generated instantiation file twice.
+list(REMOVE_DUPLICATES GENERATED_SOURCES)
+list(REMOVE_DUPLICATES GENERATED_INSTANTIATION_SOURCES)
 
 set(GENERATED_OUTPUT ${GENERATED_SOURCES} ${GENERATED_HEADERS})
 
@@ -119,6 +129,16 @@ set(PROTON_ROS2_SOURCES
 # target_link_libraries(${PROTON_ROS2_LIB} proton::protoncpp)
 # target_include_directories(${PROTON_ROS2_LIB} PRIVATE include ${GENERATED_HEADER_PATH})
 # ament_target_dependencies(${PROTON_ROS2_LIB} ${PROTON_ROS2_DEPENDENCIES})
+
+# Template instantiation translation units are extremely template-heavy and
+# generate massive debug info. Compiling them with minimal/no debug symbols
+# typically reduces peak compiler RAM and speeds up builds significantly.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set_source_files_properties(${GENERATED_INSTANTIATION_SOURCES}
+    PROPERTIES
+      COMPILE_OPTIONS "-g0"
+  )
+endif()
 
 # Proton ROS2 node
 add_executable(${PROTON_ROS2_EXECUTABLE}
