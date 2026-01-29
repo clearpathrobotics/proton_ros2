@@ -2,8 +2,8 @@
 Changelog for package proton_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2026-01-29)
+------------------
 * Remove unnecessary includes
 * Build optimizations
 * Updated links in README.
