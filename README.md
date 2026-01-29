@@ -1,6 +1,6 @@
 # Proton ROS 2
 
-ROS 2 adaptor for [Proton](https://gitlab.clearpathrobotics.com/research/proton/).
+ROS 2 adaptor for [Proton](https://github.com/clearpathrobotics/proton.git).
 
 The proton_ros2 node acts as both a ROS 2 and Proton node. It will automatically create ROS 2 publishers, subscribers, services, and clients based on the Proton configuration file. It will then bridge communication between the two nodes.
 
@@ -255,7 +255,7 @@ ros2:
 ```
 mkdir ~/proton_ws/src -p
 cd ~/proton_ws/src
-git clone git@gitlab.clearpathrobotics.com:research/proton_ros2.git
+git clone https://github.com/clearpathrobotics/proton_ros2.git
 
 cd ~/proton_ws
 source /opt/ros/jazzy/setup.bash
