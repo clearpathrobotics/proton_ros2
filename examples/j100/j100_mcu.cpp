@@ -41,7 +41,6 @@ void send_log(char *file, const char* func, int line, uint8_t level, char *msg, 
 
 void send_log(char *file, const char* func, int line, uint8_t level, char *msg, ...) {
   auto& log_bundle = node->getBundle("log");
-  log_bundle.getSignal("name").setValue<std::string>("J100_mcu_cpp");
   log_bundle.getSignal("file").setValue<std::string>(file);
   log_bundle.getSignal("line").setValue<uint32_t>(line);
   log_bundle.getSignal("level").setValue<uint32_t>(level);
