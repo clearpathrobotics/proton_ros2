@@ -2,8 +2,8 @@
 Changelog for package proton_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.0 (2026-01-29)
+------------------
 * Merge pull request `#3 <https://github.com/clearpathrobotics/proton_ros2/issues/3>`_ from clearpathrobotics/fix/dep
   Added dependencies to package.xml
 * Added dependencies to package.xml
