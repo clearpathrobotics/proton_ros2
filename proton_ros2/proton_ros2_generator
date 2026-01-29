@@ -786,9 +786,6 @@ class ProtonROS2FactoryGenerator:
 
         self.source_writer.write_include(self.generated_include)
         self.source_writer.write_newline()
-        self.source_writer.write("#include <string_view>", indent_level=0)
-        self.source_writer.write("#include <unordered_map>", indent_level=0)
-        self.source_writer.write_newline()
         self.source_writer.write("using namespace proton::ros2;", indent_level=0)
         self.source_writer.write_newline()
 
