@@ -1,0 +1,15 @@
+pull_request_rules:
+  - name: Backport merged PRs from Main to Jazzy
+    conditions:
+      - base = main
+      - merged
+      - label = backport-jazzy
+    actions:
+      backport:
+        branches:
+          - jazzy
+        assignees:
+          - "{{ author }}"
+        title: "[Jazzy] {{ title }}"
+        body: |
+          Backport of #{{ number }} to Jazzy.
