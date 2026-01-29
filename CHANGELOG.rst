@@ -2,6 +2,14 @@
 Changelog for package proton_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove unnecessary includes
+* Build optimizations
+* Updated links in README.
+* Updated generated file header
+* Contributors: Roni Kreinin, Tony Baltovski
+
 0.1.0 (2026-01-29)
 ------------------
 * Merge pull request `#3 <https://github.com/clearpathrobotics/proton_ros2/issues/3>`_ from clearpathrobotics/fix/dep
