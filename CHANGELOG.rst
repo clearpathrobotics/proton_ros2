@@ -2,8 +2,8 @@
 Changelog for package proton_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2026-02-11)
+------------------
 * Depend on version 1.0.0 of proton_vendor (`#13 <https://github.com/clearpathrobotics/proton_ros2/issues/13>`_)
 * Contributors: mergify[bot]
 
