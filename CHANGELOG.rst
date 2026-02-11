@@ -2,6 +2,11 @@
 Changelog for package proton_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Depend on version 1.0.0 of proton_vendor (`#13 <https://github.com/clearpathrobotics/proton_ros2/issues/13>`_)
+* Contributors: mergify[bot]
+
 0.1.1 (2026-01-29)
 ------------------
 * Remove unnecessary includes
