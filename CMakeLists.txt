@@ -13,6 +13,7 @@ find_package(ament_cmake_python REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 
+find_package(can_msgs REQUIRED)
 find_package(clearpath_platform_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nmea_msgs REQUIRED)
@@ -33,6 +34,7 @@ endif()
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
 set(PROTON_ROS2_MESSAGES
+  can_msgs
   clearpath_platform_msgs
   geometry_msgs
   nmea_msgs

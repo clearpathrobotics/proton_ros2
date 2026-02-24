@@ -16,6 +16,7 @@
   <depend>rosidl_parser</depend>
   <depend>diagnostic_updater</depend>
 
+  <depend>can_msgs</depend>
   <depend>clearpath_platform_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nmea_msgs</depend>
