@@ -542,6 +542,41 @@ class ProtonROS2FactoryGenerator:
                         packages[pkg] = {'messages': [], 'services': []}
                     packages[pkg]['services'].append(s)
 
+        # Emit matching `extern template class` declarations into factory.hpp so
+        # any translation unit that includes it (notably the large factory.cpp)
+        # does NOT implicitly instantiate these heavy templates. The single
+        # explicit instantiation lives in the per-package factory_<pkg>_inst.cpp
+        # files below, which are small and compile in parallel. This is the
+        # main knob for reducing peak RAM during the build.
+        self.header_writer.write(
+            "// Suppress implicit template instantiation in consumers of this header.",
+            indent_level=0,
+        )
+        self.header_writer.write(
+            "// Explicit instantiations live in the generated factory_<pkg>_inst.cpp files.",
+            indent_level=0,
+        )
+        for pkg_name, items in packages.items():
+            for m in items['messages']:
+                self.header_writer.write(
+                    f"extern template class proton::ros2::TypedPublisher<{m.ros_type}>;",
+                    indent_level=0,
+                )
+                self.header_writer.write(
+                    f"extern template class proton::ros2::TypedSubscriber<{m.ros_type}>;",
+                    indent_level=0,
+                )
+            for s in items['services']:
+                self.header_writer.write(
+                    f"extern template class proton::ros2::TypedService<{s.ros_type}>;",
+                    indent_level=0,
+                )
+                self.header_writer.write(
+                    f"extern template class proton::ros2::TypedClient<{s.ros_type}>;",
+                    indent_level=0,
+                )
+        self.header_writer.write_newline()
+
         # Generate one instantiation file per package
         for pkg_name, items in packages.items():
             inst_filename = f"factory_{pkg_name}_inst.cpp"
@@ -553,13 +588,28 @@ class ProtonROS2FactoryGenerator:
             inst_writer.write("// This file is compiled separately to parallelize the build", indent_level=0)
             inst_writer.write_newline()
 
+            # Undo the `extern template` declarations from factory.hpp for this
+            # TU only, so the following `template class` directives actually
+            # emit the definitions here.
             for m in items['messages']:
-                inst_writer.write(f"template class proton::ros2::TypedPublisher<{m.ros_type}>;", indent_level=0)
-                inst_writer.write(f"template class proton::ros2::TypedSubscriber<{m.ros_type}>;", indent_level=0)
+                inst_writer.write(
+                    f"template class proton::ros2::TypedPublisher<{m.ros_type}>;",
+                    indent_level=0,
+                )
+                inst_writer.write(
+                    f"template class proton::ros2::TypedSubscriber<{m.ros_type}>;",
+                    indent_level=0,
+                )
 
             for s in items['services']:
-                inst_writer.write(f"template class proton::ros2::TypedService<{s.ros_type}>;", indent_level=0)
-                inst_writer.write(f"template class proton::ros2::TypedClient<{s.ros_type}>;", indent_level=0)
+                inst_writer.write(
+                    f"template class proton::ros2::TypedService<{s.ros_type}>;",
+                    indent_level=0,
+                )
+                inst_writer.write(
+                    f"template class proton::ros2::TypedClient<{s.ros_type}>;",
+                    indent_level=0,
+                )
 
             inst_writer.close_file()
 
