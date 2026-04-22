@@ -449,7 +449,7 @@ class ProtonROS2AdapterGenerator:
         self.header_writer = CPPWriter(
             self.header_path,
             self.generated_header_name,
-            f"{self.generated_header_name.upper().replace('.', '_')}_{"MSG" if self.is_message else "SRV"}"
+            f"{self.generated_header_name.upper().replace('.', '_')}_{'MSG' if self.is_message else 'SRV'}"
         )
 
         self.source_writer = CPPWriter(

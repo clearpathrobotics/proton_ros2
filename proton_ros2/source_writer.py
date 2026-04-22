@@ -152,9 +152,9 @@ class CPPWriter:
         self.write(f'typedef enum {name} {{', indent_level)
         for i in range(0, len(enum)):
             if values is not None:
-                self.write(f'{name.upper() + '__' + enum[i].upper()} = {hex(values[i])},', indent_level + 1)
+                self.write(f'{name.upper() + "__" + enum[i].upper()} = {hex(values[i])},', indent_level + 1)
             else:
-                self.write(f'{name.upper() + '__' + enum[i].upper()},', indent_level + 1)
+                self.write(f'{name.upper() + "__" + enum[i].upper()},', indent_level + 1)
         if values is None:
             self.write(f'{name.upper()}_COUNT', indent_level + 1)
         self.write(f'}} {name}_e;', indent_level)
