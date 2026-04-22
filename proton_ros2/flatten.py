@@ -137,7 +137,7 @@ def flatten_message(msg_type, ros_path_prefix="", proton_prefix=""):
                 v['array'] = True
                 v['bounded'] = getattr(type_, 'maximum', 0)
                 if v['proton_type'] != "bytes" and not v['proton_type'].startswith('list_'):
-                    v['proton_type'] = f'list_{v['proton_type']}'
+                    v['proton_type'] = f'list_{v["proton_type"]}'
                 fields[k] = v
         # Array of nested messages
         elif proton_type == 'list_array':
@@ -151,7 +151,7 @@ def flatten_message(msg_type, ros_path_prefix="", proton_prefix=""):
                 v['array'] = True
                 v['bounded'] = getattr(type_, 'size', 0)
                 if v['proton_type'] != "bytes" and not v['proton_type'].startswith('list_'):
-                    v['proton_type'] = f'list_{v['proton_type']}'
+                    v['proton_type'] = f'list_{v["proton_type"]}'
                 fields[k] = v
         # Array of basic types
         elif proton_type.startswith("list_"):
