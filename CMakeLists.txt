@@ -34,10 +34,10 @@ endif()
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
 set(PROTON_ROS2_MESSAGES
-  can_msgs
-  clearpath_platform_msgs
-  geometry_msgs
-  nmea_msgs
+  # can_msgs
+  # clearpath_platform_msgs
+  # geometry_msgs
+  # nmea_msgs
   rcl_interfaces
   sensor_msgs
   std_msgs
@@ -61,7 +61,10 @@ set(ADAPTER_CONFIG_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config)
 set(GENERATED_SOURCE_PATH ${CMAKE_CURRENT_BINARY_DIR}/src)
 set(GENERATED_HEADER_PATH ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(GENERATED_ADAPTER_HEADER_PATH ${GENERATED_HEADER_PATH}/${PROJECT_NAME})
-set(GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory.cpp)
+list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory_publishers.cpp)
+list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory_subscribers.cpp)
+list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory_services.cpp)
+list(APPEND GENERATED_SOURCES ${GENERATED_SOURCE_PATH}/factory_clients.cpp)
 set(GENERATED_HEADERS ${GENERATED_ADAPTER_HEADER_PATH}/factory.hpp)
 set(GENERATED_INSTANTIATION_SOURCES "")
 set(GENERATOR_MSGS_PACKAGES "")
