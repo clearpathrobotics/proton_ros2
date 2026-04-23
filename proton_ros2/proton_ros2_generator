@@ -598,73 +598,57 @@ class ProtonROS2FactoryGenerator:
 
             inst_writer.close_file()
 
-    def generate_publisher_factory_header(self):
+    def generate_factory_header(self, param_lists, type_name):
         parameters: List[Variable] = [
             Variable("type", "const std::string&"),
             Variable("node", "rclcpp::Node *"),
             Variable("topic", "const std::string&"),
             Variable("qos", "const rclcpp::QoS &"),
         ]
-        f = Function("createTypedPublisher", parameters, "std::shared_ptr<IPublisher>")
-        self.header_writer.write_function_prototype(f, indent_level=0)
+        for parameters in param_lists:
+            f = Function(f"createTyped{type_name}", parameters, f"std::shared_ptr<I{type_name}>")
+            self.header_writer.write_function_prototype(f, indent_level=0)
 
-    def generate_publisher_factory_source(self):
-        parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("topic", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-        ]
-
+    def generate_factory_source(self, file_name, type_name, package_sources, header_params, lambda_params):
         source_writer = CPPWriter(
             self.source_path,
-            f"{self.source_file}_publishers.cpp",
+            f"{self.source_file}_{file_name}.cpp",
         )
 
-        source_writer.write_global_include("unordered_map")
-        source_writer.write_global_include("string")
-        source_writer.write_global_include("memory")
-        source_writer.write_global_include("functional")
+        for global_include in ("unordered_map", "string", "memory", "functional"):
+            source_writer.write_global_include(global_include)
 
         source_writer.write_include(self.generated_include)
         source_writer.write_newline()
         source_writer.write_namespace_open("proton::ros2")
         source_writer.write_newline()
 
-        source_writer.write("using PublisherFactory = std::function<std::shared_ptr<IPublisher>(rclcpp::Node*, const std::string&, const rclcpp::QoS&)>;", indent_level=0)
+        source_writer.write(f"using {type_name}Factory = std::function<std::shared_ptr<I{type_name}>(rclcpp::Node*, const std::string&, const rclcpp::QoS&)>;", indent_level=0)
         source_writer.write_newline()
-
-        # group publishers into functions sorted by package. Each function contains all the messages from that package
-        package_sources = {}
-        for c in self.conversions:
-            if not c.is_message:
-                continue
-            for m in c.config.messages:
-                if m.skip:
-                    continue
-                if m.package not in package_sources:
-                    package_sources[m.package] = []
-                package_sources[m.package].append(m)
 
         registry_functions = []
 
         source_writer.write_newline()
 
         for (package, messages) in package_sources.items():
-            v = [Variable("factories", "std::unordered_map<std::string, PublisherFactory>&")]
-            function_name = f"registerTypedPublisher_{package}"
+            v = [Variable("factories", f"std::unordered_map<std::string, {type_name}Factory>&")]
+            function_name = f"registerTyped{type_name}_{package}"
             registry_functions.append(function_name)
             f = Function(function_name, v, "inline void")
             source_writer.write_function_start(f, indent_level=0)
             for m in messages:
-                source_writer.write(f'factories["{m.full_name}"] = [](rclcpp::Node* n, const std::string& t, const rclcpp::QoS& q) {{ return std::make_shared<TypedPublisher<{m.ros_type}>>(n, t, q); }};', indent_level=1)
+                lambda_input = ", ".join([f"{v.type} {v.name}" for v in lambda_params])
+                lambda_names = ", ".join([f"{v.name}" for v in lambda_params])
+                source_writer.write(f'factories["{m.full_name}"] = []({lambda_input}) {{ return std::make_shared<Typed{type_name}<{m.ros_type}>>({lambda_names}); }};', indent_level=1)
             source_writer.write_function_end(indent_level=0)
             source_writer.write_newline()
 
-        f = Function("createTypedPublisher", parameters, "std::shared_ptr<IPublisher>")
+        header_param_names = ", ".join([f"{p.name}" for p in header_params])
+
+        f = Function(f"createTyped{type_name}", header_params, f"std::shared_ptr<I{type_name}>")
         source_writer.write_function_start(f, indent_level=0)
 
-        source_writer.write("static std::unordered_map<std::string, PublisherFactory> factories;", indent_level=1)
+        source_writer.write(f"static std::unordered_map<std::string, {type_name}Factory> factories;", indent_level=1)
         source_writer.write("static bool initialized = false;", indent_level=1)
 
         source_writer.write_if_statement_start("!initialized")
@@ -676,27 +660,15 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_newline()
 
         source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write("if (it != factories.end()) {", indent_level=1)
-        source_writer.write("return it->second(node, topic, qos);", indent_level=2)
-        source_writer.write("}", indent_level=1)
-        source_writer.write("throw std::runtime_error(\"Invalid publisher message type \" + type);", indent_level=1)
+        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
+        source_writer.write(f"return it->second({header_param_names});", indent_level=2)
+        source_writer.write_if_statement_end()
+        source_writer.write(f"throw std::runtime_error(\"Invalid {type_name} message type \" + type);", indent_level=1)
         source_writer.write_function_end(indent_level=0)
 
         source_writer.write_namespace_close("proton::ros2")
 
         source_writer.close_file()
-
-    def generate_subscriber_factory_header(self):
-        parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("topic", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-        f = Function("createTypedSubscriber", parameters, "std::shared_ptr<ISubscriber>")
-        self.header_writer.write_function_prototype(f, indent_level=0)
 
     def generate_subscriber_factory_source(self):
         parameters: List[Variable] = [
@@ -767,42 +739,15 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_newline()
 
         source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write("if (it != factories.end()) {", indent_level=1)
+        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
         source_writer.write("return it->second(node, topic, qos, bundle, callback);", indent_level=2)
-        source_writer.write("}", indent_level=1)
+        source_writer.write_if_statement_end()
         source_writer.write("throw std::runtime_error(\"Invalid subscriber message type \" + type);", indent_level=1)
         source_writer.write_function_end(indent_level=0)
 
         source_writer.write_namespace_close("proton::ros2")
 
         source_writer.close_file()
-
-    def generate_services_factory_header(self):
-        request_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-            Variable("request_bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-
-        request_response_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-            Variable("request_bundle", "proton::BundleHandle &"),
-            Variable("response_bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-
-        request_function = Function("createTypedService", request_parameters, "std::shared_ptr<IService>")
-        request_response_function = Function("createTypedService", request_response_parameters, "std::shared_ptr<IService>")
-        self.header_writer.write_function_prototype(request_function, indent_level=0)
-        self.header_writer.write_function_prototype(request_response_function, indent_level=0)
 
     def generate_services_factory_source(self):
         request_parameters: List[Variable] = [
@@ -884,9 +829,9 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_newline()
 
         source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write("if (it != factories.end()) {", indent_level=1)
+        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
         source_writer.write("return it->second(node, service_name, qos, timeout_ms, request_bundle, callback);", indent_level=2)
-        source_writer.write("}", indent_level=1)
+        source_writer.write_if_statement_end()
         source_writer.write("throw std::runtime_error(\"Invalid service message type \" + type);", indent_level=1)
         source_writer.write_function_end(indent_level=0)
 
@@ -918,38 +863,14 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_newline()
 
         source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write("if (it != factories.end()) {", indent_level=1)
+        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
         source_writer.write("return it->second(node, service_name, qos, timeout_ms, request_bundle, response_bundle, callback);", indent_level=2)
-        source_writer.write("}", indent_level=1)
+        source_writer.write_if_statement_end()
         source_writer.write("throw std::runtime_error(\"Invalid service message type \" + type);", indent_level=1)
         source_writer.write_function_end(indent_level=0)
 
         source_writer.write_namespace_close("proton::ros2")
         source_writer.close_file()
-
-    def generate_client_factory_header(self):
-        request_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-        ]
-
-        request_response_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-            Variable("response_bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-
-        request_function = Function("createTypedClient", request_parameters, "std::shared_ptr<IClient>")
-        request_response_function = Function("createTypedClient", request_response_parameters, "std::shared_ptr<IClient>")
-        self.header_writer.write_function_prototype(request_function, indent_level=0)
-        self.header_writer.write_function_prototype(request_response_function, indent_level=0)
 
     def generate_client_factory_source(self):
         request_parameters: List[Variable] = [
@@ -1027,9 +948,9 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_newline()
 
         source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write("if (it != factories.end()) {", indent_level=1)
+        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
         source_writer.write("return it->second(node, service_name, qos, timeout_ms);", indent_level=2)
-        source_writer.write("}", indent_level=1)
+        source_writer.write_if_statement_end()
         source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=1)
         source_writer.write_function_end(indent_level=0)
 
@@ -1061,9 +982,9 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_newline()
 
         source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write("if (it != factories.end()) {", indent_level=1)
+        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
         source_writer.write("return it->second(node, service_name, qos, timeout_ms, response_bundle, callback);", indent_level=2)
-        source_writer.write("}", indent_level=1)
+        source_writer.write_if_statement_end()
         source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=1)
         source_writer.write_function_end(indent_level=0)
 
@@ -1082,24 +1003,99 @@ class ProtonROS2FactoryGenerator:
         for c in self.conversions:
             self.header_writer.write_include(c.generated_include)
         self.header_writer.write_newline()
-        self.header_writer.write("namespace proton::ros2 {", indent_level=0)
+        self.header_writer.write_namespace_open("proton::ros2")
         self.header_writer.write_newline()
 
         self.generate_instantiation_files()
 
-        self.generate_publisher_factory_header()
-        self.generate_subscriber_factory_header()
-        self.generate_services_factory_header()
-        self.generate_client_factory_header()
+        publisher_parameters: List[List[Variable]] = [[
+            Variable("type", "const std::string&"),
+            Variable("node", "rclcpp::Node *"),
+            Variable("topic", "const std::string&"),
+            Variable("qos", "const rclcpp::QoS &"),
+        ]]
+
+        subscriber_parameters: List[List[Variable]] = [[
+            Variable("type", "const std::string&"),
+            Variable("node", "rclcpp::Node *"),
+            Variable("topic", "const std::string&"),
+            Variable("qos", "const rclcpp::QoS &"),
+            Variable("bundle", "proton::BundleHandle &"),
+            Variable("callback", "proton::BundleHandle::BundleCallback"),
+        ]]
+
+        service_parameters: List[List[Variable]] = [
+            [
+                Variable("type", "const std::string&"),
+                Variable("node", "rclcpp::Node *"),
+                Variable("service_name", "const std::string&"),
+                Variable("qos", "const rclcpp::QoS &"),
+                Variable("timeout_ms", "const uint32_t"),
+                Variable("request_bundle", "proton::BundleHandle &"),
+                Variable("callback", "proton::BundleHandle::BundleCallback"),
+            ],
+            [
+                Variable("type", "const std::string&"),
+                Variable("node", "rclcpp::Node *"),
+                Variable("service_name", "const std::string&"),
+                Variable("qos", "const rclcpp::QoS &"),
+                Variable("timeout_ms", "const uint32_t"),
+                Variable("request_bundle", "proton::BundleHandle &"),
+                Variable("response_bundle", "proton::BundleHandle &"),
+                Variable("callback", "proton::BundleHandle::BundleCallback"),
+            ]
+        ]
+
+        client_parameters: List[List[Variable]] = [
+            [
+                Variable("type", "const std::string&"),
+                Variable("node", "rclcpp::Node *"),
+                Variable("service_name", "const std::string&"),
+                Variable("qos", "const rclcpp::QoS &"),
+                Variable("timeout_ms", "const uint32_t"),
+            ],
+            [
+                Variable("type", "const std::string&"),
+                Variable("node", "rclcpp::Node *"),
+                Variable("service_name", "const std::string&"),
+                Variable("qos", "const rclcpp::QoS &"),
+                Variable("timeout_ms", "const uint32_t"),
+                Variable("response_bundle", "proton::BundleHandle &"),
+                Variable("callback", "proton::BundleHandle::BundleCallback"),
+            ]
+        ]
+        self.generate_factory_header(publisher_parameters, "Publisher")
+        self.generate_factory_header(subscriber_parameters, "Subscriber")
+        self.generate_factory_header(service_parameters, "Service")
+        self.generate_factory_header(client_parameters, "Client")
 
         self.header_writer.write_newline()
-        self.header_writer.write("}  // namespace proton::ros2", indent_level=0)
+        self.header_writer.write_namespace_close("proton::ros2")
         self.header_writer.write_newline()
         self.header_writer.write_header_guard_close()
 
         self.header_writer.close_file()
 
-        self.generate_publisher_factory_source()
+        # group publishers into functions sorted by package. Each function contains all the messages from that package
+        message_package_sources = {}
+        for c in self.conversions:
+            if not c.is_message:
+                continue
+            for m in c.config.messages:
+                if m.skip:
+                    continue
+                if m.package not in message_package_sources:
+                    message_package_sources[m.package] = []
+                message_package_sources[m.package].append(m)
+
+        # self.generate_publisher_factory_source()
+
+        publisher_lambda_params = [
+            Variable("n", "rclcpp::Node*"),
+            Variable("t", "const std::string&"),
+            Variable("q", "const rclcpp::QoS&"),
+        ]
+        self.generate_factory_source("publishers", "Publisher", message_package_sources, publisher_parameters[0], publisher_lambda_params)
         self.generate_subscriber_factory_source()
         self.generate_services_factory_source()
         self.generate_client_factory_source()
