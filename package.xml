@@ -4,7 +4,7 @@
   <name>proton_ros2</name>
   <version>1.0.0</version>
   <description>Proton ROS 2 integration package</description>
-  <maintainer email="rkreinin@clearpathrobotics.com">rkreinin</maintainer>
+  <maintainer email="thomas.wallis@rockwellautomation.com">Tom Wallis</maintainer>
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
