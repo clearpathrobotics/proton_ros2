@@ -672,250 +672,6 @@ class ProtonROS2FactoryGenerator:
         source_writer.write_function_end(indent_level=0)
 
         source_writer.write_namespace_close("proton::ros2")
-
-        source_writer.close_file()
-
-    def generate_services_factory_source(self):
-        request_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-            Variable("request_bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-
-        request_response_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-            Variable("request_bundle", "proton::BundleHandle &"),
-            Variable("response_bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-
-        source_writer = CPPWriter(
-            self.source_path,
-            f"{self.source_file}_services.cpp",
-        )
-
-        source_writer.write_global_include("unordered_map")
-        source_writer.write_global_include("string")
-        source_writer.write_global_include("memory")
-        source_writer.write_global_include("functional")
-
-        source_writer.write_include(self.generated_include)
-        source_writer.write_newline()
-        source_writer.write_namespace_open("proton::ros2")
-        source_writer.write_newline()
-
-        source_writer.write("using ServiceRequestFactory = std::function<std::shared_ptr<IService>(rclcpp::Node*, const std::string&, const rclcpp::QoS&, uint32_t, proton::BundleHandle&, proton::BundleHandle::BundleCallback)>;", indent_level=0)
-        source_writer.write("using ServiceRequestResponseFactory = std::function<std::shared_ptr<IService>(rclcpp::Node*, const std::string&, const rclcpp::QoS&, uint32_t, proton::BundleHandle&, proton::BundleHandle&, proton::BundleHandle::BundleCallback)>;", indent_level=0)
-        source_writer.write_newline()
-
-        package_sources = {}
-        for c in self.conversions:
-            if c.is_message:
-                continue
-            for s in c.config.services:
-                if s.skip:
-                    continue
-                if s.package not in package_sources:
-                    package_sources[s.package] = []
-                package_sources[s.package].append(s)
-
-        registry_functions = []
-
-        for (package, services) in package_sources.items():
-            v = [Variable("factories", "std::unordered_map<std::string, ServiceRequestFactory>&")]
-            function_name = f"registerTypedService_{package}"
-            registry_functions.append(function_name)
-            f = Function(function_name, v, "inline void")
-            source_writer.write_function_start(f, indent_level=0)
-            for s in services:
-                source_writer.write(f'factories["{s.full_name}"] = [](rclcpp::Node* n, const std::string& sn, const rclcpp::QoS& q, uint32_t tm, proton::BundleHandle& rb, proton::BundleHandle::BundleCallback cb) {{ return std::make_shared<TypedService<{s.ros_type}>>(n, sn, q, tm, rb, cb); }};', indent_level=1)
-            source_writer.write_function_end(indent_level=0)
-            source_writer.write_newline()
-
-        # Request function definition
-        request_function = Function("createTypedService", request_parameters, "std::shared_ptr<IService>")
-        source_writer.write_function_start(request_function, indent_level=0)
-        source_writer.write("static std::unordered_map<std::string, ServiceRequestFactory> factories;", indent_level=1)
-        source_writer.write("static bool initialized = false;", indent_level=1)
-
-        source_writer.write_if_statement_start("!initialized")
-        for registry_function in registry_functions:
-            source_writer.write(f"{registry_function}(factories);", indent_level=2)
-
-        source_writer.write("initialized = true;", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write_newline()
-
-        source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
-        source_writer.write("return it->second(node, service_name, qos, timeout_ms, request_bundle, callback);", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write("throw std::runtime_error(\"Invalid service message type \" + type);", indent_level=1)
-        source_writer.write_function_end(indent_level=0)
-
-        # Request response function definition
-        registry_functions = []
-        source_writer.write_newline()
-        for (package, services) in package_sources.items():
-            v = [Variable("factories", "std::unordered_map<std::string, ServiceRequestResponseFactory>&")]
-            function_name = f"registerTypedServiceResponse_{package}"
-            registry_functions.append(function_name)
-            f = Function(function_name, v, "inline void")
-            source_writer.write_function_start(f, indent_level=0)
-            for s in services:
-                source_writer.write(f'factories["{s.full_name}"] = [](rclcpp::Node* n, const std::string& sn, const rclcpp::QoS& q, uint32_t tm, proton::BundleHandle& rb, proton::BundleHandle& resb, proton::BundleHandle::BundleCallback cb) {{ return std::make_shared<TypedService<{s.ros_type}>>(n, sn, q, tm, rb, resb, cb); }};', indent_level=1)
-            source_writer.write_function_end(indent_level=0)
-            source_writer.write_newline()
-
-        request_response_function = Function("createTypedService", request_response_parameters, "std::shared_ptr<IService>")
-        source_writer.write_function_start(request_response_function, indent_level=0)
-        source_writer.write("static std::unordered_map<std::string, ServiceRequestResponseFactory> factories;", indent_level=1)
-        source_writer.write("static bool initialized = false;", indent_level=1)
-
-        source_writer.write_if_statement_start("!initialized")
-        for registry_function in registry_functions:
-            source_writer.write(f"{registry_function}(factories);", indent_level=2)
-
-        source_writer.write("initialized = true;", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write_newline()
-
-        source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
-        source_writer.write("return it->second(node, service_name, qos, timeout_ms, request_bundle, response_bundle, callback);", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write("throw std::runtime_error(\"Invalid service message type \" + type);", indent_level=1)
-        source_writer.write_function_end(indent_level=0)
-
-        source_writer.write_namespace_close("proton::ros2")
-        source_writer.close_file()
-
-    def generate_client_factory_source(self):
-        request_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-        ]
-
-        request_response_parameters: List[Variable] = [
-            Variable("type", "const std::string&"),
-            Variable("node", "rclcpp::Node *"),
-            Variable("service_name", "const std::string&"),
-            Variable("qos", "const rclcpp::QoS &"),
-            Variable("timeout_ms", "const uint32_t"),
-            Variable("response_bundle", "proton::BundleHandle &"),
-            Variable("callback", "proton::BundleHandle::BundleCallback"),
-        ]
-
-        source_writer = CPPWriter(
-            self.source_path,
-            f"{self.source_file}_clients.cpp",
-        )
-
-        source_writer.write_global_include("unordered_map")
-        source_writer.write_global_include("string")
-        source_writer.write_global_include("memory")
-        source_writer.write_global_include("functional")
-
-        source_writer.write_include(self.generated_include)
-        source_writer.write_newline()
-        source_writer.write_namespace_open("proton::ros2")
-        source_writer.write_newline()
-
-        source_writer.write("using ServiceClientFactory = std::function<std::shared_ptr<IClient>(rclcpp::Node*, const std::string&, const rclcpp::QoS&, uint32_t)>;", indent_level=0)
-        source_writer.write("using ServiceClientResponseFactory = std::function<std::shared_ptr<IClient>(rclcpp::Node*, const std::string&, const rclcpp::QoS&, uint32_t, proton::BundleHandle&, proton::BundleHandle::BundleCallback)>;", indent_level=0)
-        source_writer.write_newline()
-
-        package_sources = {}
-        for c in self.conversions:
-            if c.is_message:
-                continue
-            for s in c.config.services:
-                if s.skip:
-                    continue
-                if s.package not in package_sources:
-                    package_sources[s.package] = []
-                package_sources[s.package].append(s)
-
-        registry_functions = []
-        for (package, services) in package_sources.items():
-            v = [Variable("factories", "std::unordered_map<std::string, ServiceClientFactory>&")]
-            function_name = f"registerTypedClient_{package}"
-            registry_functions.append(function_name)
-            f = Function(function_name, v, "inline void")
-            source_writer.write_function_start(f, indent_level=0)
-            for s in services:
-                source_writer.write(f'factories["{s.full_name}"] = [](rclcpp::Node* n, const std::string& sn, const rclcpp::QoS& q, uint32_t tm) {{ return std::make_shared<TypedClient<{s.ros_type}>>(n, sn, q, tm); }};')
-            source_writer.write_function_end(indent_level=0)
-            source_writer.write_newline()
-
-        request_function = Function("createTypedClient", request_parameters, "std::shared_ptr<IClient>")
-        source_writer.write_function_start(request_function, indent_level=0)
-
-        source_writer.write("static std::unordered_map<std::string, ServiceClientFactory> factories;", indent_level=1)
-        source_writer.write("static bool initialized = false;", indent_level=1)
-
-        source_writer.write_if_statement_start("!initialized")
-        for registry_function in registry_functions:
-            source_writer.write(f"{registry_function}(factories);", indent_level=2)
-
-        source_writer.write("initialized = true;", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write_newline()
-
-        source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
-        source_writer.write("return it->second(node, service_name, qos, timeout_ms);", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=1)
-        source_writer.write_function_end(indent_level=0)
-
-        # Request response function definition
-        registry_functions = []
-        for (package, services) in package_sources.items():
-            v = [Variable("factories", "std::unordered_map<std::string, ServiceClientResponseFactory>&")]
-            function_name = f"registerTypedClientResponse_{package}"
-            registry_functions.append(function_name)
-            f = Function(function_name, v, "inline void")
-            source_writer.write_function_start(f, indent_level=0)
-            for s in services:
-                source_writer.write(f'factories["{s.full_name}"] = [](rclcpp::Node* n, const std::string& sn, const rclcpp::QoS& q, uint32_t tm, proton::BundleHandle& resb, proton::BundleHandle::BundleCallback cb) {{ return std::make_shared<TypedClient<{s.ros_type}>>(n, sn, q, tm, &resb, cb); }};')
-            source_writer.write_function_end(indent_level=0)
-            source_writer.write_newline()
-
-        request_response_function = Function("createTypedClient", request_response_parameters, "std::shared_ptr<IClient>")
-        source_writer.write_function_start(request_response_function, indent_level=0)
-
-        source_writer.write("static std::unordered_map<std::string, ServiceClientResponseFactory> factories;", indent_level=1)
-        source_writer.write("static bool initialized = false;", indent_level=1)
-
-        source_writer.write_if_statement_start("!initialized")
-        for registry_function in registry_functions:
-            source_writer.write(f"{registry_function}(factories);", indent_level=2)
-
-        source_writer.write("initialized = true;", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write_newline()
-
-        source_writer.write("auto it = factories.find(type);", indent_level=1)
-        source_writer.write_if_statement_start("it != factories.end()", indent_level=1)
-        source_writer.write("return it->second(node, service_name, qos, timeout_ms, response_bundle, callback);", indent_level=2)
-        source_writer.write_if_statement_end()
-        source_writer.write("throw std::runtime_error(\"Invalid client message type \" + type);", indent_level=1)
-        source_writer.write_function_end(indent_level=0)
-
-        source_writer.write_namespace_close("proton::ros2")
-
         source_writer.close_file()
 
     def generate(self):
@@ -989,7 +745,7 @@ class ProtonROS2FactoryGenerator:
                 Variable("service_name", "const std::string&"),
                 Variable("qos", "const rclcpp::QoS &"),
                 Variable("timeout_ms", "const uint32_t"),
-                Variable("response_bundle", "proton::BundleHandle &"),
+                Variable("response_bundle", "proton::BundleHandle*"),
                 Variable("callback", "proton::BundleHandle::BundleCallback"),
             ]
         ]
@@ -1054,12 +810,27 @@ class ProtonROS2FactoryGenerator:
             Variable("resb", "proton::BundleHandle&"),
             Variable("cb", "proton::BundleHandle::BundleCallback"),
         ]
+        client_request_parameters = [
+            Variable("n", "rclcpp::Node*"),
+            Variable("sn", "const std::string&"),
+            Variable("q", "const rclcpp::QoS&"),
+            Variable("tm", "uint32_t"),
+        ]
+        client_response_parameters = [
+            Variable("n", "rclcpp::Node*"),
+            Variable("sn", "const std::string&"),
+            Variable("q", "const rclcpp::QoS&"),
+            Variable("tm", "uint32_t"),
+            Variable("resb", "proton::BundleHandle*"),
+            Variable("cb", "proton::BundleHandle::BundleCallback"),
+        ]
 
         self.generate_factory_source("publishers", "Publisher", message_package_sources, publisher_parameters[0], publisher_lambda_params)
         self.generate_factory_source("subscribers", "Subscriber", message_package_sources, subscriber_parameters[0], subscriber_lambda_params)
         self.generate_factory_source("services_request", "Service", service_package_sources, service_parameters[0], service_request_parameters)
         self.generate_factory_source("services_response", "Service", service_package_sources, service_parameters[1], service_response_parameters)
-        self.generate_client_factory_source()
+        self.generate_factory_source("clients_request", "Client", service_package_sources, client_parameters[0], client_request_parameters)
+        self.generate_factory_source("clients_response", "Client", service_package_sources, client_parameters[1], client_response_parameters)
 
 
 def main():

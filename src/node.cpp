@@ -259,7 +259,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           config.topic,
           getQoS(config.qos),
           config.timeout,
-          response_handle,
+          &response_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1)
         );
 
