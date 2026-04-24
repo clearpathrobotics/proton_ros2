@@ -645,7 +645,10 @@ class ProtonROS2FactoryGenerator:
             source_writer.write_function_end(indent_level=0)
             source_writer.write_newline()
 
-        header_param_names = ", ".join([f"{p.name}" for p in header_params])
+        # this list of parameters is for instantiating the factory element using the parameter names passed to the
+        # top level create function. However, not all these parameters are used in creating the factory element.
+        # Namely, the "type" parameter must be removed (if present)
+        header_param_names = ", ".join([f"{p.name}" for p in header_params if p.name != "type"])
 
         f = Function(f"createTyped{type_name}", header_params, f"std::shared_ptr<I{type_name}>")
         source_writer.write_function_start(f, indent_level=0)
@@ -935,15 +938,15 @@ class ProtonROS2FactoryGenerator:
         self.generate_instantiation_files()
 
         publisher_parameters: List[List[Variable]] = [[
-            Variable("type", "const std::string&"),
             Variable("node", "rclcpp::Node *"),
+            Variable("type", "const std::string&"),
             Variable("topic", "const std::string&"),
             Variable("qos", "const rclcpp::QoS &"),
         ]]
 
         subscriber_parameters: List[List[Variable]] = [[
-            Variable("type", "const std::string&"),
             Variable("node", "rclcpp::Node *"),
+            Variable("type", "const std::string&"),
             Variable("topic", "const std::string&"),
             Variable("qos", "const rclcpp::QoS &"),
             Variable("bundle", "proton::BundleHandle &"),
@@ -952,8 +955,8 @@ class ProtonROS2FactoryGenerator:
 
         service_parameters: List[List[Variable]] = [
             [
-                Variable("type", "const std::string&"),
                 Variable("node", "rclcpp::Node *"),
+                Variable("type", "const std::string&"),
                 Variable("service_name", "const std::string&"),
                 Variable("qos", "const rclcpp::QoS &"),
                 Variable("timeout_ms", "const uint32_t"),
@@ -961,8 +964,8 @@ class ProtonROS2FactoryGenerator:
                 Variable("callback", "proton::BundleHandle::BundleCallback"),
             ],
             [
-                Variable("type", "const std::string&"),
                 Variable("node", "rclcpp::Node *"),
+                Variable("type", "const std::string&"),
                 Variable("service_name", "const std::string&"),
                 Variable("qos", "const rclcpp::QoS &"),
                 Variable("timeout_ms", "const uint32_t"),
@@ -974,15 +977,15 @@ class ProtonROS2FactoryGenerator:
 
         client_parameters: List[List[Variable]] = [
             [
-                Variable("type", "const std::string&"),
                 Variable("node", "rclcpp::Node *"),
+                Variable("type", "const std::string&"),
                 Variable("service_name", "const std::string&"),
                 Variable("qos", "const rclcpp::QoS &"),
                 Variable("timeout_ms", "const uint32_t"),
             ],
             [
-                Variable("type", "const std::string&"),
                 Variable("node", "rclcpp::Node *"),
+                Variable("type", "const std::string&"),
                 Variable("service_name", "const std::string&"),
                 Variable("qos", "const rclcpp::QoS &"),
                 Variable("timeout_ms", "const uint32_t"),
@@ -1006,18 +1009,20 @@ class ProtonROS2FactoryGenerator:
         message_package_sources = {}
         service_package_sources = {}
         for c in self.conversions:
-            for m in c.config.messages:
-                if m.skip:
-                    continue
-                if m.package not in message_package_sources:
-                    message_package_sources[m.package] = []
-                message_package_sources[m.package].append(m)
-            for s in c.config.services:
-                if s.skip:
-                    continue
-                if s.package not in service_package_sources:
-                    service_package_sources[s.package] = []
-                service_package_sources[s.package].append(s)
+            if c.is_message:
+                for m in c.config.messages:
+                    if m.skip:
+                        continue
+                    if m.package not in message_package_sources:
+                        message_package_sources[m.package] = []
+                    message_package_sources[m.package].append(m)
+            else:
+                for s in c.config.services:
+                    if s.skip:
+                        continue
+                    if s.package not in service_package_sources:
+                        service_package_sources[s.package] = []
+                    service_package_sources[s.package].append(s)
 
         publisher_lambda_params = [
             Variable("n", "rclcpp::Node*"),
@@ -1052,7 +1057,8 @@ class ProtonROS2FactoryGenerator:
 
         self.generate_factory_source("publishers", "Publisher", message_package_sources, publisher_parameters[0], publisher_lambda_params)
         self.generate_factory_source("subscribers", "Subscriber", message_package_sources, subscriber_parameters[0], subscriber_lambda_params)
-        self.generate_services_factory_source()
+        self.generate_factory_source("services_request", "Service", service_package_sources, service_parameters[0], service_request_parameters)
+        self.generate_factory_source("services_response", "Service", service_package_sources, service_parameters[1], service_response_parameters)
         self.generate_client_factory_source()
 
 

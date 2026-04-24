@@ -188,7 +188,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
 
     // Proton node consumes this bundle, so the ROS node should publish it.
     if (handle_consumer) {
-      auto pub = createTypedPublisher(config.message, this, config.topic, getQoS(config.qos));
+      auto pub = createTypedPublisher(this, config.message, config.topic, getQoS(config.qos));
       publishers_.emplace(config.bundle, pub);
       proton_node_->registerCallback(
           config.bundle, std::bind(&Node::protonCallback, this, std::placeholders::_1));
@@ -202,7 +202,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
     // Proton node produces this bundle, so the ROS node should subscribe to it.
     else if (handle_producer) {
       auto sub = createTypedSubscriber(
-                  config.message, this, config.topic,
+                  this, config.message, config.topic,
                   getQoS(config.qos), handle,
                   std::bind(&Node::rosCallback, this, std::placeholders::_1));
       subscribers_.emplace(config.bundle, sub);
@@ -233,8 +233,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
       if (request_producer && response_consumer)
       {
         auto srv = createTypedService(
-          config.service,
           this,
+          config.service,
           config.topic,
           getQoS(config.qos),
           config.timeout,
@@ -254,8 +254,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
       else if (request_consumer && response_producer)
       {
         auto client = createTypedClient(
-          config.service,
           this,
+          config.service,
           config.topic,
           getQoS(config.qos),
           config.timeout,
@@ -285,8 +285,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
       if (request_producer)
       {
         auto srv = createTypedService(
-          config.service,
           this,
+          config.service,
           config.topic,
           getQoS(config.qos),
           config.timeout,
@@ -304,8 +304,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
       else if (request_consumer)
       {
         auto client = createTypedClient(
-          config.service,
           this,
+          config.service,
           config.topic,
           getQoS(config.qos),
           config.timeout
