@@ -34,10 +34,10 @@ endif()
 set(PROTON_ROS2_EXECUTABLE proton_ros2_node)
 set(PROTON_ROS2_LIB proton_ros2)
 set(PROTON_ROS2_MESSAGES
-  # can_msgs
-  # clearpath_platform_msgs
-  # geometry_msgs
-  # nmea_msgs
+  can_msgs
+  clearpath_platform_msgs
+  geometry_msgs
+  nmea_msgs
   rcl_interfaces
   sensor_msgs
   std_msgs
