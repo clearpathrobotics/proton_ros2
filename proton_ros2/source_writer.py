@@ -61,6 +61,10 @@ class CPPWriter:
         else:
             self.write(f'#include "{file}"', indent_level=0)
 
+    def write_global_include(self, file: str, path=None):
+        full_path = os.path.join(path, file) if path else file
+        self.write(f'#include <{full_path}>', indent_level=0)
+
     def write_comment(self, comment, indent_level=1):
         self.write("// {0}".format(comment), indent_level)
 
@@ -74,6 +78,12 @@ class CPPWriter:
 
     def write_header_guard_close(self):
         self.write(f'#endif  // INC_PROTON_ROS2__{self.header_guard}', indent_level=0)
+
+    def write_namespace_open(self, namespace: str):
+        self.write(f'namespace {namespace} {{ ', indent_level=0)
+
+    def write_namespace_close(self, namespace: str):
+        self.write(f'}}  // namespace {namespace}', indent_level=0)
 
     def write_variable(self, variable: Variable, indent_level=0):
         var_string = f"{variable.type} {variable.name}"

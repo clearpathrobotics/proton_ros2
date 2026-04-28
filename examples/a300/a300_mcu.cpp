@@ -26,7 +26,7 @@
 
 std::unique_ptr<proton::Node> node;
 
-void send_log(const char *file, const char* func, int line, uint8_t level, std::string msg, ...);
+void send_log(const char *file, const char* func, int line, uint8_t level, const char *msg, ...);
 
 #define LOG_DEBUG(message, ...)                                                \
   send_log(__FILE_NAME__, __func__, __LINE__, 10U, message, ##__VA_ARGS__)
@@ -39,7 +39,7 @@ void send_log(const char *file, const char* func, int line, uint8_t level, std::
 #define LOG_FATAL(message, ...)                                                \
   send_log(__FILE_NAME__, __func__, __LINE__, 50U, message, ##__VA_ARGS__)
 
-void send_log(const char *file, const char* func, int line, uint8_t level, std::string msg, ...) {
+void send_log(const char *file, const char* func, int line, uint8_t level, const char *msg, ...) {
   auto& log_bundle = node->getBundle("log");
   log_bundle.getSignal("file").setValue<std::string>(file);
   log_bundle.getSignal("line").setValue<uint32_t>(line);
@@ -49,13 +49,13 @@ void send_log(const char *file, const char* func, int line, uint8_t level, std::
   va_list args;
   va_start(args, msg);
   // Get string size
-  int size = std::vsnprintf(nullptr, 0, msg.c_str(), args);
+  int size = std::vsnprintf(nullptr, 0, msg, args);
   va_end(args);
 
   std::string message(size, '\0');
 
   va_start(args, msg);
-  std::vsnprintf(message.data(), size + 1, msg.c_str(), args);
+  std::vsnprintf(message.data(), size + 1, msg, args);
   va_end(args);
 
   log_bundle.getSignal("msg").setValue<std::string>(message);
@@ -81,13 +81,13 @@ void update_power()
   auto& power_bundle = node->getBundle("power");
 
   auto& measured_voltages = power_bundle.getSignal("measured_voltages");
-  for (auto i = 0; i < measured_voltages.getLength(); i++)
+  for (uint32_t i = 0; i < measured_voltages.getLength(); i++)
   {
     measured_voltages.setValue<float>(i, static_cast<float>(rand()));
   }
 
   auto& measured_currents = power_bundle.getSignal("measured_currents");
-  for (auto i = 0; i < measured_currents.getLength(); i++)
+  for (uint32_t i = 0; i < measured_currents.getLength(); i++)
   {
     measured_currents.setValue<float>(i, static_cast<float>(rand()));
   }
@@ -101,7 +101,7 @@ void update_temperature()
 
   auto& temperatures_signal = temperature_bundle.getSignal("temperatures");
 
-  for (auto i = 0; i < temperatures_signal.getLength(); i++)
+  for (uint32_t i = 0; i < temperatures_signal.getLength(); i++)
   {
     temperatures_signal.setValue<float>(i, static_cast<float>(rand()));
   }
@@ -186,7 +186,7 @@ void run_stats_thread()
   }
 }
 
-void clear_needs_reset_callback(proton::BundleHandle& bundle)
+void clear_needs_reset_callback([[maybe_unused]] proton::BundleHandle& bundle)
 {
   static int i = 0;
   needs_reset = false;
@@ -203,7 +203,7 @@ void cmd_lights_callback(proton::BundleHandle& bundle)
   bundle.printBundleVerbose();
 }
 
-void cmd_shutdown_callback(proton::BundleHandle& bundle)
+void cmd_shutdown_callback([[maybe_unused]] proton::BundleHandle& bundle)
 {
   auto& response = node->getBundle("cmd_shutdown_response");
   response.getSignal("success").setValue<bool>(true);

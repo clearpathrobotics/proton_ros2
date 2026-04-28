@@ -26,7 +26,7 @@
 
 std::unique_ptr<proton::Node> node;
 
-void send_log(char *file, const char* func, int line, uint8_t level, char *msg, ...);
+void send_log(const char *file, const char* func, int line, uint8_t level, const char *msg, ...);
 
 #define LOG_DEBUG(message, ...)                                                \
   send_log(__FILE_NAME__, __func__, __LINE__, 10U, message, ##__VA_ARGS__)
@@ -39,7 +39,7 @@ void send_log(char *file, const char* func, int line, uint8_t level, char *msg, 
 #define LOG_FATAL(message, ...)                                                \
   send_log(__FILE_NAME__, __func__, __LINE__, 50U, message, ##__VA_ARGS__)
 
-void send_log(char *file, const char* func, int line, uint8_t level, char *msg, ...) {
+void send_log(const char *file, const char* func, int line, uint8_t level, const char *msg, ...) {
   auto& log_bundle = node->getBundle("log");
   log_bundle.getSignal("file").setValue<std::string>(file);
   log_bundle.getSignal("line").setValue<uint32_t>(line);
@@ -83,7 +83,7 @@ void update_power()
   auto& measured_voltages = power_bundle.getSignal("measured_voltages");
   proton::list_float voltages(measured_voltages.getLength());
 
-  for (auto i = 0; i < measured_voltages.getLength(); i++)
+  for (uint32_t i = 0; i < measured_voltages.getLength(); i++)
   {
     measured_voltages.setValue<float>(i, static_cast<float>(rand()));
   }
@@ -91,7 +91,7 @@ void update_power()
   auto& measured_currents = power_bundle.getSignal("measured_currents");
   proton::list_float currents(measured_currents.getLength());
 
-  for (auto i = 0; i < measured_currents.getLength(); i++)
+  for (uint32_t i = 0; i < measured_currents.getLength(); i++)
   {
     measured_currents.setValue<float>(i, static_cast<float>(rand()));
   }
@@ -106,7 +106,7 @@ void update_temperature()
   auto& temperatures_signal = temperature_bundle.getSignal("temperatures");
   proton::list_float temperatures(temperatures_signal.getLength());
 
-  for (auto i = 0; i < temperatures_signal.getLength(); i++)
+  for (uint32_t i = 0; i < temperatures_signal.getLength(); i++)
   {
     temperatures_signal.setValue<float>(i, static_cast<float>(rand()));
   }
@@ -206,7 +206,6 @@ void run_1hz_thread()
 
 void run_10hz_thread()
 {
-  uint32_t i = 0;
   while(1)
   {
     update_power();
@@ -217,7 +216,6 @@ void run_10hz_thread()
 
 void run_50hz_thread()
 {
-  uint32_t i = 0;
   while(1)
   {
     update_imu();
