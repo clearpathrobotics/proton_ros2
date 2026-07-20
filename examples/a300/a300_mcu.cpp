@@ -16,31 +16,41 @@
  * @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
  */
 
-#include "protoncpp/proton.hpp"
-#include <iostream>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <thread>
 #include <chrono>
+#include <iostream>
+#include <thread>
+#include "protoncpp/proton.hpp"
 
 std::unique_ptr<proton::Node> node;
 
+<<<<<<< HEAD
 void send_log(const char *file, const char* func, int line, uint8_t level, std::string msg, ...);
+=======
+void send_log(const char * file, const char * func, int line, uint8_t level, const char * msg, ...);
+>>>>>>> 3857de9 (Run lint)
 
-#define LOG_DEBUG(message, ...)                                                \
+#define LOG_DEBUG(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 10U, message, ##__VA_ARGS__)
-#define LOG_INFO(message, ...)                                                 \
+#define LOG_INFO(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 20U, message, ##__VA_ARGS__)
-#define LOG_WARNING(message, ...)                                              \
+#define LOG_WARNING(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 30U, message, ##__VA_ARGS__)
-#define LOG_ERROR(message, ...)                                                \
+#define LOG_ERROR(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 40U, message, ##__VA_ARGS__)
-#define LOG_FATAL(message, ...)                                                \
+#define LOG_FATAL(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 50U, message, ##__VA_ARGS__)
 
+<<<<<<< HEAD
 void send_log(const char *file, const char* func, int line, uint8_t level, std::string msg, ...) {
   auto& log_bundle = node->getBundle("log");
+=======
+void send_log(const char * file, const char * func, int line, uint8_t level, const char * msg, ...)
+{
+  auto & log_bundle = node->getBundle("log");
+>>>>>>> 3857de9 (Run lint)
   log_bundle.getSignal("file").setValue<std::string>(file);
   log_bundle.getSignal("line").setValue<uint32_t>(line);
   log_bundle.getSignal("level").setValue<uint32_t>(level);
@@ -65,7 +75,7 @@ void send_log(const char *file, const char* func, int line, uint8_t level, std::
 
 void update_status()
 {
-  auto& status_bundle = node->getBundle("status");
+  auto & status_bundle = node->getBundle("status");
   status_bundle.getSignal("hardware_id").setValue<std::string>("A300_MCU");
   status_bundle.getSignal("firmware_version").setValue<std::string>("3.0.0");
   status_bundle.getSignal("mcu_uptime_sec").setValue<int32_t>(rand());
@@ -78,16 +88,26 @@ void update_status()
 
 void update_power()
 {
-  auto& power_bundle = node->getBundle("power");
+  auto & power_bundle = node->getBundle("power");
 
+<<<<<<< HEAD
   auto& measured_voltages = power_bundle.getSignal("measured_voltages");
   for (auto i = 0; i < measured_voltages.getLength(); i++)
+=======
+  auto & measured_voltages = power_bundle.getSignal("measured_voltages");
+  for (uint32_t i = 0; i < measured_voltages.getLength(); i++)
+>>>>>>> 3857de9 (Run lint)
   {
     measured_voltages.setValue<float>(i, static_cast<float>(rand()));
   }
 
+<<<<<<< HEAD
   auto& measured_currents = power_bundle.getSignal("measured_currents");
   for (auto i = 0; i < measured_currents.getLength(); i++)
+=======
+  auto & measured_currents = power_bundle.getSignal("measured_currents");
+  for (uint32_t i = 0; i < measured_currents.getLength(); i++)
+>>>>>>> 3857de9 (Run lint)
   {
     measured_currents.setValue<float>(i, static_cast<float>(rand()));
   }
@@ -97,9 +117,9 @@ void update_power()
 
 void update_temperature()
 {
-  auto& temperature_bundle = node->getBundle("temperature");
+  auto & temperature_bundle = node->getBundle("temperature");
 
-  auto& temperatures_signal = temperature_bundle.getSignal("temperatures");
+  auto & temperatures_signal = temperature_bundle.getSignal("temperatures");
 
   for (auto i = 0; i < temperatures_signal.getLength(); i++)
   {
@@ -111,7 +131,9 @@ void update_temperature()
 
 void update_emergency_stop()
 {
-  node->getBundle("emergency_stop").getSignal("data").setValue<bool>(!node->getBundle("emergency_stop").getSignal("data").getValue<bool>());
+  node->getBundle("emergency_stop")
+    .getSignal("data")
+    .setValue<bool>(!node->getBundle("emergency_stop").getSignal("data").getValue<bool>());
   node->sendBundle("emergency_stop");
 }
 
@@ -131,12 +153,15 @@ void update_alerts()
 
 void update_pinout_state()
 {
-  auto& pinout_state_bundle = node->getBundle("pinout_state");
+  auto & pinout_state_bundle = node->getBundle("pinout_state");
 
   pinout_state_bundle.getSignal("rails").setValue<proton::list_bool>({rand() % 2});
-  pinout_state_bundle.getSignal("inputs").setValue<proton::list_bool>({rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2});
-  pinout_state_bundle.getSignal("outputs").setValue<proton::list_bool>({rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2});
-  pinout_state_bundle.getSignal("output_periods").setValue<proton::list_uint32>({rand(), rand(), rand(), rand(), rand(), rand(), rand()});
+  pinout_state_bundle.getSignal("inputs").setValue<proton::list_bool>(
+    {rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2});
+  pinout_state_bundle.getSignal("outputs").setValue<proton::list_bool>(
+    {rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2, rand() % 2});
+  pinout_state_bundle.getSignal("output_periods")
+    .setValue<proton::list_uint32>({rand(), rand(), rand(), rand(), rand(), rand(), rand()});
 
   node->sendBundle(pinout_state_bundle);
 }
@@ -151,7 +176,7 @@ void send_request()
 void run_1hz_thread()
 {
   uint32_t i = 0;
-  while(1)
+  while (1)
   {
     LOG_INFO("Test Log %d", i++);
     update_status();
@@ -166,7 +191,7 @@ void run_1hz_thread()
 void run_10hz_thread()
 {
   uint32_t i = 0;
-  while(1)
+  while (1)
   {
     LOG_INFO("Test Log %d", i++);
     update_power();
@@ -178,7 +203,7 @@ void run_10hz_thread()
 
 void run_stats_thread()
 {
-  while(1)
+  while (1)
   {
     node->printStats();
 
@@ -186,36 +211,38 @@ void run_stats_thread()
   }
 }
 
+<<<<<<< HEAD
 void clear_needs_reset_callback(proton::BundleHandle& bundle)
+=======
+void clear_needs_reset_callback([[maybe_unused]] proton::BundleHandle & bundle)
+>>>>>>> 3857de9 (Run lint)
 {
   static int i = 0;
   needs_reset = false;
 
-  auto& response = node->getBundle("clear_needs_reset_response");
+  auto & response = node->getBundle("clear_needs_reset_response");
   response.getSignal("success").setValue<bool>(true);
   response.getSignal("message").setValue<std::string>("Needs Reset Cleared " + std::to_string(i++));
 
   node->sendBundle(response);
 }
 
-void cmd_lights_callback(proton::BundleHandle& bundle)
-{
-  bundle.printBundleVerbose();
-}
+void cmd_lights_callback(proton::BundleHandle & bundle) { bundle.printBundleVerbose(); }
 
+<<<<<<< HEAD
 void cmd_shutdown_callback(proton::BundleHandle& bundle)
+=======
+void cmd_shutdown_callback([[maybe_unused]] proton::BundleHandle & bundle)
+>>>>>>> 3857de9 (Run lint)
 {
-  auto& response = node->getBundle("cmd_shutdown_response");
+  auto & response = node->getBundle("cmd_shutdown_response");
   response.getSignal("success").setValue<bool>(true);
   response.getSignal("message").setValue<std::string>("Shutting Down");
 
   node->sendBundle(response);
 }
 
-void empty_callback(proton::BundleHandle& bundle)
-{
-  bundle.printBundleVerbose();
-}
+void empty_callback(proton::BundleHandle & bundle) { bundle.printBundleVerbose(); }
 
 int main()
 {
@@ -238,4 +265,3 @@ int main()
 
   return 0;
 }
-

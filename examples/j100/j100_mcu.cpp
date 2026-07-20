@@ -16,31 +16,41 @@
  * @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
  */
 
-#include "protoncpp/proton.hpp"
-#include <iostream>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <thread>
 #include <chrono>
+#include <iostream>
+#include <thread>
+#include "protoncpp/proton.hpp"
 
 std::unique_ptr<proton::Node> node;
 
+<<<<<<< HEAD
 void send_log(char *file, const char* func, int line, uint8_t level, char *msg, ...);
+=======
+void send_log(const char * file, const char * func, int line, uint8_t level, const char * msg, ...);
+>>>>>>> 3857de9 (Run lint)
 
-#define LOG_DEBUG(message, ...)                                                \
+#define LOG_DEBUG(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 10U, message, ##__VA_ARGS__)
-#define LOG_INFO(message, ...)                                                 \
+#define LOG_INFO(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 20U, message, ##__VA_ARGS__)
-#define LOG_WARNING(message, ...)                                              \
+#define LOG_WARNING(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 30U, message, ##__VA_ARGS__)
-#define LOG_ERROR(message, ...)                                                \
+#define LOG_ERROR(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 40U, message, ##__VA_ARGS__)
-#define LOG_FATAL(message, ...)                                                \
+#define LOG_FATAL(message, ...) \
   send_log(__FILE_NAME__, __func__, __LINE__, 50U, message, ##__VA_ARGS__)
 
+<<<<<<< HEAD
 void send_log(char *file, const char* func, int line, uint8_t level, char *msg, ...) {
   auto& log_bundle = node->getBundle("log");
+=======
+void send_log(const char * file, const char * func, int line, uint8_t level, const char * msg, ...)
+{
+  auto & log_bundle = node->getBundle("log");
+>>>>>>> 3857de9 (Run lint)
   log_bundle.getSignal("file").setValue<std::string>(file);
   log_bundle.getSignal("line").setValue<uint32_t>(line);
   log_bundle.getSignal("level").setValue<uint32_t>(level);
@@ -65,7 +75,7 @@ void send_log(char *file, const char* func, int line, uint8_t level, char *msg, 
 
 void update_status()
 {
-  auto& status_bundle = node->getBundle("status");
+  auto & status_bundle = node->getBundle("status");
   status_bundle.getSignal("hardware_id").setValue<std::string>("J100_MCU");
   status_bundle.getSignal("firmware_version").setValue<std::string>("3.0.0");
   status_bundle.getSignal("mcu_uptime_sec").setValue<int32_t>(rand());
@@ -78,9 +88,9 @@ void update_status()
 
 void update_power()
 {
-  auto& power_bundle = node->getBundle("power");
+  auto & power_bundle = node->getBundle("power");
 
-  auto& measured_voltages = power_bundle.getSignal("measured_voltages");
+  auto & measured_voltages = power_bundle.getSignal("measured_voltages");
   proton::list_float voltages(measured_voltages.getLength());
 
   for (auto i = 0; i < measured_voltages.getLength(); i++)
@@ -88,7 +98,7 @@ void update_power()
     measured_voltages.setValue<float>(i, static_cast<float>(rand()));
   }
 
-  auto& measured_currents = power_bundle.getSignal("measured_currents");
+  auto & measured_currents = power_bundle.getSignal("measured_currents");
   proton::list_float currents(measured_currents.getLength());
 
   for (auto i = 0; i < measured_currents.getLength(); i++)
@@ -101,9 +111,9 @@ void update_power()
 
 void update_temperature()
 {
-  auto& temperature_bundle = node->getBundle("temperature");
+  auto & temperature_bundle = node->getBundle("temperature");
 
-  auto& temperatures_signal = temperature_bundle.getSignal("temperatures");
+  auto & temperatures_signal = temperature_bundle.getSignal("temperatures");
   proton::list_float temperatures(temperatures_signal.getLength());
 
   for (auto i = 0; i < temperatures_signal.getLength(); i++)
@@ -128,7 +138,7 @@ void update_stop_status()
 
 void update_imu()
 {
-  auto& imu_bundle = node->getBundle("imu");
+  auto & imu_bundle = node->getBundle("imu");
 
   imu_bundle.getSignal("linear_acceleration_x").setValue<double>(static_cast<double>(rand()));
   imu_bundle.getSignal("linear_acceleration_y").setValue<double>(static_cast<double>(rand()));
@@ -143,7 +153,7 @@ void update_imu()
 
 void update_magnetometer()
 {
-  auto& mag_bundle = node->getBundle("magnetometer");
+  auto & mag_bundle = node->getBundle("magnetometer");
 
   mag_bundle.getSignal("magnetic_field_x").setValue<double>(static_cast<double>(rand()));
   mag_bundle.getSignal("magnetic_field_y").setValue<double>(static_cast<double>(rand()));
@@ -152,16 +162,18 @@ void update_magnetometer()
   node->sendBundle(mag_bundle);
 }
 
-std::string gen_random_string(const int len) {
+std::string gen_random_string(const int len)
+{
   static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
   std::string tmp_s;
   tmp_s.reserve(len);
 
-  for (int i = 0; i < len; ++i) {
-      tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  for (int i = 0; i < len; ++i)
+  {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
   }
 
   return tmp_s;
@@ -169,24 +181,33 @@ std::string gen_random_string(const int len) {
 
 void update_nmea()
 {
-  auto& nmea_bundle = node->getBundle("nmea");
+  auto & nmea_bundle = node->getBundle("nmea");
 
-  nmea_bundle.getSignal("sentence").setValue<std::string>(gen_random_string(rand() % nmea_bundle.getSignal("sentence").getCapacity()));
+  nmea_bundle.getSignal("sentence")
+    .setValue<std::string>(
+      gen_random_string(rand() % nmea_bundle.getSignal("sentence").getCapacity()));
 
   node->sendBundle(nmea_bundle);
 }
 
 void update_motor_feedback()
 {
-  auto& feedback_bundle = node->getBundle("motor_feedback");
+  auto & feedback_bundle = node->getBundle("motor_feedback");
 
-  feedback_bundle.getSignal("drivers_current").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("drivers_bridge_temperature").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("drivers_motor_temperature").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("drivers_driver_fault").setValue<proton::list_bool>({static_cast<bool>(rand() % 2), static_cast<bool>(rand() % 2)});
-  feedback_bundle.getSignal("drivers_duty_cycle").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("drivers_measured_velocity").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
-  feedback_bundle.getSignal("drivers_measured_travel").setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_current")
+    .setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_bridge_temperature")
+    .setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_motor_temperature")
+    .setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_driver_fault")
+    .setValue<proton::list_bool>({static_cast<bool>(rand() % 2), static_cast<bool>(rand() % 2)});
+  feedback_bundle.getSignal("drivers_duty_cycle")
+    .setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_measured_velocity")
+    .setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
+  feedback_bundle.getSignal("drivers_measured_travel")
+    .setValue<proton::list_float>({static_cast<float>(rand()), static_cast<float>(rand())});
 
   node->sendBundle(feedback_bundle);
 }
@@ -194,7 +215,7 @@ void update_motor_feedback()
 void run_1hz_thread()
 {
   uint32_t i = 0;
-  while(1)
+  while (1)
   {
     LOG_INFO("Test Log %d", i++);
     update_status();
@@ -206,8 +227,12 @@ void run_1hz_thread()
 
 void run_10hz_thread()
 {
+<<<<<<< HEAD
   uint32_t i = 0;
   while(1)
+=======
+  while (1)
+>>>>>>> 3857de9 (Run lint)
   {
     update_power();
     update_temperature();
@@ -217,8 +242,12 @@ void run_10hz_thread()
 
 void run_50hz_thread()
 {
+<<<<<<< HEAD
   uint32_t i = 0;
   while(1)
+=======
+  while (1)
+>>>>>>> 3857de9 (Run lint)
   {
     update_imu();
     update_magnetometer();
@@ -230,7 +259,7 @@ void run_50hz_thread()
 
 void run_stats_thread()
 {
-  while(1)
+  while (1)
   {
     node->printStats();
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -256,4 +285,3 @@ int main()
 
   return 0;
 }
-

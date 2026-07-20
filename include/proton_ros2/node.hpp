@@ -21,88 +21,96 @@
 
 #include <map>
 
+#include "diagnostic_updater/diagnostic_updater.hpp"
+#include "proton_ros2/factory.hpp"
+#include "proton_ros2/typed.hpp"
 #include "protoncpp/proton.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "diagnostic_updater/diagnostic_updater.hpp"
-#include "proton_ros2/typed.hpp"
-#include "proton_ros2/factory.hpp"
 
-namespace proton::ros2 {
+namespace proton::ros2
+{
 
-namespace keys {
-  static const char *const ROS2 = "ros2";
-  static const char *const TOPICS = "topics";
-  static const char *const SERVICES = "services";
-  static const char *const TOPIC = "topic";
-  static const char *const MESSAGE = "message";
-  static const char *const SERVICE = "service";
-  static const char *const BUNDLE = "bundle";
-  static const char *const REQUEST = "request";
-  static const char *const RESPONSE = "response";
-  static const char *const TIMEOUT = "timeout";
-  static const char *const QOS = "qos";
-  static const char *const PROFILE = "profile";
-  static const char *const HISTORY = "history";
-  static const char *const DEPTH = "depth";
-  static const char *const RELIABILITY = "reliability";
-  static const char *const DURABILITY = "durability";
-}
+namespace keys
+{
+static const char * const ROS2 = "ros2";
+static const char * const TOPICS = "topics";
+static const char * const SERVICES = "services";
+static const char * const TOPIC = "topic";
+static const char * const MESSAGE = "message";
+static const char * const SERVICE = "service";
+static const char * const BUNDLE = "bundle";
+static const char * const REQUEST = "request";
+static const char * const RESPONSE = "response";
+static const char * const TIMEOUT = "timeout";
+static const char * const QOS = "qos";
+static const char * const PROFILE = "profile";
+static const char * const HISTORY = "history";
+static const char * const DEPTH = "depth";
+static const char * const RELIABILITY = "reliability";
+static const char * const DURABILITY = "durability";
+}  // namespace keys
 
-namespace qos {
-  namespace profiles {
-    inline static const std::string DEFAULT = "default";
-    inline static const std::string SYSTEM_DEFAULTS = "system_defaults";
-    inline static const std::string SENSOR_DATA = "sensor_data";
-    inline static const std::string SERVICES = "services";
-    inline static const std::string ROSOUT = "rosout";
+namespace qos
+{
+namespace profiles
+{
+inline static const std::string DEFAULT = "default";
+inline static const std::string SYSTEM_DEFAULTS = "system_defaults";
+inline static const std::string SENSOR_DATA = "sensor_data";
+inline static const std::string SERVICES = "services";
+inline static const std::string ROSOUT = "rosout";
 
-    const std::map<std::string, rclcpp::QoS> profiles = {
-      {DEFAULT, rclcpp::QoS(10)},
-      {SYSTEM_DEFAULTS, rclcpp::SystemDefaultsQoS()},
-      {SENSOR_DATA, rclcpp::SensorDataQoS()},
-      {SERVICES, rclcpp::ServicesQoS()},
-      {ROSOUT, rclcpp::RosoutQoS()},
-    };
-  }
+const std::map<std::string, rclcpp::QoS> profiles = {
+  {DEFAULT, rclcpp::QoS(10)},
+  {SYSTEM_DEFAULTS, rclcpp::SystemDefaultsQoS()},
+  {SENSOR_DATA, rclcpp::SensorDataQoS()},
+  {SERVICES, rclcpp::ServicesQoS()},
+  {ROSOUT, rclcpp::RosoutQoS()},
+};
+}  // namespace profiles
 
-  namespace history {
-    inline static const std::string SYSTEM_DEFAULT = "system_default";
-    inline static const std::string KEEP_LAST = "keep_last";
-    inline static const std::string KEEP_ALL = "keep_all";
+namespace history
+{
+inline static const std::string SYSTEM_DEFAULT = "system_default";
+inline static const std::string KEEP_LAST = "keep_last";
+inline static const std::string KEEP_ALL = "keep_all";
 
-    const std::map<std::string, rmw_qos_history_policy_t> policies = {
-      {SYSTEM_DEFAULT, RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT},
-      {KEEP_LAST, RMW_QOS_POLICY_HISTORY_KEEP_LAST},
-      {KEEP_ALL, RMW_QOS_POLICY_HISTORY_KEEP_ALL},
-    };
-  }
+const std::map<std::string, rmw_qos_history_policy_t> policies = {
+  {SYSTEM_DEFAULT, RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT},
+  {KEEP_LAST, RMW_QOS_POLICY_HISTORY_KEEP_LAST},
+  {KEEP_ALL, RMW_QOS_POLICY_HISTORY_KEEP_ALL},
+};
+}  // namespace history
 
-  namespace reliability {
-    inline static const std::string SYSTEM_DEFAULT = "system_default";
-    inline static const std::string RELIABLE = "reliable";
-    inline static const std::string BEST_EFFORT = "best_effort";
+namespace reliability
+{
+inline static const std::string SYSTEM_DEFAULT = "system_default";
+inline static const std::string RELIABLE = "reliable";
+inline static const std::string BEST_EFFORT = "best_effort";
 
-    const std::map<std::string, rmw_qos_reliability_policy_t> policies = {
-      {SYSTEM_DEFAULT, RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT},
-      {RELIABLE, RMW_QOS_POLICY_RELIABILITY_RELIABLE},
-      {BEST_EFFORT, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT},
-    };
-  }
+const std::map<std::string, rmw_qos_reliability_policy_t> policies = {
+  {SYSTEM_DEFAULT, RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT},
+  {RELIABLE, RMW_QOS_POLICY_RELIABILITY_RELIABLE},
+  {BEST_EFFORT, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT},
+};
+}  // namespace reliability
 
-  namespace durability {
-    inline static const std::string SYSTEM_DEFAULT = "system_default";
-    inline static const std::string TRANSIENT_LOCAL = "transient_local";
-    inline static const std::string VOLATILE = "volatile";
+namespace durability
+{
+inline static const std::string SYSTEM_DEFAULT = "system_default";
+inline static const std::string TRANSIENT_LOCAL = "transient_local";
+inline static const std::string VOLATILE = "volatile";
 
-    const std::map<std::string, rmw_qos_durability_policy_t> policies = {
-      {SYSTEM_DEFAULT, RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT},
-      {TRANSIENT_LOCAL, RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL},
-      {VOLATILE, RMW_QOS_POLICY_DURABILITY_VOLATILE},
-    };
-  }
-}
+const std::map<std::string, rmw_qos_durability_policy_t> policies = {
+  {SYSTEM_DEFAULT, RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT},
+  {TRANSIENT_LOCAL, RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL},
+  {VOLATILE, RMW_QOS_POLICY_DURABILITY_VOLATILE},
+};
+}  // namespace durability
+}  // namespace qos
 
-typedef struct {
+typedef struct
+{
   std::string profile;
   std::string history;
   size_t depth;
@@ -110,14 +118,16 @@ typedef struct {
   std::string durability;
 } QosConfig;
 
-struct TopicConfig {
+struct TopicConfig
+{
   std::string topic;
   std::string message;
   std::string bundle;
   QosConfig qos;
 };
 
-struct ServiceConfig {
+struct ServiceConfig
+{
   std::string topic;
   std::string service;
   QosConfig qos;
@@ -126,7 +136,8 @@ struct ServiceConfig {
   uint32_t timeout;
 };
 
-struct ROS2Config {
+struct ROS2Config
+{
   std::vector<TopicConfig> topics;
   std::vector<ServiceConfig> services;
 };
@@ -141,12 +152,14 @@ public:
 
 private:
   rclcpp::QoS getQoS(QosConfig config);
-  void protonCallback(proton::BundleHandle& bundle);
-  void rosCallback(proton::BundleHandle& bundle);
-  proton::BundleHandle& serviceCallback(proton::BundleHandle & request);
+  void protonCallback(proton::BundleHandle & bundle);
+  void rosCallback(proton::BundleHandle & bundle);
+  proton::BundleHandle & serviceCallback(proton::BundleHandle & request);
   void nodeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
-  void bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& bundle_name);
-  void heartbeatDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& producer);
+  void bundleDiagnostic(
+    diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & bundle_name);
+  void heartbeatDiagnostic(
+    diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string & producer);
 
   std::string config_file_;
   std::string target_;
@@ -165,8 +178,6 @@ private:
   diagnostic_updater::Updater updater_;
 };
 
-}
-
-
+}  // namespace proton::ros2
 
 #endif  // INC_PROTON_ROS2_NODE_HPP_
