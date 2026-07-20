@@ -1,0 +1,4 @@
+*.json
+external/*
+core/include/proton/generated/*
+core/src/generated/*
