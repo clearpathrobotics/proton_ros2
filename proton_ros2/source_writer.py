@@ -14,26 +14,26 @@
 #
 # @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
 
-from typing import List
 import os
+import pathlib
 
 
 class Variable:
-    def __init__(self, name, type, length=0, capacity=0):
+    def __init__(self, name, var_type, length=0, capacity=0):
         self.name = name
-        self.type = type
+        self.type = var_type
         self.length = length
         self.capacity = capacity
 
 
 class Struct:
-    def __init__(self, name, vars):
+    def __init__(self, name, variables):
         self.name = name
-        self.vars = vars
+        self.vars = variables
 
 
 class Function:
-    def __init__(self, name: str, parameters: List[Variable], ret: str):
+    def __init__(self, name: str, parameters: list[Variable], ret: str):
         self.name = name
         self.parameters = parameters
         self.ret = ret
@@ -42,7 +42,7 @@ class Function:
 class CPPWriter:
     tab = '  '
 
-    def __init__(self, path: str, name: str, header_guard: str = None):
+    def __init__(self, path: str, name: str, header_guard: str | None = None):
         self.file_path = path
         self.name = name
         if header_guard is None:
@@ -50,11 +50,11 @@ class CPPWriter:
         else:
             self.header_guard = header_guard
         self.file_name = os.path.join(self.file_path, name)
-        self.file = open(self.file_name, 'w')
+        self.file = pathlib.Path(self.file_name).open('w', encoding='utf-8')
         self.initialize_file()
 
     def write(self, string, indent_level=1):
-        self.file.write('{0}{1}\n'.format(self.tab * indent_level, string))
+        self.file.write(f'{self.tab * indent_level}{string}\n')
 
     def write_include(self, file: str, path=None):
         if '.h' not in file and '.hpp' not in file and '.hh' not in file:
@@ -65,7 +65,7 @@ class CPPWriter:
             self.write(f'#include "{file}"', indent_level=0)
 
     def write_comment(self, comment, indent_level=1):
-        self.write('// {0}'.format(comment), indent_level)
+        self.write(f'// {comment}', indent_level)
 
     def write_newline(self):
         self.write('', 0)
@@ -152,10 +152,10 @@ class CPPWriter:
         self.write('}', indent_level)
 
     def write_enum(
-        self, name: str, enum: List[str], values: List[int] | None = None, indent_level=0
+        self, name: str, enum: list[str], values: list[int] | None = None, indent_level=0
     ):
         self.write(f'typedef enum {name} {{', indent_level)
-        for i in range(0, len(enum)):
+        for i in range(len(enum)):
             if values is not None:
                 self.write(
                     f'{name.upper() + "__" + enum[i].upper()} = {hex(values[i])},',
@@ -171,7 +171,8 @@ class CPPWriter:
         self, count, iter_type='int', iter_name='i', start=0, incr=1, indent_level=1
     ):
         self.write(
-            f'for ({iter_type} {iter_name} = {start}; {iter_name} < {count}; {iter_name} += {incr})',
+            f'for ({iter_type} {iter_name} = {start}; {iter_name} < {count};'
+            f' {iter_name} += {incr})',
             indent_level,
         )
         self.write('{', indent_level)

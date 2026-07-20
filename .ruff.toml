@@ -32,7 +32,7 @@ select = [
     "INP", # flake8-no-pep420
     "T20", # flake8-print
 ]
-ignore = ['D100','D101','D102','D103','D104','D105','D106','D107','D203','D212','D404','D415']
+ignore = ['undocumented-public-module','undocumented-public-class','undocumented-public-method','undocumented-public-function','undocumented-public-package','undocumented-magic-method','undocumented-public-nested-class','undocumented-public-init','incorrect-blank-line-before-class','multi-line-summary-first-line','docstring-starts-with-this','missing-terminal-punctuation','T201','PTH118','SIM115','class-as-data-structure']
 
 [lint.isort]
 # sections.ros = ['rclpy']
