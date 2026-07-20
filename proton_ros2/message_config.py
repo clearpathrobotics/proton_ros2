@@ -14,7 +14,6 @@
 #
 # @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
 
-from typing import List
 from enum import Enum
 import re
 
@@ -205,7 +204,7 @@ class ProtonROS2Config:
             except KeyError:
                 self.stamp = None
 
-            self.mappings: List[ProtonROS2Config.Mapping] = []
+            self.mappings: list[ProtonROS2Config.Mapping] = []
             for m in config[self.MAPPING]:
                 self.mappings.append(ProtonROS2Config.Mapping(m))
 
@@ -228,8 +227,8 @@ class ProtonROS2Config:
             self.ros_type = f'{package}::{self.path}::{self.name}'
             self.hpp_header = f'{package}/{self.path}/{self.snakecase_name}.hpp'
 
-            self.request_mappings: List[ProtonROS2Config.Mapping] = []
-            self.response_mappings: List[ProtonROS2Config.Mapping] = []
+            self.request_mappings: list[ProtonROS2Config.Mapping] = []
+            self.response_mappings: list[ProtonROS2Config.Mapping] = []
 
             try:
                 self.skip = config[self.SKIP]
@@ -249,15 +248,15 @@ class ProtonROS2Config:
                 pass
 
     def camel_to_snake(name):
-        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+        s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
     def __init__(self, config: dict):
         self.config = config
         self.package = config[self.PACKAGE]
 
-        self.messages: List[ProtonROS2Config.Message] = []
-        self.services: List[ProtonROS2Config.Service] = []
+        self.messages: list[ProtonROS2Config.Message] = []
+        self.services: list[ProtonROS2Config.Service] = []
         for m in config[self.MESSAGES]:
             try:
                 self.messages.append(self.Message(self.package, m))
