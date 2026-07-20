@@ -40,7 +40,7 @@ struct convert<proton::ros2::QosConfig>
     {
       rhs.profile = node.as<std::string>();
     }
-    // Map representing a custome QoS profile
+    // Map representing a customer QoS profile
     else if (node.IsMap())
     {
       // History
