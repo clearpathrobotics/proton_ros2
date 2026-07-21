@@ -109,7 +109,7 @@ class CPPWriter:
                 self.write_variable(v, indent_level + 1)
             elif isinstance(v, Struct):
                 self.write_struct(v, indent_level + 1)
-        self.write(f"}} {struct.name};", indent_level)
+        self.write(f'}} {struct.name};', indent_level)
 
     def write_typedef_struct(self, struct: Struct, indent_level=1):
         self.write(f'typedef struct {struct.name} {{', indent_level)

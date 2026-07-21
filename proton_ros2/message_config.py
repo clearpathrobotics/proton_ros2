@@ -155,7 +155,7 @@ class ProtonROS2Config:
                     self.data_type == 'list_bytes'):
                 self.mapping_type = self.MappingType.DYNAMIC_SUBINDEX
             else:
-                raise KeyError(f"Invalid mapping configuration: {config}")
+                raise KeyError(f'Invalid mapping configuration: {config}')
 
     class Message:
         # Message keys

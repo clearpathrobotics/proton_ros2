@@ -109,15 +109,15 @@ def flatten_message(msg_type, ros_path_prefix='', proton_prefix=''):
     fields = {}
     for slot, type_ in zip(msg_type.__slots__, msg_type.SLOT_TYPES):
         name = slot.lstrip('_')
-        ros_path = f"{ros_path_prefix}{name}"
-        proton_name = f"{proton_prefix}{name}"
+        ros_path = f'{ros_path_prefix}{name}'
+        proton_name = f'{proton_prefix}{name}'
         proton_type = ros_type_to_proton_type(type_)
         if proton_type == 'unknown':
             raise KeyError(f'UNKNOWN TYPE {type_.typename}')
 
         # Nested message
         if proton_type == 'nested':
-            nested_cls = get_message("/".join(type_.namespaces + [type_.name]))
+            nested_cls = get_message('/'.join(type_.namespaces + [type_.name]))
             # Define path to stamp
             if name == 'stamp' and nested_cls == Time:
                 fields.update({proton_name: {'stamp': ros_path}})
@@ -130,7 +130,7 @@ def flatten_message(msg_type, ros_path_prefix='', proton_prefix=''):
         # Sequence of nested messages
         elif proton_type == 'list_unbounded' or proton_type == 'list_bounded':
             nested_cls = get_message(
-                "/".join(type_.value_type.namespaces + [type_.value_type.name]))
+                '/'.join(type_.value_type.namespaces + [type_.value_type.name]))
             # Flatten each subfield with array-style prefix
             nested_fields = flatten_message(
                 nested_cls,
@@ -148,7 +148,7 @@ def flatten_message(msg_type, ros_path_prefix='', proton_prefix=''):
         # Array of nested messages
         elif proton_type == 'list_array':
             nested_cls = get_message(
-                "/".join(type_.value_type.namespaces + [type_.value_type.name]))
+                '/'.join(type_.value_type.namespaces + [type_.value_type.name]))
             # Flatten each subfield with array-style prefix
             nested_fields = flatten_message(
                 nested_cls,
@@ -202,7 +202,7 @@ def flatten_package_messages(pkg_name):
     flat_map = {}
 
     try:
-        msg_module = importlib.import_module(f"{pkg_name}.msg")
+        msg_module = importlib.import_module(f'{pkg_name}.msg')
     except ModuleNotFoundError:
         return flat_map
 
@@ -218,7 +218,7 @@ def flatten_package_services(pkg_name):
     """Flatten all services in a ROS2 package."""
     flat_map = {}
     try:
-        srv_module = importlib.import_module(f"{pkg_name}.srv")
+        srv_module = importlib.import_module(f'{pkg_name}.srv')
     except ModuleNotFoundError:
         return flat_map
 
