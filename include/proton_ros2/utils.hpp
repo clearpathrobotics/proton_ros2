@@ -19,18 +19,18 @@
 #ifndef INC_PROTON_ROS2_CONVERSIONS_UTILS_HPP_
 #define INC_PROTON_ROS2_CONVERSIONS_UTILS_HPP_
 
-#include "builtin_interfaces/msg/time.hpp"
 #include "rclcpp/clock.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 
 namespace proton::ros2
 {
 
-class Utils
-{
+class Utils {
 public:
   static builtin_interfaces::msg::Time getTimeStamp();
 };
 
-}  // namespace proton::ros2
+
+}
 
 #endif  // INC_PROTON_ROS2_CONVERSIONS_UTILS_HPP_

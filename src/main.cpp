@@ -16,8 +16,8 @@
  * @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
  */
 
-#include <iostream>
 #include "proton_ros2/node.hpp"
+#include <iostream>
 
 using namespace proton::ros2;
 

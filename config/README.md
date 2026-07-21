@@ -160,3 +160,4 @@ Not supported: :x:
 | `Empty`   | :white_check_mark: |
 | `SetBool` | :white_check_mark: |
 | `Trigger` | :white_check_mark: |
+
