@@ -1,0 +1,9 @@
+repositories:
+  proton_vendor:
+    type: git
+    url: https://github.com/clearpathrobotics/proton_vendor.git
+    version: jazzy
+  clearpath_msgs:
+    type: git
+    url: https://github.com/clearpathrobotics/clearpath_msgs.git
+    version: jazzy
