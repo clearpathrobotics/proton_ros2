@@ -34,6 +34,9 @@ select = [
 ]
 ignore = ['undocumented-public-module','undocumented-public-class','undocumented-public-method','undocumented-public-function','undocumented-public-package','undocumented-magic-method','undocumented-public-nested-class','undocumented-public-init','incorrect-blank-line-before-class','multi-line-summary-first-line','docstring-starts-with-this','missing-terminal-punctuation','T201','PTH118','SIM115','class-as-data-structure']
 
+[lint.per-file-ignores]
+"proton_ros2/proton_ros2_generator" = ["E501"]
+
 [lint.isort]
 # sections.ros = ['rclpy']
 # section-order = ['future', 'standard-library', 'third-party', 'ros', 'first-party', 'local-folder']
