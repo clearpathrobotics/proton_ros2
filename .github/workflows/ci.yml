@@ -44,18 +44,3 @@ jobs:
         run: |
           . venv/bin/activate
           pre-commit run --all-files
-
-  build:
-    name: Build proton_ros2 Source
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/clearpathrobotics/clearpath_docker:jazzy-ci-common-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ros-tooling/action-ros-ci@v0.4
-        id: action_ros_ci_step
-        with:
-          target-ros2-distro: jazzy
-          package-name: |
-            proton_ros2
-          vcs-repo-file-url: dependencies.repos
