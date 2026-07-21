@@ -21,61 +21,50 @@
 #include <chrono>
 #include <iostream>
 
-namespace YAML {
+namespace YAML
+{
 
 template<>
-struct convert<proton::ros2::QosConfig> {
-  static bool decode(const Node& node, proton::ros2::QosConfig& rhs) {
+struct convert<proton::ros2::QosConfig>
+{
+  static bool decode(const Node & node, proton::ros2::QosConfig & rhs)
+  {
     if(!node.IsDefined() || node.IsNull()) {
       rhs.profile = proton::ros2::qos::profiles::SERVICES;
       return true;
     }
 
     // String representing a standard QoS profile
-    if (node.IsScalar())
-    {
+    if (node.IsScalar()) {
       rhs.profile = node.as<std::string>();
     }
     // Map representing a custom QoS profile
-    else if (node.IsMap())
-    {
+    else if (node.IsMap()) {
       // History
-      if (node[proton::ros2::keys::HISTORY])
-      {
+      if (node[proton::ros2::keys::HISTORY]) {
         rhs.history = node[proton::ros2::keys::HISTORY].as<std::string>();
-      }
-      else
-      {
+      } else {
         rhs.history = proton::ros2::qos::history::SYSTEM_DEFAULT;
       }
 
       // Depth
-      if (node[proton::ros2::keys::DEPTH])
-      {
+      if (node[proton::ros2::keys::DEPTH]) {
         rhs.depth = node[proton::ros2::keys::DEPTH].as<size_t>();
-      }
-      else
-      {
+      } else {
         rhs.depth = 10U;
       }
 
       // Reliability
-      if (node[proton::ros2::keys::RELIABILITY])
-      {
+      if (node[proton::ros2::keys::RELIABILITY]) {
         rhs.reliability = node[proton::ros2::keys::RELIABILITY].as<std::string>();
-      }
-      else
-      {
+      } else {
         rhs.reliability = proton::ros2::qos::reliability::SYSTEM_DEFAULT;
       }
 
       // Durability
-      if (node[proton::ros2::keys::DURABILITY])
-      {
+      if (node[proton::ros2::keys::DURABILITY]) {
         rhs.durability = node[proton::ros2::keys::DURABILITY].as<std::string>();
-      }
-      else
-      {
+      } else {
         rhs.durability = proton::ros2::qos::durability::SYSTEM_DEFAULT;
       }
     }
@@ -85,8 +74,10 @@ struct convert<proton::ros2::QosConfig> {
 };
 
 template<>
-struct convert<proton::ros2::TopicConfig> {
-  static bool decode(const Node& node, proton::ros2::TopicConfig& rhs) {
+struct convert<proton::ros2::TopicConfig>
+{
+  static bool decode(const Node & node, proton::ros2::TopicConfig & rhs)
+  {
     if(!node.IsDefined() || node.IsNull()) {
       return false;
     }
@@ -101,8 +92,10 @@ struct convert<proton::ros2::TopicConfig> {
 };
 
 template<>
-struct convert<proton::ros2::ServiceConfig> {
-  static bool decode(const Node& node, proton::ros2::ServiceConfig& rhs) {
+struct convert<proton::ros2::ServiceConfig>
+{
+  static bool decode(const Node & node, proton::ros2::ServiceConfig & rhs)
+  {
     if(!node.IsDefined() || node.IsNull()) {
       return false;
     }
@@ -113,22 +106,16 @@ struct convert<proton::ros2::ServiceConfig> {
     rhs.qos = node[proton::ros2::keys::QOS].as<proton::ros2::QosConfig>();
 
     auto response_node = node[proton::ros2::keys::RESPONSE];
-    if (response_node.IsDefined() && !response_node.IsNull())
-    {
+    if (response_node.IsDefined() && !response_node.IsNull()) {
       rhs.response = response_node.as<std::string>();
-    }
-    else
-    {
+    } else {
       rhs.response = "";
     }
 
     auto timeout_node = node[proton::ros2::keys::TIMEOUT];
-    if (timeout_node.IsDefined() && !timeout_node.IsNull())
-    {
+    if (timeout_node.IsDefined() && !timeout_node.IsNull()) {
       rhs.timeout = timeout_node.as<uint32_t>();
-    }
-    else
-    {
+    } else {
       rhs.timeout = proton::ros2::Node::DEFAULT_TIMEOUT_MS;
     }
 
@@ -137,19 +124,19 @@ struct convert<proton::ros2::ServiceConfig> {
 };
 
 template<>
-struct convert<proton::ros2::ROS2Config> {
-  static bool decode(const Node& node, proton::ros2::ROS2Config& rhs) {
+struct convert<proton::ros2::ROS2Config>
+{
+  static bool decode(const Node & node, proton::ros2::ROS2Config & rhs)
+  {
     if(!node.IsDefined() || node.IsNull()) {
       return false;
     }
 
-    for (auto topic: node[proton::ros2::keys::TOPICS])
-    {
+    for (auto topic: node[proton::ros2::keys::TOPICS]) {
       rhs.topics.push_back(topic.as<proton::ros2::TopicConfig>());
     }
 
-    for (auto service: node[proton::ros2::keys::SERVICES])
-    {
+    for (auto service: node[proton::ros2::keys::SERVICES]) {
       rhs.services.push_back(service.as<proton::ros2::ServiceConfig>());
     }
 
@@ -161,7 +148,9 @@ struct convert<proton::ros2::ROS2Config> {
 
 using namespace proton::ros2;
 
-Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
+Node::Node()
+: rclcpp::Node("proton_ros2"), updater_(this)
+{
   declare_parameter(
       "config_file",
       "/home/rkreinin/proto_ws/src/proton_ros2/examples/j100/j100.yaml");
@@ -179,12 +168,14 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
 
   // Create publishers and subscribers
   for (auto config : ros2_config_.topics) {
-    auto& handle = proton_node_->getBundle(config.bundle);
+    auto & handle = proton_node_->getBundle(config.bundle);
     auto consumers = handle.getConsumers();
     auto producers = handle.getProducers();
 
-    bool handle_consumer = std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end();
-    bool handle_producer = std::find(producers.begin(), producers.end(), proton_node_->getName()) != producers.end();
+    bool handle_consumer = std::find(consumers.begin(), consumers.end(),
+      proton_node_->getName()) != consumers.end();
+    bool handle_producer = std::find(producers.begin(), producers.end(),
+      proton_node_->getName()) != producers.end();
 
     // Proton node consumes this bundle, so the ROS node should publish it.
     if (handle_consumer) {
@@ -216,22 +207,24 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
 
   // Create services
   for (auto config : ros2_config_.services) {
-    auto& request_handle = proton_node_->getBundle(config.request);
+    auto & request_handle = proton_node_->getBundle(config.request);
     auto request_consumers = request_handle.getConsumers();
     auto request_producers = request_handle.getProducers();
-    bool request_consumer = std::find(request_consumers.begin(), request_consumers.end(), proton_node_->getName()) != request_consumers.end();
-    bool request_producer = std::find(request_producers.begin(), request_producers.end(), proton_node_->getName()) != request_producers.end();
+    bool request_consumer = std::find(request_consumers.begin(), request_consumers.end(),
+      proton_node_->getName()) != request_consumers.end();
+    bool request_producer = std::find(request_producers.begin(), request_producers.end(),
+      proton_node_->getName()) != request_producers.end();
 
-    if (config.response != "")
-    {
-      auto &response_handle = proton_node_->getBundle(config.response);
+    if (config.response != "") {
+      auto & response_handle = proton_node_->getBundle(config.response);
       auto response_consumers = response_handle.getConsumers();
       auto response_producers = response_handle.getProducers();
-      bool response_consumer = std::find(response_consumers.begin(), response_consumers.end(), proton_node_->getName()) != response_consumers.end();
-      bool response_producer = std::find(response_consumers.begin(), response_consumers.end(), proton_node_->getName()) != response_producers.end();
+      bool response_consumer = std::find(response_consumers.begin(), response_consumers.end(),
+        proton_node_->getName()) != response_consumers.end();
+      bool response_producer = std::find(response_consumers.begin(), response_consumers.end(),
+        proton_node_->getName()) != response_producers.end();
 
-      if (request_producer && response_consumer)
-      {
+      if (request_producer && response_consumer) {
         auto srv = createTypedService(
           this,
           config.service,
@@ -242,7 +235,8 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           response_handle,
           std::bind(&Node::rosCallback, this, std::placeholders::_1));
         // Register the response callback
-        proton_node_->registerCallback(config.response, std::bind(&IService::responseCallback, srv, std::placeholders::_1));
+        proton_node_->registerCallback(config.response,
+          std::bind(&IService::responseCallback, srv, std::placeholders::_1));
         services_.emplace(config.request, srv);
 
         RCLCPP_INFO(get_logger(), "Created service %s",
@@ -250,9 +244,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           srv->getServiceName(),
           get_name(),
           get_namespace()).c_str());
-      }
-      else if (request_consumer && response_producer)
-      {
+      } else if (request_consumer && response_producer) {
         auto client = createTypedClient(
           this,
           config.service,
@@ -275,15 +267,12 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
             client->getServiceName(),
             get_name(),
             get_namespace()).c_str());
+      } else {
+        throw std::runtime_error("Invalid request and response bundle for service " +
+          config.service);
       }
-      else
-      {
-        throw std::runtime_error("Invalid request and response bundle for service " + config.service);
-      }
-    }
-    else {
-      if (request_producer)
-      {
+    } else {
+      if (request_producer) {
         auto srv = createTypedService(
           this,
           config.service,
@@ -300,9 +289,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           srv->getServiceName(),
           get_name(),
           get_namespace()).c_str());
-      }
-      else if (request_consumer)
-      {
+      } else if (request_consumer) {
         auto client = createTypedClient(
           this,
           config.service,
@@ -323,9 +310,7 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
           client->getServiceName(),
           get_name(),
           get_namespace()).c_str());
-      }
-      else
-      {
+      } else {
         throw std::runtime_error("Invalid request bundle for service " + config.service);
       }
     }
@@ -338,17 +323,16 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
   updater_.add("Proton Statistics", this, &Node::nodeDiagnostic);
 
   // Bundle diagnostics
-  for (auto &[name, handle]: proton_node_->getBundleMap())
-  {
-    updater_.add(name, std::bind(&Node::bundleDiagnostic, this, std::placeholders::_1, handle.getName()));
+  for (auto &[name, handle]: proton_node_->getBundleMap()) {
+    updater_.add(name,
+      std::bind(&Node::bundleDiagnostic, this, std::placeholders::_1, handle.getName()));
   }
 
   // Heartbeat diagnostics
-  for (auto& [name, node]: proton_node_->getConfig().getNodes())
-  {
-    if (node.name != target_ && node.heartbeat.enabled)
-    {
-      updater_.add(node.name, std::bind(&Node::heartbeatDiagnostic, this, std::placeholders::_1, node.name));
+  for (auto & [name, node]: proton_node_->getConfig().getNodes()) {
+    if (node.name != target_ && node.heartbeat.enabled) {
+      updater_.add(node.name,
+        std::bind(&Node::heartbeatDiagnostic, this, std::placeholders::_1, node.name));
     }
   }
 
@@ -363,17 +347,13 @@ Node::Node() : rclcpp::Node("proton_ros2"), updater_(this) {
  * Publish directly to ROS 2.
  * @param bundle
  */
-void Node::protonCallback(proton::BundleHandle &bundle) {
-  if (publishers_.find(bundle.getName()) != publishers_.end())
-  {
+void Node::protonCallback(proton::BundleHandle & bundle)
+{
+  if (publishers_.find(bundle.getName()) != publishers_.end()) {
     publishers_.at(bundle.getName())->publish(bundle);
-  }
-  else if (clients_.find(bundle.getName()) != clients_.end())
-  {
+  } else if (clients_.find(bundle.getName()) != clients_.end()) {
     clients_.at(bundle.getName())->sendRequest(bundle);
-  }
-  else
-  {
+  } else {
     RCLCPP_ERROR(get_logger(), "Invalid bundle in protonCallback %s", bundle.getName().c_str());
   }
 }
@@ -384,7 +364,8 @@ void Node::protonCallback(proton::BundleHandle &bundle) {
  *
  * @param bundle
  */
-void Node::rosCallback(proton::BundleHandle &bundle) {
+void Node::rosCallback(proton::BundleHandle & bundle)
+{
   proton_node_->sendBundle(bundle);
 }
 
@@ -396,12 +377,9 @@ void Node::rosCallback(proton::BundleHandle &bundle) {
  */
 rclcpp::QoS Node::getQoS(QosConfig config)
 {
-  if (config.profile != "")
-  {
+  if (config.profile != "") {
     return proton::ros2::qos::profiles::profiles.at(config.profile);
-  }
-  else
-  {
+  } else {
     rmw_qos_profile_t profile = {
       proton::ros2::qos::history::policies.at(config.history),
       config.depth,
@@ -423,14 +401,15 @@ void Node::nodeDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
   stat.summary(diagnostic_updater::DiagnosticStatusWrapper::OK, "Proton Node statistics");
   stat.add("Config", proton_node_->getConfig().getName());
   stat.add("Node", target_);
-  for (auto& [name, connection] : proton_node_->getConnections())
-  {
+  for (auto & [name, connection] : proton_node_->getConnections()) {
     stat.add(name + " Rx", connection.getRxKbps());
     stat.add(name + " Tx", connection.getTxKbps());
   }
 }
 
-void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& bundle_name)
+void Node::bundleDiagnostic(
+  diagnostic_updater::DiagnosticStatusWrapper & stat,
+  const std::string & bundle_name)
 {
   auto & handle = proton_node_->getBundle(bundle_name);
   auto consumers = handle.getConsumers();
@@ -441,38 +420,29 @@ void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, 
   stat.add("Bundle", handle.getName());
 
   std::size_t i = 0;
-  for (auto& p: producers)
-  {
-    if (i++ < producers.size() - 1)
-    {
+  for (auto & p: producers) {
+    if (i++ < producers.size() - 1) {
       producers_string += p + ", ";
-    }
-    else
-    {
+    } else {
       producers_string += p + "]";
     }
   }
   stat.add("Producers", producers_string);
 
   i = 0;
-  for (auto& c: consumers)
-  {
-    if (i++ < consumers.size() - 1)
-    {
+  for (auto & c: consumers) {
+    if (i++ < consumers.size() - 1) {
       consumers_string += c + ", ";
-    }
-    else
-    {
+    } else {
       consumers_string += c + "]";
     }
   }
   stat.add("Consumers", consumers_string);
 
-  if (std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end())
-  {
+  if (std::find(consumers.begin(), consumers.end(), proton_node_->getName()) != consumers.end()) {
     stat.add("Frequency", handle.getRxps());
-  }
-  else if (std::find(producers.begin(), producers.end(), proton_node_->getName()) != producers.end())
+  } else if (std::find(producers.begin(), producers.end(),
+    proton_node_->getName()) != producers.end())
   {
     stat.add("Frequency", handle.getTxps());
   }
@@ -480,19 +450,19 @@ void Node::bundleDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, 
   stat.summary(diagnostic_updater::DiagnosticStatusWrapper::OK, handle.getName() + " statistics");
 }
 
-void Node::heartbeatDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat, const std::string& producer)
+void Node::heartbeatDiagnostic(
+  diagnostic_updater::DiagnosticStatusWrapper & stat,
+  const std::string & producer)
 {
-  auto& handle = proton_node_->getHeartbeat(producer);
+  auto & handle = proton_node_->getHeartbeat(producer);
   uint32_t hz = handle.getRxps();
 
   proton::NodeConfig node_config = proton_node_->getConfig().getNodes().at(producer);
 
-  if (hz != (1000 / node_config.heartbeat.period))
-  {
-    stat.summary(diagnostic_updater::DiagnosticStatusWrapper::WARN, "Heartbeat does not match period");
-  }
-  else
-  {
+  if (hz != (1000 / node_config.heartbeat.period)) {
+    stat.summary(diagnostic_updater::DiagnosticStatusWrapper::WARN,
+      "Heartbeat does not match period");
+  } else {
     stat.summary(diagnostic_updater::DiagnosticStatusWrapper::OK, "Heartbeat OK");
   }
 
