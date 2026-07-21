@@ -14,25 +14,24 @@
 #
 # @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
 
-import inspect
 import importlib
-import yaml
+import inspect
 
-from rosidl_runtime_py.utilities import get_message
+from builtin_interfaces.msg import Time
+from proton_ros2.message_config import ProtonROS2Config
 from rosidl_parser.definition import (
+    Array,
     BasicType,
+    BoundedSequence,
+    BoundedString,
     NamedType,
     NamespacedType,
     UnboundedSequence,
-    BoundedSequence,
     UnboundedString,
-    BoundedString,
-    Array
 )
+from rosidl_runtime_py.utilities import get_message
+import yaml
 
-from proton_ros2.message_config import ProtonROS2Config
-
-from builtin_interfaces.msg import Time
 
 def ros_type_to_proton_type(field_type):
     """Map a ROS2 field type to a Proton type."""
@@ -123,13 +122,20 @@ def flatten_message(msg_type, ros_path_prefix="", proton_prefix=""):
             if name == 'stamp' and nested_cls == Time:
                 fields.update({proton_name: {'stamp': ros_path}})
             else:
-                fields.update(flatten_message(nested_cls, ros_path_prefix=f"{ros_path}.", proton_prefix=f"{proton_name}_"))
+                fields.update(flatten_message(
+                    nested_cls,
+                    ros_path_prefix=f"{ros_path}.",
+                    proton_prefix=f"{proton_name}_"))
 
         # Sequence of nested messages
         elif proton_type == 'list_unbounded' or proton_type == 'list_bounded':
-            nested_cls = get_message("/".join(type_.value_type.namespaces + [type_.value_type.name]))
+            nested_cls = get_message(
+                "/".join(type_.value_type.namespaces + [type_.value_type.name]))
             # Flatten each subfield with array-style prefix
-            nested_fields = flatten_message(nested_cls, ros_path_prefix=f"{ros_path}.", proton_prefix=f"{proton_name}_")
+            nested_fields = flatten_message(
+                nested_cls,
+                ros_path_prefix=f"{ros_path}.",
+                proton_prefix=f"{proton_name}_")
             for k, v in nested_fields.items():
                 v = v.copy()
                 v['subpath'] = v['ros_path'].split('.')[1]
@@ -141,9 +147,13 @@ def flatten_message(msg_type, ros_path_prefix="", proton_prefix=""):
                 fields[k] = v
         # Array of nested messages
         elif proton_type == 'list_array':
-            nested_cls = get_message("/".join(type_.value_type.namespaces + [type_.value_type.name]))
+            nested_cls = get_message(
+                "/".join(type_.value_type.namespaces + [type_.value_type.name]))
             # Flatten each subfield with array-style prefix
-            nested_fields = flatten_message(nested_cls, ros_path_prefix=f"{ros_path}.", proton_prefix=f"{proton_name}_")
+            nested_fields = flatten_message(
+                nested_cls,
+                ros_path_prefix=f"{ros_path}.",
+                proton_prefix=f"{proton_name}_")
             for k, v in nested_fields.items():
                 v = v.copy()
                 v['subpath'] = v['ros_path'].split('.')[1]
@@ -172,8 +182,8 @@ def flatten_message(msg_type, ros_path_prefix="", proton_prefix=""):
 
     return fields
 
-def flatten_service(srv_type):
 
+def flatten_service(srv_type):
     flat = {}
 
     # Resolve request and response messages
@@ -203,6 +213,7 @@ def flatten_package_messages(pkg_name):
 
     return flat_map
 
+
 def flatten_package_services(pkg_name):
     """Flatten all services in a ROS2 package."""
     flat_map = {}
@@ -217,6 +228,7 @@ def flatten_package_services(pkg_name):
             flat_map[name] = flatten_service(obj)
 
     return flat_map
+
 
 def get_mapping_config(name: str, info: dict) -> dict:
     try:
@@ -238,10 +250,11 @@ def get_mapping_config(name: str, info: dict) -> dict:
             {ProtonROS2Config.Mapping.ROS2_LENGTH: info["bounded"]}
         )
     elif info["bounded"] > 0:
-         # String capacity
+        # String capacity
         pass
 
     return mapping_config
+
 
 def get_package_config(package: str) -> dict:
     package = package.strip()
@@ -283,14 +296,19 @@ def get_package_config(package: str) -> dict:
         }
 
         for k, v in info['request'].items():
-            service_config[ProtonROS2Config.Service.MAPPING][ProtonROS2Config.Service.REQUEST].append(get_mapping_config(k, v))
+            request_mapping = service_config[ProtonROS2Config.Service.MAPPING]
+            request_mapping[ProtonROS2Config.Service.REQUEST].append(
+                get_mapping_config(k, v))
 
         for k, v in info['response'].items():
-            service_config[ProtonROS2Config.Service.MAPPING][ProtonROS2Config.Service.RESPONSE].append(get_mapping_config(k, v))
+            response_mapping = service_config[ProtonROS2Config.Service.MAPPING]
+            response_mapping[ProtonROS2Config.Service.RESPONSE].append(
+                get_mapping_config(k, v))
 
         package_config[ProtonROS2Config.SERVICES].append(service_config)
 
     return package_config
+
 
 if __name__ == '__main__':
     package = "clearpath_platform_msgs"

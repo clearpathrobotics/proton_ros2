@@ -14,27 +14,33 @@
 #
 # @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
 
-from typing import List
 import os
+from typing import List
 
 
 class Variable:
+
     def __init__(self, name, type, length=0, capacity=0):
         self.name = name
         self.type = type
         self.length = length
         self.capacity = capacity
 
+
 class Struct:
+
     def __init__(self, name, vars):
         self.name = name
         self.vars = vars
 
+
 class Function:
+
     def __init__(self, name: str, parameters: List[Variable], ret: str):
         self.name = name
         self.parameters = parameters
         self.ret = ret
+
 
 class CPPWriter:
     tab = "  "
@@ -158,19 +164,26 @@ class CPPWriter:
     def write_case_end(self, indent_level=2):
         self.write('}', indent_level)
 
-    def write_enum(self, name: str, enum: List[str], values: List[int] | None = None, indent_level=0):
+    def write_enum(
+            self, name: str, enum: List[str], values: List[int] | None = None, indent_level=0):
         self.write(f'typedef enum {name} {{', indent_level)
         for i in range(0, len(enum)):
             if values is not None:
-                self.write(f'{name.upper() + "__" + enum[i].upper()} = {hex(values[i])},', indent_level + 1)
+                self.write(f'{name.upper() + "__" + enum[i].upper()}'
+                           f' = {hex(values[i])},',
+                           indent_level + 1)
             else:
                 self.write(f'{name.upper() + "__" + enum[i].upper()},', indent_level + 1)
         if values is None:
             self.write(f'{name.upper()}_COUNT', indent_level + 1)
         self.write(f'}} {name}_e;', indent_level)
 
-    def write_for_loop_start(self, count, iter_type='int', iter_name='i', start=0, incr=1, indent_level=1):
-        self.write(f'for ({iter_type} {iter_name} = {start}; {iter_name} < {count}; {iter_name} += {incr})', indent_level)
+    def write_for_loop_start(
+            self, count, iter_type='int', iter_name='i', start=0, incr=1, indent_level=1):
+        self.write(
+            f'for ({iter_type} {iter_name} = {start}; {iter_name} < {count}; '
+            f'{iter_name} += {incr})',
+            indent_level)
         self.write('{', indent_level)
 
     def write_for_loop_end(self, indent_level=0):
