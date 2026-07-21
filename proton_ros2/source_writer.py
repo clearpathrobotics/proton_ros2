@@ -20,18 +20,18 @@ from typing import List
 
 class Variable:
 
-    def __init__(self, name, type, length=0, capacity=0):
+    def __init__(self, name, var_type, length=0, capacity=0):
         self.name = name
-        self.type = type
+        self.type = var_type
         self.length = length
         self.capacity = capacity
 
 
 class Struct:
 
-    def __init__(self, name, vars):
+    def __init__(self, name, variables):
         self.name = name
-        self.vars = vars
+        self.vars = variables
 
 
 class Function:
@@ -43,7 +43,7 @@ class Function:
 
 
 class CPPWriter:
-    tab = "  "
+    tab = '  '
 
     def __init__(self, path: str, name: str, header_guard: str = None):
         self.file_path = path
@@ -53,15 +53,15 @@ class CPPWriter:
         else:
             self.header_guard = header_guard
         self.file_name = os.path.join(self.file_path, name)
-        self.file = open(self.file_name, "w")
+        self.file = open(self.file_name, 'w')
         self.initialize_file()
 
     def write(self, string, indent_level=1):
-        self.file.write("{0}{1}\n".format(self.tab * indent_level, string))
+        self.file.write('{0}{1}\n'.format(self.tab * indent_level, string))
 
     def write_include(self, file: str, path=None):
-        if ".h" not in file and ".hpp" not in file and ".hh" not in file:
-            file = f"{file}.h"
+        if '.h' not in file and '.hpp' not in file and '.hh' not in file:
+            file = f'{file}.h'
         if path:
             self.write(f'#include "{os.path.join(path, file)}"', indent_level=0)
         else:
@@ -72,10 +72,10 @@ class CPPWriter:
         self.write(f'#include <{full_path}>', indent_level=0)
 
     def write_comment(self, comment, indent_level=1):
-        self.write("// {0}".format(comment), indent_level)
+        self.write('// {0}'.format(comment), indent_level)
 
     def write_newline(self):
-        self.write("", 0)
+        self.write('', 0)
 
     def write_header_guard_open(self):
         self.write(f'#ifndef INC_PROTON_ROS2__{self.header_guard}', indent_level=0)
@@ -92,18 +92,18 @@ class CPPWriter:
         self.write(f'}}  // namespace {namespace}', indent_level=0)
 
     def write_variable(self, variable: Variable, indent_level=0):
-        var_string = f"{variable.type} {variable.name}"
+        var_string = f'{variable.type} {variable.name}'
 
         if isinstance(variable.length, str) or variable.length > 0:
-            var_string += f"[{variable.length}]"
+            var_string += f'[{variable.length}]'
         if isinstance(variable.capacity, str) or variable.capacity > 0:
-            var_string += f"[{variable.capacity}]"
-        var_string += ";"
+            var_string += f'[{variable.capacity}]'
+        var_string += ';'
 
         self.write(var_string, indent_level)
 
     def write_struct(self, struct: Struct, indent_level=1):
-        self.write("struct {", indent_level)
+        self.write('struct {', indent_level)
         for v in struct.vars:
             if isinstance(v, Variable):
                 self.write_variable(v, indent_level + 1)
@@ -112,13 +112,13 @@ class CPPWriter:
         self.write(f"}} {struct.name};", indent_level)
 
     def write_typedef_struct(self, struct: Struct, indent_level=1):
-        self.write(f"typedef struct {struct.name} {{", indent_level)
+        self.write(f'typedef struct {struct.name} {{', indent_level)
         for v in struct.vars:
             if isinstance(v, Variable):
                 self.write_variable(v, indent_level + 1)
             elif isinstance(v, Struct):
                 self.write_struct(v, indent_level + 1)
-        self.write(f"}} {struct.name}_t;", indent_level)
+        self.write(f'}} {struct.name}_t;', indent_level)
 
     def write_extern_variable(self, variable: Variable, indent_level=0):
         self.write(f'extern {variable.type} {variable.name};', indent_level)

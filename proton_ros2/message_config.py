@@ -21,19 +21,19 @@ from typing import List
 
 class ProtonROS2Config:
     # Top level keys
-    PACKAGE = "package"
-    MESSAGES = "messages"
-    SERVICES = "services"
+    PACKAGE = 'package'
+    MESSAGES = 'messages'
+    SERVICES = 'services'
 
     class Mapping:
-        ROS2_PATH = "ros2.path"
-        ROS2_INDEX = "ros2.index"
-        ROS2_LENGTH = "ros2.length"
-        ROS2_SUBPATH = "ros2.subpath"
-        PROTON_SIGNAL = "proton.signal"
-        PROTON_INDEX = "proton.index"
-        PROTON_SUBINDEX = "proton.subindex"
-        TYPE = "type"
+        ROS2_PATH = 'ros2.path'
+        ROS2_INDEX = 'ros2.index'
+        ROS2_LENGTH = 'ros2.length'
+        ROS2_SUBPATH = 'ros2.subpath'
+        PROTON_SIGNAL = 'proton.signal'
+        PROTON_INDEX = 'proton.index'
+        PROTON_SUBINDEX = 'proton.subindex'
+        TYPE = 'type'
 
         class MappingType(Enum):
             SCALAR = 0
@@ -144,7 +144,7 @@ class ProtonROS2Config:
                     self.ros_index is None and
                     self.ros_length > 0 and
                     self.ros_subpath is not None and
-                    self.data_type == "list_bytes"):
+                    self.data_type == 'list_bytes'):
                 self.mapping_type = self.MappingType.FIXED_SUBINDEX
             # ros_msg.field[].subfield = proton.signal[n][proton_subindex]
             elif (self.proton_index is None and
@@ -152,18 +152,18 @@ class ProtonROS2Config:
                     self.ros_index is None and
                     self.ros_length == 0 and
                     self.ros_subpath is not None and
-                    self.data_type == "list_bytes"):
+                    self.data_type == 'list_bytes'):
                 self.mapping_type = self.MappingType.DYNAMIC_SUBINDEX
             else:
                 raise KeyError(f"Invalid mapping configuration: {config}")
 
     class Message:
         # Message keys
-        NAME = "name"
-        PATH = "path"
-        SKIP = "skip"
-        MAPPING = "mapping"
-        STAMP = "stamp"
+        NAME = 'name'
+        PATH = 'path'
+        SKIP = 'skip'
+        MAPPING = 'mapping'
+        STAMP = 'stamp'
 
         def __init__(self, package: str, config: dict):
             self.package = package
@@ -191,12 +191,12 @@ class ProtonROS2Config:
 
     class Service:
         # Message keys
-        NAME = "name"
-        PATH = "path"
-        SKIP = "skip"
-        MAPPING = "mapping"
-        REQUEST = "request"
-        RESPONSE = "response"
+        NAME = 'name'
+        PATH = 'path'
+        SKIP = 'skip'
+        MAPPING = 'mapping'
+        REQUEST = 'request'
+        RESPONSE = 'response'
 
         def __init__(self, package: str, config: dict):
             self.package = package
