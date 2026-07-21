@@ -14,29 +14,25 @@
 #
 # @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
 
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import  Node
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     pkg_proton_ros2 = FindPackageShare('proton_ros2')
 
-    arg_namespace = DeclareLaunchArgument(
-      'namespace',
-      default_value='')
+    arg_namespace = DeclareLaunchArgument('namespace', default_value='')
 
     arg_config_file = DeclareLaunchArgument(
-      'config_file',
-      default_value=PathJoinSubstitution([pkg_proton_ros2, 'examples/a300/a300.yaml'])
+        'config_file',
+        default_value=PathJoinSubstitution([pkg_proton_ros2, 'examples/a300/a300.yaml']),
     )
 
-    arg_target = DeclareLaunchArgument(
-      'target',
-      default_value='pc'
-    )
+    arg_target = DeclareLaunchArgument('target', default_value='pc')
 
     node_a300_proton_ros2 = Node(
         name='proton_ros2',
@@ -44,13 +40,11 @@ def generate_launch_description():
         package='proton_ros2',
         namespace=LaunchConfiguration('namespace'),
         parameters=[
-          {'target': LaunchConfiguration('target')},
-          {'config_file': LaunchConfiguration('config_file')},
+            {'target': LaunchConfiguration('target')},
+            {'config_file': LaunchConfiguration('config_file')},
         ],
-        remappings=[
-          ('/diagnostics', 'diagnostics')
-        ],
-        output='screen'
+        remappings=[('/diagnostics', 'diagnostics')],
+        output='screen',
     )
 
     ld = LaunchDescription()
