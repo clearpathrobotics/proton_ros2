@@ -28,6 +28,12 @@
       ]
     }
   ],
+  "overrides": [
+    {
+      "filename": "**/proton_ros2_generator",
+      "languageId": "python"
+    }
+  ],
   "patterns": [
     {
       "name": "pathname",
@@ -127,6 +133,7 @@
     "ntcalug",
     "Ofast",
     "packethook",
+    "pathlib",
     "pinout",
     "Protobuf",
     "protobuf",
