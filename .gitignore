@@ -2,5 +2,3 @@ __pycache__/
 build/
 *.egg-info/
 test/
-venv/
-.venv/
