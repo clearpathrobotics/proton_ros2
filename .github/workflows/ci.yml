@@ -56,7 +56,7 @@ jobs:
         id: action_ros_ci_step
         with:
           target-ros2-distro: jazzy
-          package_name: |
+          package-name: |
             proton_vendor
             can_msgs
             clearpath_platform_msgs
