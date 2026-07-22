@@ -7,23 +7,19 @@ endif()
 
 # find dependencies
 find_package(proton REQUIRED)
+find_package(proton_ros2_interfaces REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
-
-find_package(std_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
 
 # install(DIRECTORY launch
 #   DESTINATION share/${PROJECT_NAME}
 # )
 
-# ament_python_install_package(${PROJECT_NAME})
-
 # ament_export_include_directories(include)
-# #ament_export_libraries(${PROTON_ROS2_LIB})
-# ament_export_dependencies(${PROTON_ROS2_DEPENDENCIES})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
