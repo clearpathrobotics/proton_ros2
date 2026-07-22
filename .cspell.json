@@ -145,6 +145,7 @@
     "PROTONCPP",
     "protoncpp",
     "Purvis",
+    "pytest",
     "PYTHONPATH",
     "pyyaml",
     "rclc",
