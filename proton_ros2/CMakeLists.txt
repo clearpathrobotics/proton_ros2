@@ -15,17 +15,11 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
 
-find_package(std_msgs REQUIRED)
-
 # install(DIRECTORY launch
 #   DESTINATION share/${PROJECT_NAME}
 # )
 
-# ament_python_install_package(${PROJECT_NAME})
-
 # ament_export_include_directories(include)
-# #ament_export_libraries(${PROTON_ROS2_LIB})
-# ament_export_dependencies(${PROTON_ROS2_DEPENDENCIES})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
