@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(proton REQUIRED)
+find_package(proton_ros2_interfaces REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)

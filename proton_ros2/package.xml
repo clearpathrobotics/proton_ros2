@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend version_gte="2.0.0">proton_vendor</depend>
+  <depend>proton_ros2_interfaces</depend>
 
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
