@@ -9,21 +9,13 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend version_gte="1.0.0">proton_vendor</depend>
+  <depend version_gte="2.0.0">proton_vendor</depend>
 
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rosidl_runtime_py</depend>
-  <depend>rosidl_parser</depend>
-  <depend>diagnostic_updater</depend>
-
-  <depend>can_msgs</depend>
-  <depend>clearpath_platform_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>nmea_msgs</depend>
   <depend>rcl_interfaces</depend>
-  <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>std_srvs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

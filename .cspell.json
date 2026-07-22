@@ -135,6 +135,7 @@
     "packethook",
     "pathlib",
     "pinout",
+    "pluginlib",
     "Protobuf",
     "protobuf",
     "PROTOC",
