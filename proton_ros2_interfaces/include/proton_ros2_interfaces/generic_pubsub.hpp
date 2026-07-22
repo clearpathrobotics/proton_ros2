@@ -42,7 +42,8 @@ public:
   GenericPublisher(
     rclcpp::Node * node, const std::string & topic,
     const std::string & msg_type, const rclcpp::QoS & qos,
-    proton_registry_t * registry, SerializeFn serialize)
+    proton_registry_t * registry, const std::vector<std::string> & trigger_bundles,
+    SerializeFn serialize)
   : registry_(registry), serialize_(std::move(serialize))
   {
     pub_ = node->create_generic_publisher(topic, msg_type, qos);
@@ -64,7 +65,9 @@ public:
   GenericSubscription(
     rclcpp::Node * node, const std::string & topic,
     const std::string & msg_type, const rclcpp::QoS & qos,
-    protoncpp::node_builder::GeneratedNode & proton_node, DeserializeAndConvertFn convert)
+    protoncpp::node_builder::GeneratedNode & proton_node,
+    const std::vector<std::string> & target_bundles,
+    DeserializeAndConvertFn convert)
   {
     sub_ = node->create_generic_subscription(topic, msg_type, qos,
         [&proton_node, convert = std::move(convert)]
