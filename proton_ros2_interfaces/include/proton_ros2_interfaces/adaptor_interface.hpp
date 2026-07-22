@@ -54,12 +54,12 @@ public:
     const rclcpp::QoS & qos, proton_registry_t * registry, SerializeFn serialize) const = 0;
 
   /**
-   * @brief Create subscription: deserializes ROS message, writes to signal registry
+   * @brief Create subscription: deserializes ROS message, writes to signal registry, optionally triggers bundles
    */
   virtual std::unique_ptr<GenericSubscription> createSubscription(
     rclcpp::Node * node, const std::string & topic, const rclcpp::QoS & qos,
-    protoncpp::node_builder::GeneratedNode & proton_node, DeserializeAndConvertFn convert,
-    ConversionCompleteCallback callback) const = 0;
+    protoncpp::node_builder::GeneratedNode & proton_node,
+    DeserializeAndConvertFn convert) const = 0;
 };
 
 }  // namespace proton_ros2_interfaces

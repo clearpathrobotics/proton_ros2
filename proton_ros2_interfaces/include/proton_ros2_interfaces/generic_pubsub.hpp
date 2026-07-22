@@ -64,14 +64,12 @@ public:
   GenericSubscription(
     rclcpp::Node * node, const std::string & topic,
     const std::string & msg_type, const rclcpp::QoS & qos,
-    protoncpp::node_builder::GeneratedNode & proton_node, DeserializeAndConvertFn convert,
-    ConversionCompleteCallback callback)
+    protoncpp::node_builder::GeneratedNode & proton_node, DeserializeAndConvertFn convert)
   {
     sub_ = node->create_generic_subscription(topic, msg_type, qos,
-        [&proton_node, convert = std::move(convert), cb = std::move(callback)]
+        [&proton_node, convert = std::move(convert)]
         (std::shared_ptr<rclcpp::SerializedMessage> msg) {
           convert(*msg, proton_node);
-          cb();
       });
   }
 
