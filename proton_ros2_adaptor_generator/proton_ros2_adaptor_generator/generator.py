@@ -92,7 +92,7 @@ def generate_package_xml(
         version=package_config.version,
         maintainer_name=package_config.maintainer_name,
         maintainer_email=package_config.maintainer_email,
-        license=package_config.license,
+        license=package_config.pkg_license,
         ros_msg_dependencies=sorted(adaptor_config.ros_msg_dependencies),
     )
 
@@ -186,7 +186,7 @@ def generate_package(
 
     print(f'\nSuccessfully generated {package_name}')
     print(f'  Messages: {len(adaptor_config.messages)}')
-    print(f'  ROS dependencies: {', '.join(sorted(adaptor_config.ros_msg_dependencies))}')
+    print(f'  ROS dependencies: {", ".join(sorted(adaptor_config.ros_msg_dependencies))}')
 
     return 0
 

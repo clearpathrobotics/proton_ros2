@@ -110,7 +110,7 @@ class MessageBinding:
         return self.ros2_type.split('/')[0]
 
     @classmethod
-    def from_dict(cls, d: dict) -> "MessageBinding":
+    def from_dict(cls, d: dict) -> 'MessageBinding':
         """Parse a message binding from YAML dict format."""
         mappings = [Mapping.from_dict(m) for m in d.get('mapping', [])]
         return cls(
@@ -268,4 +268,4 @@ class PackageConfig:
     version: str = '0.0.1'
     maintainer_name: str = 'Unknown'
     maintainer_email: str = 'unknown@example.com'
-    license: str = 'TODO: License declaration'
+    pkg_license: str = 'TODO: License declaration'
