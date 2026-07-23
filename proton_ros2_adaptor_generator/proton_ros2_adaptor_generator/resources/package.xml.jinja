@@ -11,18 +11,12 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>pluginlib</build_depend>
-  <build_depend>proton_ros2_interfaces</build_depend>
-  <build_depend>rclcpp</build_depend>
+  <depend>pluginlib</depend>
+  <depend>proton_vendor</depend>
+  <depend>proton_ros2_interfaces</depend>
+  <depend>rclcpp</depend>
 {% for dep in ros_msg_dependencies %}
-  <build_depend>{{ dep }}</build_depend>
-{% endfor %}
-
-  <exec_depend>pluginlib</exec_depend>
-  <exec_depend>proton_ros2_interfaces</exec_depend>
-  <exec_depend>rclcpp</exec_depend>
-{% for dep in ros_msg_dependencies %}
-  <exec_depend>{{ dep }}</exec_depend>
+  <depend>{{ dep }}</depend>
 {% endfor %}
 
   <test_depend>ament_lint_auto</test_depend>

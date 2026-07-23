@@ -45,7 +45,8 @@ class Mapping:
     ros_index: Optional[int] = None  # Array index for ROS_INDEXED mappings
 
     # Resolved at generation time
-    signal_id: Optional[str] = None  # Signal ID constant name (e.g., "SIGNAL_ID_TEMPERATURE")
+    signal_id: Optional[int] = None  # Signal ID constant name (e.g., "SIGNAL_ID_TEMPERATURE")
+    signal_capacity: Optional[int] = None # Signal capacity for repeated types (bytes, string)
 
     @property
     def mapping_type(self) -> MappingType:
@@ -140,6 +141,97 @@ class AdaptorConfig:
         messages = [MessageBinding.from_dict(m) for m in data.get("messages", [])]
 
         return cls(messages=messages)
+
+    def resolve_signal_ids(self, proton_config_path: Path) -> list[str]:
+        """
+        Resolve signal IDs from proton config file.
+
+        Args:
+            proton_config_path: Path to proton YAML config with signals stanza
+
+        Returns:
+            List of error messages (empty if all resolved successfully)
+        """
+        # Load proton config
+        with open(proton_config_path) as f:
+            proton_data = yaml.safe_load(f)
+
+        # Build signal name -> id lookup
+        signal_lookup: dict[str, int] = {}
+        for sig in proton_data.get("signals", []):
+            name = sig.get("name")
+            sig_id = sig.get("id")
+            if name and sig_id is not None:
+                # Handle hex strings (e.g., "0x1000") or integers
+                if isinstance(sig_id, str):
+                    sig_id = int(sig_id, 0)  # auto-detect base (handles 0x prefix)
+                signal_lookup[name] = sig_id
+
+        # Resolve each mapping's signal_id
+        errors = []
+        for msg in self.messages:
+            for mapping in msg.mappings:
+                if mapping.signal_name in signal_lookup:
+                    mapping.signal_id = signal_lookup[mapping.signal_name]
+                else:
+                    errors.append(
+                        f"Signal '{mapping.signal_name}' not found in proton config "
+                        f"(binding '{msg.name}', field '{mapping.ros_path}')"
+                    )
+
+        return errors
+
+    def resolve_signal_capacities(self, proton_config_path: Path) -> list[str]:
+        """
+        Resolve signal capacities for repeated types from proton config file.
+
+        Args:
+            proton_config_path: Path to proton YAML config with signals stanza
+
+        Returns:
+            List of error messages (empty if all resolved successfully)
+        """
+        # Load proton config
+        with open(proton_config_path) as f:
+            proton_data = yaml.safe_load(f)
+
+        errors = []
+
+        # Build signal name -> capacity lookup
+        signal_lookup: dict[str, int] = {}
+        for sig in proton_data.get("signals", []):
+            name = sig.get("name")
+            sig_cap = sig.get("capacity")
+            sig_value = sig.get("value")
+            sig_type = sig.get("type")
+            if name is not None:
+                if sig_cap is not None:
+                    # Handle hex strings (e.g., "0x1000") or integers
+                    if isinstance(sig_cap, str):
+                        sig_cap = int(sig_cap, 0)  # auto-detect base (handles 0x prefix)
+                    signal_lookup[name] = sig_cap
+                # if signal has a default value
+                if sig_value is not None:
+                    if sig_type == "bytes":
+                        if sig_cap is None:
+                            signal_lookup[name] = len(sig_value)
+                        elif sig_cap < len(sig_value):
+                            errors.append(f"Signal '{name}' has default value longer than capacity "
+                                          f"({len(sig_value)} > {sig_cap})")
+                    elif sig_type == "string":
+                        if sig_cap is None or sig_cap == len(sig_value):
+                            signal_lookup[name] = len(sig_value) + 1
+                        elif sig_cap < len(sig_value):
+                            errors.append(f"Signal '{name}' has default value longer than capacity "
+                                          f"({len(sig_value)} > {sig_cap})")
+
+        for msg in self.messages:
+            for mapping in msg.mappings:
+                if mapping.signal_name in signal_lookup:
+                    mapping.signal_capacity = signal_lookup[mapping.signal_name]
+
+        return errors
+
 
     def validate(self) -> list[str]:
         """Validate configuration and return list of errors."""

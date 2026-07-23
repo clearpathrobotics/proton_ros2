@@ -74,7 +74,7 @@ def generate_cmakelists(
 
     output_file = output_dir / "CMakeLists.txt"
     output_file.write_text(content)
-    print(f"Generated: {output_file.relative_to(output_dir)}")
+    print(f"  Generated: {output_file.relative_to(output_dir)}")
 
 
 def generate_package_xml(
@@ -117,7 +117,7 @@ def generate_plugins_xml(
 
     output_file = output_dir / "plugins.xml"
     output_file.write_text(content)
-    print(f"Generated: {output_file.relative_to(output_dir)}")
+    print(f"  Generated: {output_file.relative_to(output_dir)}")
 
 
 def generate_package(
@@ -137,6 +137,24 @@ def generate_package(
     if errors:
         print("Configuration errors:", file=sys.stderr)
         for error in errors:
+            print(f"  - {error}", file=sys.stderr)
+        return 1
+
+    # Resolve signal IDs from proton config
+    print(f"Resolving signal IDs from: {config_path}")
+    signal_id_errors = adaptor_config.resolve_signal_ids(config_path)
+    if signal_id_errors:
+        print("Signal ID resolution errors:", file=sys.stderr)
+        for error in signal_id_errors:
+            print(f"  - {error}", file=sys.stderr)
+        return 1
+
+    # Get signal capacities for repeated types
+    print(f"Identifying signal capacities from: {config_path}")
+    signal_capacity_errors = adaptor_config.resolve_signal_capacities(config_path)
+    if signal_capacity_errors:
+        print("Signal capacity resolution errors:", file=sys.stderr)
+        for error in signal_capacity_errors:
             print(f"  - {error}", file=sys.stderr)
         return 1
 

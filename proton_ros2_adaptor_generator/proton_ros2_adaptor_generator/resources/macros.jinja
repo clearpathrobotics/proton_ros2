@@ -18,7 +18,7 @@
 
   Parameters:
     m - Mapping object with:
-      - signal_id: proton signal ID constant name
+      - signal_id: proton signal ID
       - ros_path: dot-separated path in ROS message (e.g., "header.frame_id")
       - ros_index: (optional) array index for indexed access
       - data_type: proton type name (double, float, int32, etc.)
@@ -26,14 +26,14 @@
 {% macro to_ros(m) %}
 {
 {# Create temporary type value #}
-{{ CPP_TYPE[m.data_type] }} tmp;
+  {{ CPP_TYPE[m.data_type] }} tmp;
 {% if m.data_type in ['string', 'bytes'] %}
   {# Capacity types need to be sized correctly #}
-  tmp.resize({{ m.capacity }});
+  tmp.resize({{ m.signal_capacity }});
 {% endif %}
-  proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(registry, m.signal_id);
+  proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(registry, {{ m.signal_id }});
   if (sig.get(tmp) == PROTON_OK) {
-{% if m.ros_index is defined %}
+{% if m.ros_index is not none %}
   {# Indexed array access #}
     msg.{{ m.ros_path }}[{{ m.ros_index }}] = tmp;
 {% else %}
@@ -52,25 +52,25 @@
 
 {% macro to_proton(m) %}
 {
-proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(generated_node.registry(), m.signal_id);
-{% if m.ros_index is defined %}
+  proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(generated_node.registry(), {{ m.signal_id }});
+{% if m.ros_index is not none %}
 {# Indexed array access #}
 {% if m.data_type in ['string', 'bytes'] %}
 {# Capacity types cannot be statically cast. But this will be caught via static_assert #}
-{{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }}[{{ m.ros_index }}];
+  {{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }}[{{ m.ros_index }}];
 {% else %}
-{{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }}[{{ m.ros_index }}]);
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }}[{{ m.ros_index }}]);
 {% endif %}
 {% else %}
 {# Scalar access #}
 {% if m.data_type in ['string', 'bytes'] %}
-{{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }};
+  {{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }};
 {% else %}
-{{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }});
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }});
 {% endif %}
 {% endif %}
 
-sig.set(val);
+  sig.set(val);
 }
 {% endmacro %}
 

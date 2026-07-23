@@ -11,6 +11,7 @@ endif()
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(proton_vendor REQUIRED)
 find_package(proton_ros2_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 {% for dep in ros_msg_dependencies %}
