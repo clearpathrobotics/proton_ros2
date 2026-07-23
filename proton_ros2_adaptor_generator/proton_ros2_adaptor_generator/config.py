@@ -265,4 +265,4 @@ class PackageConfig:
     version: str = "0.0.1"
     maintainer_name: str = "Unknown"
     maintainer_email: str = "unknown@example.com"
-    license: str = "Apache-2.0"
+    license: str = "TODO: TODO: License declaration"
