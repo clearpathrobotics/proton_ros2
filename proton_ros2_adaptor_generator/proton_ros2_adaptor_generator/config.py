@@ -21,7 +21,7 @@ methods for parsing and validation.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import auto, Enum
 from pathlib import Path
 from typing import Optional
 
@@ -72,7 +72,8 @@ class MessageBinding:
     name: str  # Unique binding name (e.g., "BoardTemps")
     ros2_type: str  # Fully qualified ROS type (e.g., "clearpath_platform_msgs/msg/Temperature")
     mappings: list[Mapping] = field(default_factory=list)
-    stamp_path: Optional[str] = None  # Path to timestamp field for injection (e.g., "header.stamp")
+    # Path to timestamp field for injection (e.g., "header.stamp")
+    stamp_path: Optional[str] = None
 
     @property
     def adaptor_class(self) -> str:
@@ -90,7 +91,8 @@ class MessageBinding:
 
     @property
     def ros_cpp_type(self) -> str:
-        """Convert ROS type to C++ type (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist')."""
+        """Convert ROS type to C++ type
+        (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist')."""
         return self.ros2_type.replace("/", "::")
 
     @property
@@ -152,11 +154,13 @@ class AdaptorConfig:
             seen.add(name)
 
         # Validate data types
-        valid_types = {"double", "float", "int32", "int64", "uint32", "uint64", "bool", "string", "bytes"}
+        valid_types = {"double", "float", "int32",
+                       "int64", "uint32", "uint64", "bool", "string", "bytes"}
         for msg in self.messages:
             for mapping in msg.mappings:
                 if mapping.data_type not in valid_types:
-                    errors.append(f"Invalid data type '{mapping.data_type}' in binding '{msg.name}'")
+                    errors.append(
+                        f"Invalid data type '{mapping.data_type}' in binding '{msg.name}'")
 
         return errors
 

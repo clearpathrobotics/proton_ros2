@@ -24,8 +24,8 @@ Usage:
 """
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
