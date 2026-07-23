@@ -53,7 +53,9 @@ public:
 
   void publish(const std::string & bundle_name)
   {
-    if (std::find(trigger_bundles_.begin(), trigger_bundles_.end(), bundle_name) != trigger_bundles_.end()) {
+    if (std::find(trigger_bundles_.begin(), trigger_bundles_.end(),
+        bundle_name) != trigger_bundles_.end())
+    {
       pub_->publish(serialize_(registry_));
     }
   }
@@ -72,7 +74,8 @@ public:
     const std::string & msg_type, const rclcpp::QoS & qos,
     proton::node_builder::GeneratedNode & proton_node,
     const std::vector<std::string> & target_bundles,
-    DeserializeAndConvertFn convert) : target_bundles_(target_bundles)
+    DeserializeAndConvertFn convert)
+  : target_bundles_(target_bundles)
   {
     sub_ = node->create_generic_subscription(topic, msg_type, qos,
         [&proton_node, convert = std::move(convert)]

@@ -46,7 +46,7 @@ class Mapping:
 
     # Resolved at generation time
     signal_id: Optional[int] = None  # Signal ID constant name (e.g., "SIGNAL_ID_TEMPERATURE")
-    signal_capacity: Optional[int] = None # Signal capacity for repeated types (bytes, string)
+    signal_capacity: Optional[int] = None  # Signal capacity for repeated types (bytes, string)
 
     @property
     def mapping_type(self) -> MappingType:
@@ -216,14 +216,14 @@ class AdaptorConfig:
                         if sig_cap is None:
                             signal_lookup[name] = len(sig_value)
                         elif sig_cap < len(sig_value):
-                            errors.append(f"Signal '{name}' has default value longer than capacity "
-                                          f"({len(sig_value)} > {sig_cap})")
+                            errors.append(f"Signal '{name}' has default value longer "
+                                          f"than capacity: ({len(sig_value)} > {sig_cap})")
                     elif sig_type == "string":
                         if sig_cap is None or sig_cap == len(sig_value):
                             signal_lookup[name] = len(sig_value) + 1
                         elif sig_cap < len(sig_value):
-                            errors.append(f"Signal '{name}' has default value longer than capacity "
-                                          f"({len(sig_value)} > {sig_cap})")
+                            errors.append(f"Signal '{name}' has default value longer "
+                                          f"than capacity: ({len(sig_value)} > {sig_cap})")
 
         for msg in self.messages:
             for mapping in msg.mappings:
@@ -231,7 +231,6 @@ class AdaptorConfig:
                     mapping.signal_capacity = signal_lookup[mapping.signal_name]
 
         return errors
-
 
     def validate(self) -> list[str]:
         """Validate configuration and return list of errors."""
