@@ -11,12 +11,12 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'PyYAML', 'Jinja2'],
     zip_safe=True,
     maintainer='Tom Wallis',
     maintainer_email='thomas.wallis@rockwellautomation.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Proton ROS 2 message bridge package generator',
+    license='Apache 2.0',
     extras_require={
         'test': [
             'pytest',
