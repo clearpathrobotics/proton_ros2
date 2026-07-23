@@ -60,7 +60,7 @@ public:
    */
   virtual std::unique_ptr<GenericSubscription> createSubscription(
     rclcpp::Node * node, const std::string & topic, const rclcpp::QoS & qos,
-    protoncpp::node_builder::GeneratedNode & proton_node,
+    proton::node_builder::GeneratedNode & proton_node,
     const std::vector<std::string> & target_bundles,
     DeserializeAndConvertFn convert) const = 0;
 };
