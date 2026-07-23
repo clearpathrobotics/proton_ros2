@@ -70,7 +70,8 @@ public:
   {
     return std::make_unique<proton_ros2_interfaces::GenericSubscription>(
       node, topic, getMessageType(), qos, proton_node, target_bundles,
-      [](const rclcpp::SerializedMessage & serialized, proton::node_builder::GeneratedNode & generated_node) {
+      [](const rclcpp::SerializedMessage & serialized,
+      proton::node_builder::GeneratedNode & generated_node) {
         {{ binding.ros_cpp_type }} msg;
         rclcpp::Serialization<{{ binding.ros_cpp_type }}> serializer;
         serializer.deserialize_message(&serialized, &msg);
