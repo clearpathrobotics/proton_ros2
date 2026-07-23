@@ -23,6 +23,7 @@ methods for parsing and validation.
 from dataclasses import dataclass, field
 from enum import auto, Enum
 from pathlib import Path
+import re
 from typing import Optional
 
 import yaml
@@ -45,7 +46,7 @@ class Mapping:
     ros_index: Optional[int] = None  # Array index for ROS_INDEXED mappings
 
     # Resolved at generation time
-    signal_id: Optional[int] = None  # Signal ID constant name (e.g., "SIGNAL_ID_TEMPERATURE")
+    signal_id: Optional[int] = None  # Signal ID integer
     signal_capacity: Optional[int] = None  # Signal capacity for repeated types (bytes, string)
 
     @property
@@ -85,7 +86,6 @@ class MessageBinding:
     def source_file(self) -> str:
         """Generate source filename for this adaptor."""
         # Convert CamelCase to snake_case
-        import re
 
         name = re.sub(r"(?<!^)(?=[A-Z])", "_", self.name).lower()
         return f"{name}_adaptor.cpp"
@@ -99,7 +99,7 @@ class MessageBinding:
     @property
     def hpp_include(self) -> str:
         """Generate C++ include path for ROS message header."""
-        return self.ros2_type.lower().replace("/msg/", "/msg/").replace("/srv/", "/srv/") + ".hpp"
+        return self.ros2_type.lower().replace("/msg/", "/msg/") + ".hpp"
 
     @property
     def ros_package(self) -> str:
