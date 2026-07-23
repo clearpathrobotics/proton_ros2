@@ -83,19 +83,3 @@ sig.set(val);
 {% macro inject_timestamp(stamp_path) %}
 msg.{{ stamp_path }} = node->get_clock()->now();
 {% endmacro %}
-
-{#
-  Convert ROS 2 type string to C++ include path.
-  e.g., "geometry_msgs/msg/Twist" -> "geometry_msgs/msg/twist.hpp"
-#}
-{% macro ros_type_to_include(ros_type) %}
-{{ ros_type | lower | replace('/msg/', '/msg/') | replace('/srv/', '/srv/') }}.hpp
-{% endmacro %}
-
-{#
-  Convert ROS 2 type string to C++ type.
-  e.g., "geometry_msgs/msg/Twist" -> "geometry_msgs::msg::Twist"
-#}
-{% macro ros_type_to_cpp(ros_type) %}
-{{ ros_type | replace('/', '::') }}
-{% endmacro %}

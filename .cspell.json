@@ -59,6 +59,7 @@
     "clangd",
     "clearpath",
     "clearpathrobotics",
+    "cmakelists",
     "colcon",
     "commandable",
     "contactors",
