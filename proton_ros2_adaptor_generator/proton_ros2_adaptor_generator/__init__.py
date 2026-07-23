@@ -18,7 +18,7 @@ Proton ROS 2 Adaptor Generator.
 Generates pluginlib adaptor packages from YAML configuration files.
 """
 
-__version__ = "0.0.1"
+__version__ = '0.0.1'
 
 from .config import (
     AdaptorConfig,
@@ -30,10 +30,10 @@ from .config import (
 from .generator import generate_package
 
 __all__ = [
-    "AdaptorConfig",
-    "Mapping",
-    "MappingType",
-    "MessageBinding",
-    "PackageConfig",
-    "generate_package",
+    'AdaptorConfig',
+    'Mapping',
+    'MappingType',
+    'MessageBinding',
+    'PackageConfig',
+    'generate_package',
 ]

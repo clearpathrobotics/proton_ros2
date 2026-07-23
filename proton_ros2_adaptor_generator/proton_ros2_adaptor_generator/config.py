@@ -57,13 +57,13 @@ class Mapping:
         return MappingType.SCALAR
 
     @classmethod
-    def from_dict(cls, d: dict) -> "Mapping":
+    def from_dict(cls, d: dict) -> 'Mapping':
         """Parse a mapping from YAML dict format."""
         return cls(
-            ros_path=d["ros2.path"],
-            signal_name=d["proton.signal"],
-            data_type=d["type"],
-            ros_index=d.get("ros2.index"),
+            ros_path=d['ros2.path'],
+            signal_name=d['proton.signal'],
+            data_type=d['type'],
+            ros_index=d.get('ros2.index'),
         )
 
 
@@ -80,15 +80,15 @@ class MessageBinding:
     @property
     def adaptor_class(self) -> str:
         """Generate C++ class name for this adaptor."""
-        return f"{self.name}Adaptor"
+        return f'{self.name}Adaptor'
 
     @property
     def source_file(self) -> str:
         """Generate source filename for this adaptor."""
         # Convert CamelCase to snake_case
 
-        name = re.sub(r"(?<!^)(?=[A-Z])", "_", self.name).lower()
-        return f"{name}_adaptor.cpp"
+        name = re.sub(r'(?<!^)(?=[A-Z])', '_', self.name).lower()
+        return f'{name}_adaptor.cpp'
 
     @property
     def ros_cpp_type(self) -> str:
@@ -97,27 +97,27 @@ class MessageBinding:
 
         (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist').
         """
-        return self.ros2_type.replace("/", "::")
+        return self.ros2_type.replace('/', '::')
 
     @property
     def hpp_include(self) -> str:
         """Generate C++ include path for ROS message header."""
-        return self.ros2_type.lower().replace("/msg/", "/msg/") + ".hpp"
+        return self.ros2_type.lower().replace('/msg/', '/msg/') + '.hpp'
 
     @property
     def ros_package(self) -> str:
         """Extract ROS package name from type."""
-        return self.ros2_type.split("/")[0]
+        return self.ros2_type.split('/')[0]
 
     @classmethod
     def from_dict(cls, d: dict) -> "MessageBinding":
         """Parse a message binding from YAML dict format."""
-        mappings = [Mapping.from_dict(m) for m in d.get("mapping", [])]
+        mappings = [Mapping.from_dict(m) for m in d.get('mapping', [])]
         return cls(
-            name=d["name"],
-            ros2_type=d["ros2_type"],
+            name=d['name'],
+            ros2_type=d['ros2_type'],
             mappings=mappings,
-            stamp_path=d.get("stamp"),
+            stamp_path=d.get('stamp'),
         )
 
 
@@ -136,12 +136,12 @@ class AdaptorConfig:
         return deps
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "AdaptorConfig":
+    def from_yaml(cls, path: Path) -> 'AdaptorConfig':
         """Load configuration from a YAML file."""
         with open(path) as f:
             data = yaml.safe_load(f)
 
-        messages = [MessageBinding.from_dict(m) for m in data.get("messages", [])]
+        messages = [MessageBinding.from_dict(m) for m in data.get('messages', [])]
 
         return cls(messages=messages)
 
@@ -161,11 +161,11 @@ class AdaptorConfig:
 
         # Build signal name -> id lookup
         signal_lookup: dict[str, int] = {}
-        for sig in proton_data.get("signals", []):
-            name = sig.get("name")
-            sig_id = sig.get("id")
+        for sig in proton_data.get('signals', []):
+            name = sig.get('name')
+            sig_id = sig.get('id')
             if name and sig_id is not None:
-                # Handle hex strings (e.g., "0x1000") or integers
+                # Handle hex strings (e.g., '0x1000') or integers
                 if isinstance(sig_id, str):
                     sig_id = int(sig_id, 0)  # auto-detect base (handles 0x prefix)
                 signal_lookup[name] = sig_id
@@ -178,8 +178,8 @@ class AdaptorConfig:
                     mapping.signal_id = signal_lookup[mapping.signal_name]
                 else:
                     errors.append(
-                        f"Signal '{mapping.signal_name}' not found in proton config "
-                        f"(binding '{msg.name}', field '{mapping.ros_path}')"
+                        f'Signal "{mapping.signal_name}" not found in proton config '
+                        f'(binding "{msg.name}", field "{mapping.ros_path}")'
                     )
 
         return errors
@@ -202,31 +202,31 @@ class AdaptorConfig:
 
         # Build signal name -> capacity lookup
         signal_lookup: dict[str, int] = {}
-        for sig in proton_data.get("signals", []):
-            name = sig.get("name")
-            sig_cap = sig.get("capacity")
-            sig_value = sig.get("value")
-            sig_type = sig.get("type")
+        for sig in proton_data.get('signals', []):
+            name = sig.get('name')
+            sig_cap = sig.get('capacity')
+            sig_value = sig.get('value')
+            sig_type = sig.get('type')
             if name is not None:
                 if sig_cap is not None:
-                    # Handle hex strings (e.g., "0x1000") or integers
+                    # Handle hex strings (e.g., '0x1000') or integers
                     if isinstance(sig_cap, str):
                         sig_cap = int(sig_cap, 0)  # auto-detect base (handles 0x prefix)
                     signal_lookup[name] = sig_cap
                 # if signal has a default value
                 if sig_value is not None:
-                    if sig_type == "bytes":
+                    if sig_type == 'bytes':
                         if sig_cap is None:
                             signal_lookup[name] = len(sig_value)
                         elif sig_cap < len(sig_value):
-                            errors.append(f"Signal '{name}' has default value longer "
-                                          f"than capacity: ({len(sig_value)} > {sig_cap})")
-                    elif sig_type == "string":
+                            errors.append(f'Signal "{name}" has default value longer '
+                                          f'than capacity: ({len(sig_value)} > {sig_cap})')
+                    elif sig_type == 'string':
                         if sig_cap is None or sig_cap == len(sig_value):
                             signal_lookup[name] = len(sig_value) + 1
                         elif sig_cap < len(sig_value):
-                            errors.append(f"Signal '{name}' has default value longer "
-                                          f"than capacity: ({len(sig_value)} > {sig_cap})")
+                            errors.append(f'Signal "{name}" has default value longer '
+                                          f'than capacity: ({len(sig_value)} > {sig_cap})')
 
         for msg in self.messages:
             for mapping in msg.mappings:
@@ -244,17 +244,17 @@ class AdaptorConfig:
         seen = set()
         for name in names:
             if name in seen:
-                errors.append(f"Duplicate binding name: {name}")
+                errors.append(f'Duplicate binding name: {name}')
             seen.add(name)
 
         # Validate data types
-        valid_types = {"double", "float", "int32",
-                       "int64", "uint32", "uint64", "bool", "string", "bytes"}
+        valid_types = {'double', 'float', 'int32',
+                       'int64', 'uint32', 'uint64', 'bool', 'string', 'bytes'}
         for msg in self.messages:
             for mapping in msg.mappings:
                 if mapping.data_type not in valid_types:
                     errors.append(
-                        f"Invalid data type '{mapping.data_type}' in binding '{msg.name}'")
+                        f'Invalid data type "{mapping.data_type}" in binding "{msg.name}"')
 
         return errors
 
@@ -265,7 +265,7 @@ class PackageConfig:
 
     package_name: str
     project_name: str
-    version: str = "0.0.1"
-    maintainer_name: str = "Unknown"
-    maintainer_email: str = "unknown@example.com"
-    license: str = "TODO: TODO: License declaration"
+    version: str = '0.0.1'
+    maintainer_name: str = 'Unknown'
+    maintainer_email: str = 'unknown@example.com'
+    license: str = 'TODO: License declaration'

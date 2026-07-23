@@ -35,7 +35,7 @@ from .config import AdaptorConfig, MessageBinding, PackageConfig
 def create_jinja_env() -> Environment:
     """Create Jinja2 environment with template loader."""
     return Environment(
-        loader=PackageLoader("proton_ros2_adaptor_generator", "resources"),
+        loader=PackageLoader('proton_ros2_adaptor_generator', 'resources'),
         autoescape=select_autoescape(),
         trim_blocks=True,
         lstrip_blocks=True,
@@ -45,16 +45,16 @@ def create_jinja_env() -> Environment:
 
 def generate_message_adaptor(env: Environment, binding: MessageBinding, output_dir: Path) -> None:
     """Generate a single message adaptor C++ file."""
-    template = env.get_template("adaptor.cpp.jinja")
+    template = env.get_template('adaptor.cpp.jinja')
 
     content = template.render(binding=binding)
 
-    src_dir = output_dir / "src"
+    src_dir = output_dir / 'src'
     src_dir.mkdir(parents=True, exist_ok=True)
 
     output_file = src_dir / binding.source_file
     output_file.write_text(content)
-    print(f"  Generated: {output_file.relative_to(output_dir)}")
+    print(f'  Generated: {output_file.relative_to(output_dir)}')
 
 
 def generate_cmakelists(
@@ -64,7 +64,7 @@ def generate_cmakelists(
     output_dir: Path,
 ) -> None:
     """Generate CMakeLists.txt for the adaptor package."""
-    template = env.get_template("CMakeLists.txt.jinja")
+    template = env.get_template('CMakeLists.txt.jinja')
 
     content = template.render(
         package_name=package_config.package_name,
@@ -72,9 +72,9 @@ def generate_cmakelists(
         message_adaptors=adaptor_config.messages,
     )
 
-    output_file = output_dir / "CMakeLists.txt"
+    output_file = output_dir / 'CMakeLists.txt'
     output_file.write_text(content)
-    print(f"  Generated: {output_file.relative_to(output_dir)}")
+    print(f'  Generated: {output_file.relative_to(output_dir)}')
 
 
 def generate_package_xml(
@@ -84,7 +84,7 @@ def generate_package_xml(
     output_dir: Path,
 ) -> None:
     """Generate package.xml for the adaptor package."""
-    template = env.get_template("package.xml.jinja")
+    template = env.get_template('package.xml.jinja')
 
     content = template.render(
         package_name=package_config.package_name,
@@ -96,9 +96,9 @@ def generate_package_xml(
         ros_msg_dependencies=sorted(adaptor_config.ros_msg_dependencies),
     )
 
-    output_file = output_dir / "package.xml"
+    output_file = output_dir / 'package.xml'
     output_file.write_text(content)
-    print(f"  Generated: {output_file.relative_to(output_dir)}")
+    print(f'  Generated: {output_file.relative_to(output_dir)}')
 
 
 def generate_plugins_xml(
@@ -108,16 +108,16 @@ def generate_plugins_xml(
     output_dir: Path,
 ) -> None:
     """Generate plugins.xml for pluginlib export."""
-    template = env.get_template("plugins.xml.jinja")
+    template = env.get_template('plugins.xml.jinja')
 
     content = template.render(
         package_name=package_config.package_name,
         message_adaptors=adaptor_config.messages,
     )
 
-    output_file = output_dir / "plugins.xml"
+    output_file = output_dir / 'plugins.xml'
     output_file.write_text(content)
-    print(f"  Generated: {output_file.relative_to(output_dir)}")
+    print(f'  Generated: {output_file.relative_to(output_dir)}')
 
 
 def generate_package(
@@ -125,37 +125,37 @@ def generate_package(
     output_dir: Path,
     package_name: str,
     project_name: str,
-    maintainer_name: str = "Unknown",
-    maintainer_email: str = "unknown@example.com",
+    maintainer_name: str = 'Unknown',
+    maintainer_email: str = 'unknown@example.com',
 ) -> int:
     """Generate a complete adaptor package from configuration."""
-    print(f"Loading configuration from: {config_path}")
+    print(f'Loading configuration from: {config_path}')
 
     # Load and validate configuration
     adaptor_config = AdaptorConfig.from_yaml(config_path)
     errors = adaptor_config.validate()
     if errors:
-        print("Configuration errors:", file=sys.stderr)
+        print('Configuration errors:', file=sys.stderr)
         for error in errors:
-            print(f"  - {error}", file=sys.stderr)
+            print(f'  - {error}', file=sys.stderr)
         return 1
 
     # Resolve signal IDs from proton config
-    print(f"Resolving signal IDs from: {config_path}")
+    print(f'Resolving signal IDs from: {config_path}')
     signal_id_errors = adaptor_config.resolve_signal_ids(config_path)
     if signal_id_errors:
-        print("Signal ID resolution errors:", file=sys.stderr)
+        print('Signal ID resolution errors:', file=sys.stderr)
         for error in signal_id_errors:
-            print(f"  - {error}", file=sys.stderr)
+            print(f'  - {error}', file=sys.stderr)
         return 1
 
     # Get signal capacities for repeated types
-    print(f"Identifying signal capacities from: {config_path}")
+    print(f'Identifying signal capacities from: {config_path}')
     signal_capacity_errors = adaptor_config.resolve_signal_capacities(config_path)
     if signal_capacity_errors:
-        print("Signal capacity resolution errors:", file=sys.stderr)
+        print('Signal capacity resolution errors:', file=sys.stderr)
         for error in signal_capacity_errors:
-            print(f"  - {error}", file=sys.stderr)
+            print(f'  - {error}', file=sys.stderr)
         return 1
 
     package_config = PackageConfig(
@@ -167,26 +167,26 @@ def generate_package(
 
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Generating package: {package_name}")
-    print(f"Output directory: {output_dir}")
+    print(f'Generating package: {package_name}')
+    print(f'Output directory: {output_dir}')
 
     # Create Jinja environment
     env = create_jinja_env()
 
     # Generate adaptor source files
-    print(f"\nGenerating {len(adaptor_config.messages)} message adaptors:")
+    print(f'\nGenerating {len(adaptor_config.messages)} message adaptors:')
     for binding in adaptor_config.messages:
         generate_message_adaptor(env, binding, output_dir)
 
     # Generate package infrastructure
-    print("\nGenerating package files:")
+    print('\nGenerating package files:')
     generate_cmakelists(env, package_config, adaptor_config, output_dir)
     generate_package_xml(env, package_config, adaptor_config, output_dir)
     generate_plugins_xml(env, package_config, adaptor_config, output_dir)
 
-    print(f"\nSuccessfully generated {package_name}")
-    print(f"  Messages: {len(adaptor_config.messages)}")
-    print(f"  ROS dependencies: {', '.join(sorted(adaptor_config.ros_msg_dependencies))}")
+    print(f'\nSuccessfully generated {package_name}')
+    print(f'  Messages: {len(adaptor_config.messages)}')
+    print(f'  ROS dependencies: {', '.join(sorted(adaptor_config.ros_msg_dependencies))}')
 
     return 0
 
@@ -194,57 +194,57 @@ def generate_package(
 def main() -> int:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Generate proton_ros2 adaptor packages from YAML configuration",
+        description='Generate proton_ros2 adaptor packages from YAML configuration',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
     # generate command
-    gen_parser = subparsers.add_parser("generate", help="Generate an adaptor package")
+    gen_parser = subparsers.add_parser('generate', help='Generate an adaptor package')
     gen_parser.add_argument(
-        "--config",
-        "-c",
+        '--config',
+        '-c',
         type=Path,
         required=True,
-        help="Path to YAML configuration file",
+        help='Path to YAML configuration file',
     )
     gen_parser.add_argument(
-        "--output",
-        "-o",
+        '--output',
+        '-o',
         type=Path,
         required=True,
-        help="Output directory for generated package",
+        help='Output directory for generated package',
     )
     gen_parser.add_argument(
-        "--package-name",
-        "-p",
+        '--package-name',
+        '-p',
         type=str,
         required=True,
-        help="Name of the generated ROS package",
+        help='Name of the generated ROS package',
     )
     gen_parser.add_argument(
-        "--project-name",
+        '--project-name',
         type=str,
         required=True,
-        help="Project name for description (e.g., 'A300')",
+        help='Project name for description (e.g., "A300")',
     )
     gen_parser.add_argument(
-        "--maintainer-name",
+        '--maintainer-name',
         type=str,
-        default="Unknown",
-        help="Package maintainer name",
+        default='Unknown',
+        help='Package maintainer name',
     )
     gen_parser.add_argument(
-        "--maintainer-email",
+        '--maintainer-email',
         type=str,
-        default="unknown@example.com",
-        help="Package maintainer email",
+        default='unknown@example.com',
+        help='Package maintainer email',
     )
 
     args = parser.parse_args()
 
-    if args.command == "generate":
+    if args.command == 'generate':
         return generate_package(
             config_path=args.config,
             output_dir=args.output,
@@ -257,5 +257,5 @@ def main() -> int:
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())
