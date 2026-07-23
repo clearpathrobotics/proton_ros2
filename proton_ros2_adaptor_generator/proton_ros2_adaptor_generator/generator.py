@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-Proton ROS 2 Adaptor Generator
+Proton ROS 2 Adaptor Generator.
 
 Generates pluginlib adaptor packages from YAML configuration files.
 

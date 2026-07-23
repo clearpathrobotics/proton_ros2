@@ -92,8 +92,11 @@ class MessageBinding:
 
     @property
     def ros_cpp_type(self) -> str:
-        """Convert ROS type to C++ type
-        (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist')."""
+        """
+        Convert ROS type to C++ type.
+
+        (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist').
+        """
         return self.ros2_type.replace("/", "::")
 
     @property
@@ -146,11 +149,11 @@ class AdaptorConfig:
         """
         Resolve signal IDs from proton config file.
 
-        Args:
-            proton_config_path: Path to proton YAML config with signals stanza
+        Looks up each mapping's signal_name in the proton config's signals
+        stanza and sets the signal_id field to the integer ID.
 
-        Returns:
-            List of error messages (empty if all resolved successfully)
+        :param proton_config_path: Path to proton YAML config with signals stanza
+        :return: List of error messages (empty if all resolved successfully)
         """
         # Load proton config
         with open(proton_config_path) as f:
@@ -183,13 +186,13 @@ class AdaptorConfig:
 
     def resolve_signal_capacities(self, proton_config_path: Path) -> list[str]:
         """
-        Resolve signal capacities for repeated types from proton config file.
+        Resolve signal capacities for repeated types from proton config.
 
-        Args:
-            proton_config_path: Path to proton YAML config with signals stanza
+        Looks up each mapping's signal_name in the proton config and sets
+        the signal_capacity field for string/bytes types.
 
-        Returns:
-            List of error messages (empty if all resolved successfully)
+        :param proton_config_path: Path to proton YAML config with signals stanza
+        :return: List of error messages (empty if all resolved successfully)
         """
         # Load proton config
         with open(proton_config_path) as f:
