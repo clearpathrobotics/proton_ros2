@@ -1,0 +1,101 @@
+{# Shared Jinja2 macros for proton_ros2 adaptor generation #}
+
+{# C++ type mapping from proton signal types #}
+{% set CPP_TYPE = {
+  'double': 'double',
+  'float': 'float',
+  'int32': 'int32_t',
+  'int64': 'int64_t',
+  'uint32': 'uint32_t',
+  'uint64': 'uint64_t',
+  'bool': 'bool',
+  'string': 'std::string',
+  'bytes': 'std::vector<uint8_t>'
+} %}
+
+{#
+  Generate code to read from proton registry and write to ROS message field.
+
+  Parameters:
+    m - Mapping object with:
+      - signal_id: proton signal ID constant name
+      - ros_path: dot-separated path in ROS message (e.g., "header.frame_id")
+      - ros_index: (optional) array index for indexed access
+      - data_type: proton type name (double, float, int32, etc.)
+#}
+{% macro to_ros(m) %}
+{
+{# Create temporary type value #}
+{{ CPP_TYPE[m.data_type] }} tmp;
+{% if m.data_type in ['string', 'bytes'] %}
+  {# Capacity types need to be sized correctly #}
+  tmp.resize({{ m.capacity }});
+{% endif %}
+  proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(registry, m.signal_id);
+  if (sig.get(tmp) == PROTON_OK) {
+{% if m.ros_index is defined %}
+  {# Indexed array access #}
+    msg.{{ m.ros_path }}[{{ m.ros_index }}] = tmp;
+{% else %}
+    msg.{{ m.ros_path }} = tmp;
+{% endif %}
+  }
+}
+{% endmacro %}
+
+{#
+  Generate code to read from ROS message field and write to proton registry.
+
+  Parameters:
+    m - Mapping object (same as to_ros)
+#}
+
+{% macro to_proton(m) %}
+{
+proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(generated_node.registry(), m.signal_id);
+{% if m.ros_index is defined %}
+{# Indexed array access #}
+{% if m.data_type in ['string', 'bytes'] %}
+{# Capacity types cannot be statically cast. But this will be caught via static_assert #}
+{{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }}[{{ m.ros_index }}];
+{% else %}
+{{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }}[{{ m.ros_index }}]);
+{% endif %}
+{% else %}
+{# Scalar access #}
+{% if m.data_type in ['string', 'bytes'] %}
+{{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }};
+{% else %}
+{{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }});
+{% endif %}
+{% endif %}
+
+sig.set(val);
+}
+{% endmacro %}
+
+{#
+  Generate timestamp injection code for messages with stamp field.
+
+  Parameters:
+    stamp_path - dot-separated path to builtin_interfaces/Time field (e.g., "header.stamp")
+#}
+{% macro inject_timestamp(stamp_path) %}
+msg.{{ stamp_path }} = node->get_clock()->now();
+{% endmacro %}
+
+{#
+  Convert ROS 2 type string to C++ include path.
+  e.g., "geometry_msgs/msg/Twist" -> "geometry_msgs/msg/twist.hpp"
+#}
+{% macro ros_type_to_include(ros_type) %}
+{{ ros_type | lower | replace('/msg/', '/msg/') | replace('/srv/', '/srv/') }}.hpp
+{% endmacro %}
+
+{#
+  Convert ROS 2 type string to C++ type.
+  e.g., "geometry_msgs/msg/Twist" -> "geometry_msgs::msg::Twist"
+#}
+{% macro ros_type_to_cpp(ros_type) %}
+{{ ros_type | replace('/', '::') }}
+{% endmacro %}
