@@ -60,4 +60,5 @@ jobs:
             proton_ros2_interfaces
             proton_ros2_adaptor_generator
             proton_ros2
+            proton_ros2_node
           vcs-repo-file-url: dependencies.repos
