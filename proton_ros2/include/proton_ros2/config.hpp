@@ -20,7 +20,6 @@
 #define PROTON_ROS2_CONFIG_HPP
 
 #include <algorithm>
-#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -42,7 +41,7 @@ enum class QoSProfile {
   Rosout,
 };
 
-inline std::optional<QoSProfile> parseQosProfile(std::string_view s)
+inline std::optional<QoSProfile> parse_qos_profile(std::string_view s)
 {
   static const std::unordered_map<std::string_view, QoSProfile> lookup = {
     {"default", QoSProfile::Default},
@@ -60,7 +59,7 @@ inline std::optional<QoSProfile> parseQosProfile(std::string_view s)
   return std::nullopt;
 }
 
-inline rclcpp::QoS getQosProfile(QoSProfile profile)
+inline rclcpp::QoS get_qos_profile(QoSProfile profile)
 {
   switch (profile) {
     case QoSProfile::Default:
@@ -83,7 +82,7 @@ enum class QoSHistory {
   KeepAll,
 };
 
-inline std::optional<QoSHistory> parseQosHistory(std::string_view s)
+inline std::optional<QoSHistory> parse_qos_history(std::string_view s)
 {
   static const std::unordered_map<std::string_view, QoSHistory> lookup = {
     {"system_default", QoSHistory::SystemDefault},
@@ -98,7 +97,7 @@ inline std::optional<QoSHistory> parseQosHistory(std::string_view s)
   return std::nullopt;
 }
 
-inline rmw_qos_history_policy_t getQosHistory(QoSHistory history)
+inline rmw_qos_history_policy_t get_qos_history(QoSHistory history)
 {
   switch (history) {
     case QoSHistory::SystemDefault:
@@ -116,7 +115,7 @@ enum class QoSReliability {
   BestEffort,
 };
 
-inline std::optional<QoSReliability> parseQosReliability(std::string_view s)
+inline std::optional<QoSReliability> parse_qos_reliability(std::string_view s)
 {
   static const std::unordered_map<std::string_view, QoSReliability> lookup = {
     {"system_default", QoSReliability::SystemDefault},
@@ -131,7 +130,7 @@ inline std::optional<QoSReliability> parseQosReliability(std::string_view s)
   return std::nullopt;
 }
 
-inline rmw_qos_reliability_policy_t getQosReliability(QoSReliability reliability)
+inline rmw_qos_reliability_policy_t get_qos_reliability(QoSReliability reliability)
 {
   switch (reliability) {
     case QoSReliability::SystemDefault:
@@ -149,7 +148,7 @@ enum class QoSDurability {
   Volatile,
 };
 
-inline std::optional<QoSDurability> parseQosDurability(std::string_view s)
+inline std::optional<QoSDurability> parse_qos_durability(std::string_view s)
 {
   static const std::unordered_map<std::string_view, QoSDurability> lookup = {
     {"system_default", QoSDurability::SystemDefault},
@@ -164,7 +163,7 @@ inline std::optional<QoSDurability> parseQosDurability(std::string_view s)
   return std::nullopt;
 }
 
-inline rmw_qos_durability_policy_t getQosDurability(QoSDurability durability)
+inline rmw_qos_durability_policy_t get_qos_durability(QoSDurability durability)
 {
   switch (durability) {
     case QoSDurability::SystemDefault:
