@@ -186,6 +186,8 @@
     "venv",
     "Werror",
     "Wextra",
-    "Wpedantic"
+    "Wnon",
+    "Wpedantic",
+    "Wshadow"
   ]
 }
