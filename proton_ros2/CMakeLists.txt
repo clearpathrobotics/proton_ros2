@@ -20,6 +20,7 @@ add_library(${PROJECT_NAME}
   src/config.cpp
   src/node.cpp
 )
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     proton_vendor::proton_vendor
@@ -30,7 +31,7 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+    $<INSTALL_INTERFACE:include>
 )
 
 install(
@@ -41,6 +42,7 @@ install(
 install(
   TARGETS
     ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
@@ -60,7 +62,8 @@ endif()
 
 # Ament export
 ament_export_include_directories(include)
-ament_export_targets(${PROJECT_NAME})
+ament_export_libraries(${PROJECT_NAME})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   proton_vendor
   proton_ros2_interfaces

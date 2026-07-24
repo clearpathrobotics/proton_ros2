@@ -16,7 +16,7 @@
  * @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
  */
 
-#include "proton_ros2/node.hpp"
+#include <proton_ros2/node.hpp>
 #include <iostream>
 #include <memory>
 

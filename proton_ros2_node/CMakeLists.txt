@@ -18,7 +18,15 @@ add_executable(${PROJECT_NAME}
   src/main.cpp
   # transport stuff here
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC proton_ros2)
+ament_target_dependencies(${PROJECT_NAME}
+  proton_ros2
+  rclcpp
+)
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
 install(
   TARGETS
@@ -45,10 +53,9 @@ if(BUILD_TESTING)
 endif()
 
 # Ament export
-ament_export_include_directories(include)
-ament_export_targets(${PROJECT_NAME})
 ament_export_dependencies(
   rclcpp
+  proton_ros2
 )
 
 ament_package()
