@@ -18,8 +18,10 @@
 
 #include "proton_ros2/config.hpp"
 #include "proton_ros2/node.hpp"
+#include "proton_ros2/utils.hpp"
 
 #include <protoncpp/node_builder/config.hpp>
+#include <protoncpp/node_access.hpp>
 
 namespace proton_ros2
 {
@@ -36,6 +38,56 @@ ProtonRos2Node::ProtonRos2Node()
   // Proton node builder will throw exceptions from errors in the config,
   // so allow the process to fail early.
   proton_node_ = node_from_config(config_file, target);
+}
+
+void ProtonRos2Node::process_bytes(const uint8_t * buf, std::size_t len)
+{
+  proton_status_e status = proton::NodeAccess(proton_node_.node()).receive(buf, len);
+
+  if (status != PROTON_OK) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger(),
+      "Proton reception error: %s",
+      error_to_string(status).c_str()
+    );
+  }
+}
+
+std::vector<DataForPeers> ProtonRos2Node::spin_once(const rclcpp::Time & time)
+{
+  proton::NodeAccess node(node_.node());
+  const auto num_peers = node.num_peers();
+  const auto bundle_count = node_.registry()->bundle_count;
+  const uint64_t time_ms = time.seconds() * 1000 + time.nanoseconds() / 1000000;
+
+  std::vector<DataForPeers> to_send;
+
+  for (auto i = 0; i < bundle_count; i++) {
+    std::vector<uint8_t> buf(1024);
+    std::vector<proton_endpoint_t> peers(num_peers);
+    std::size_t out_len = 0;
+    std::size_t num_selected_peers = 0;
+
+    proton_status_e status = node.update(time_ms, buf, out_len, peers, num_selected_peers);
+    if (status != PROTON_OK) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger(),
+        "Could not encode proton message: %s",
+        error_to_string(status).c_str()
+      );
+      // Investigate returning a variant rather than a vector, so that an error may be returned properly
+      break;
+    } else if (out_len != 0) {
+      peers.resize(num_selected_peers);
+      buf.resize(out_len);
+      to_send.push_back({peers, buf});
+    } else {
+      // No more data to send
+      break;
+    }
+  }
+
+  return to_send;
 }
 
 }  // namespace proton_ros2
