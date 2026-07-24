@@ -13,37 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @author Tom Wallis (thomas.wallis@rockwellautomation.com)
+ * @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
  */
 
-#ifndef PROTON_ROS2_NODE_HPP
-#define PROTON_ROS2_NODE_HPP
+#include "proton_ros2/node.hpp"
+#include <iostream>
+#include <memory>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include <protoncpp/node_builder/generator.hpp>
-
-#include "rclcpp/rclcpp.hpp"
-
-namespace proton_ros2
+int main(int argc, char * argv[])
 {
+  rclcpp::init(argc, argv);
 
-/**
- * @class ProtonRos2Node
- *
- * Central class for proton ROS 2 node
- */
-class ProtonRos2Node : public rclcpp::Node
-{
-public:
-  ProtonRos2Node();
+  rclcpp::executors::SingleThreadedExecutor executor;
 
-private:
-  proton::node_builder::GeneratedNode proton_node_;
-};
+  auto node = std::make_shared<proton_ros2::ProtonRos2Node>();
 
-}  // namespace proton_ros2
+  executor.add_node(node);
+  executor.spin();
 
-#endif  // PROTON_ROS2_NODE_HPP
+  rclcpp::shutdown();
+
+  return 0;
+}

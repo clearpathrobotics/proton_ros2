@@ -16,34 +16,21 @@
  * @author Tom Wallis (thomas.wallis@rockwellautomation.com)
  */
 
-#ifndef PROTON_ROS2_NODE_HPP
-#define PROTON_ROS2_NODE_HPP
+#include "proton_ros2/config.hpp"
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include <protoncpp/node_builder/generator.hpp>
-
-#include "rclcpp/rclcpp.hpp"
+#include <protoncpp/node_builder/config.hpp>
 
 namespace proton_ros2
 {
 
-/**
- * @class ProtonRos2Node
- *
- * Central class for proton ROS 2 node
- */
-class ProtonRos2Node : public rclcpp::Node
+proton::node_builder::GeneratedNode node_from_config(std::string_view config_path, std::string_view target_name)
 {
-public:
-  ProtonRos2Node();
+  using namespace proton::node_builder;
 
-private:
-  proton::node_builder::GeneratedNode proton_node_;
-};
+  const auto cfg = ConfigTree::from_yaml_file(config_path);
+  const auto filtered_config = filter_for_target(cfg, target_name);
+
+  return GeneratedNode(filtered_config, target_name);
+}
 
 }  // namespace proton_ros2
-
-#endif  // PROTON_ROS2_NODE_HPP

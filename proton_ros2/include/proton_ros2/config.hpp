@@ -26,6 +26,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <protoncpp/node_builder/generator.hpp>
+
 #include "rclcpp/rclcpp.hpp"
 
 namespace proton_ros2
@@ -197,6 +199,10 @@ struct Config
 {
   std::vector<TopicConfig> topics;
 };
+
+proton::node_builder::GeneratedNode node_from_config(std::string_view config_path, std::string_view target_name);
+
+// Method for getting topics for plugins
 
 }  // namespace proton_ros2
 

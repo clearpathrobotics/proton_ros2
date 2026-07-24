@@ -16,34 +16,25 @@
  * @author Tom Wallis (thomas.wallis@rockwellautomation.com)
  */
 
-#ifndef PROTON_ROS2_NODE_HPP
-#define PROTON_ROS2_NODE_HPP
+#include "proton_ros2/config.hpp"
+#include "proton_ros2/node.hpp"
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include <protoncpp/node_builder/generator.hpp>
-
-#include "rclcpp/rclcpp.hpp"
+#include <protoncpp/node_builder/config.hpp>
 
 namespace proton_ros2
 {
 
-/**
- * @class ProtonRos2Node
- *
- * Central class for proton ROS 2 node
- */
-class ProtonRos2Node : public rclcpp::Node
+ProtonRos2Node::ProtonRos2Node() : rclcpp::Node("proton_ros2")
 {
-public:
-  ProtonRos2Node();
+  this->declare_parameter("config_file", rclcpp::PARAMETER_STRING);
+  this->declare_parameter("target", rclcpp::PARAMETER_STRING);
 
-private:
-  proton::node_builder::GeneratedNode proton_node_;
-};
+  const auto config_file = get_parameter("config_file").as_string();
+  const auto target = get_parameter("target").as_string();
+
+  // Proton node builder will throw exceptions from errors in the config,
+  // so allow the process to fail early.
+  proton_node_ = node_from_config(config_file, target);
+}
 
 }  // namespace proton_ros2
-
-#endif  // PROTON_ROS2_NODE_HPP
