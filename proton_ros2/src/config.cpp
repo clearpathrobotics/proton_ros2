@@ -23,12 +23,15 @@
 namespace proton_ros2
 {
 
-proton::node_builder::GeneratedNode node_from_config(std::string_view config_path, std::string_view target_name)
+proton::node_builder::GeneratedNode node_from_config(
+  const std::string & config_path,
+  const std::string & target_name)
 {
   using namespace proton::node_builder;
 
-  const auto cfg = ConfigTree::from_yaml_file(config_path);
-  const auto filtered_config = filter_for_target(cfg, target_name);
+  const auto config_tree = ConfigTree::from_yaml_file(config_path);
+  const auto proton_config = Config(config_tree);
+  const auto filtered_config = filter_for_target(proton_config, target_name);
 
   return GeneratedNode(filtered_config, target_name);
 }

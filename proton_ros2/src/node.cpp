@@ -24,7 +24,8 @@
 namespace proton_ros2
 {
 
-ProtonRos2Node::ProtonRos2Node() : rclcpp::Node("proton_ros2")
+ProtonRos2Node::ProtonRos2Node()
+: rclcpp::Node("proton_ros2")
 {
   this->declare_parameter("config_file", rclcpp::PARAMETER_STRING);
   this->declare_parameter("target", rclcpp::PARAMETER_STRING);

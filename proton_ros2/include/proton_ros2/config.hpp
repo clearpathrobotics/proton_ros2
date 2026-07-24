@@ -35,7 +35,8 @@ namespace proton_ros2
 namespace qos
 {
 
-enum class QoSProfile {
+enum class QoSProfile
+{
   Default,
   SystemDefaults,
   SensorData,
@@ -78,7 +79,8 @@ inline rclcpp::QoS get_qos_profile(QoSProfile profile)
 }
 
 
-enum class QoSHistory {
+enum class QoSHistory
+{
   SystemDefault,
   KeepLast,
   KeepAll,
@@ -111,7 +113,8 @@ inline rmw_qos_history_policy_t get_qos_history(QoSHistory history)
   }
 }
 
-enum class QoSReliability {
+enum class QoSReliability
+{
   SystemDefault,
   Reliable,
   BestEffort,
@@ -144,7 +147,8 @@ inline rmw_qos_reliability_policy_t get_qos_reliability(QoSReliability reliabili
   }
 }
 
-enum class QoSDurability {
+enum class QoSDurability
+{
   SystemDefault,
   TransientLocal,
   Volatile,
@@ -195,12 +199,14 @@ struct TopicConfig
   QosConfig qos;
 };
 
-struct Config
+struct ProtonRos2Config
 {
   std::vector<TopicConfig> topics;
 };
 
-proton::node_builder::GeneratedNode node_from_config(std::string_view config_path, std::string_view target_name);
+proton::node_builder::GeneratedNode node_from_config(
+  const std::string & config_path,
+  const std::string & target_name);
 
 // Method for getting topics for plugins
 

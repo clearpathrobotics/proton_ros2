@@ -6,7 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(proton REQUIRED)
+find_package(proton_vendor REQUIRED)
 find_package(proton_ros2_interfaces REQUIRED)
 
 find_package(ament_cmake REQUIRED)
@@ -15,11 +15,25 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
 
+# Proton ROS2 lib
+add_library(${PROJECT_NAME}
+  src/config.cpp
+  src/node.cpp
+)
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    proton_vendor::proton_vendor
+    proton_ros2_interfaces::proton_ros2_interfaces
+    rclcpp::rclcpp
+    pluginlib
+)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+
+
+
 # install(DIRECTORY launch
 #   DESTINATION share/${PROJECT_NAME}
 # )
-
-# ament_export_include_directories(include)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
