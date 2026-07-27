@@ -36,7 +36,8 @@ int main(int argc, char * argv[])
     [node]() {
       std::vector<proton_ros2::DataForPeers> data_for_peers = node->spin_once(node->now());
       if (!data_for_peers.empty()) {
-        RCLCPP_INFO(node->get_logger(), "data for peer received. send to %ld peers", data_for_peers.size());
+        RCLCPP_INFO(node->get_logger(), "data for peer received. send to %ld peers",
+        data_for_peers.size());
       }
     }
   );
