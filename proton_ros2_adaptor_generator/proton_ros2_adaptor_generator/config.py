@@ -1,4 +1,3 @@
-
 # Copyright 2026 Rockwell Automation Technologies, Inc., All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
