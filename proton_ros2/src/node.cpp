@@ -37,7 +37,15 @@ ProtonRos2Node::ProtonRos2Node()
 
   // Proton node builder will throw exceptions from errors in the config,
   // so allow the process to fail early.
-  proton_node_ = node_from_config(config_file, target);
+  try {
+    proton_node_ = node_from_config(config_file, target);
+  } catch (proton::node_builder::NodeBuilderException & e) {
+    RCLCPP_FATAL(
+      this->get_logger(),
+      "Proton configuration error: %s", e.what()
+    );
+    throw;
+  }
 }
 
 void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
