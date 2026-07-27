@@ -18,8 +18,8 @@
 
 #include "proton_ros2/config.hpp"
 #include "proton_ros2/node.hpp"
-#include "proton_ros2/utils.hpp"
 
+#include <proton/common.h>
 #include <protoncpp/node_builder/config.hpp>
 #include <protoncpp/node_access.hpp>
 
@@ -56,7 +56,7 @@ void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
     RCLCPP_ERROR(
       this->get_logger(),
       "Proton reception error: %s",
-      error_to_string(status).c_str()
+      proton_status_to_string(status)
     );
   }
 }
@@ -81,7 +81,7 @@ std::vector<DataForPeers> ProtonRos2Node::spin_once(const rclcpp::Time & time)
       RCLCPP_ERROR(
         this->get_logger(),
         "Could not encode proton message: %s",
-        error_to_string(status).c_str()
+        proton_status_to_string(status)
       );
       // Investigate returning a variant rather than a vector, so that an error may be returned properly
       break;
