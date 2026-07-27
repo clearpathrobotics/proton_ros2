@@ -61,19 +61,19 @@ public:
    * @brief Receive bytes from transport for processing. Should already be
    * decoded from proton transport
    */
-  void process_bytes(const uint8_t * buf, std::size_t len);
-  void process_bytes(const std::vector<uint8_t> & buf)
+  void recv_bytes(const uint8_t * buf, std::size_t len);
+  void recv_bytes(const std::vector<uint8_t> & buf)
   {
-    process_bytes(buf.data(), buf.size());
+    recv_bytes(buf.data(), buf.size());
   }
 
 #if __cplusplus >= 202002L
   /**
    * @brief span-based access for C++20 and newer
    */
-  void process_bytes(std::span<const uint8_t> buf)
+  void recv_bytes(std::span<const uint8_t> buf)
   {
-    process_bytes(buf.data(), buf.size());
+    recv_bytes(buf.data(), buf.size());
   }
 #endif  // __cplusplus >= 202002L
 

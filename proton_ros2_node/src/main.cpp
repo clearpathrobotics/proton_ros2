@@ -17,8 +17,12 @@
  */
 
 #include <proton_ros2/node.hpp>
+#include <chrono>
 #include <iostream>
 #include <memory>
+#include <vector>
+
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char * argv[])
 {
@@ -27,6 +31,16 @@ int main(int argc, char * argv[])
   rclcpp::executors::SingleThreadedExecutor executor;
 
   auto node = std::make_shared<proton_ros2::ProtonRos2Node>();
+  auto spin_timer = node->create_wall_timer(
+    std::chrono::milliseconds(500),
+    [node]() {
+      std::vector<proton_ros2::DataForPeers> data_for_peers = node->spin_once(node->now());
+      if (!data_for_peers.empty()) {
+        RCLCPP_INFO(node->get_logger(), "data for peer received. send to %ld peers", data_for_peers.size());
+      }
+    }
+  );
+  (void)spin_timer;
 
   executor.add_node(node);
   executor.spin();

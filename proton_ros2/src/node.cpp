@@ -40,13 +40,13 @@ ProtonRos2Node::ProtonRos2Node()
   proton_node_ = node_from_config(config_file, target);
 }
 
-void ProtonRos2Node::process_bytes(const uint8_t * buf, std::size_t len)
+void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
 {
   proton_status_e status = proton::NodeAccess(proton_node_.node()).receive(buf, len);
 
   if (status != PROTON_OK) {
     RCLCPP_ERROR(
-      rclcpp::get_logger(),
+      this->get_logger(),
       "Proton reception error: %s",
       error_to_string(status).c_str()
     );
@@ -55,9 +55,9 @@ void ProtonRos2Node::process_bytes(const uint8_t * buf, std::size_t len)
 
 std::vector<DataForPeers> ProtonRos2Node::spin_once(const rclcpp::Time & time)
 {
-  proton::NodeAccess node(node_.node());
-  const auto num_peers = node.num_peers();
-  const auto bundle_count = node_.registry()->bundle_count;
+  proton::NodeAccess proton_node(proton_node_.node());
+  const auto num_peers = proton_node.num_peers();
+  const auto bundle_count = proton_node_.registry()->bundle_count;
   const uint64_t time_ms = time.seconds() * 1000 + time.nanoseconds() / 1000000;
 
   std::vector<DataForPeers> to_send;
@@ -68,10 +68,10 @@ std::vector<DataForPeers> ProtonRos2Node::spin_once(const rclcpp::Time & time)
     std::size_t out_len = 0;
     std::size_t num_selected_peers = 0;
 
-    proton_status_e status = node.update(time_ms, buf, out_len, peers, num_selected_peers);
+    proton_status_e status = proton_node.update(time_ms, buf, out_len, peers, num_selected_peers);
     if (status != PROTON_OK) {
       RCLCPP_ERROR(
-        rclcpp::get_logger(),
+        this->get_logger(),
         "Could not encode proton message: %s",
         error_to_string(status).c_str()
       );
