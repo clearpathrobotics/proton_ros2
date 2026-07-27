@@ -19,10 +19,12 @@
 #ifndef PROTON_ROS2_INTERFACES_GENERIC_PUBSUB_HPP
 #define PROTON_ROS2_INTERFACES_GENERIC_PUBSUB_HPP
 
+#include <algorithm>
 #include <functional>
 #include <string>
 
 #include <protoncpp/node_builder/generator.hpp>
+#include <protoncpp/registry_lock.hpp>
 #include <proton/registry.h>
 
 #include "rclcpp/rclcpp.hpp"
@@ -35,7 +37,7 @@ using SerializeFn = std::function<rclcpp::SerializedMessage(proton_registry_t *)
 
 /// Deserialization + conversion function: serialized → registry signals
 using DeserializeAndConvertFn = std::function<void(const rclcpp::SerializedMessage &,
-    protoncpp::node_builder::GeneratedNode &)>;
+    proton::node_builder::GeneratedNode &)>;
 
 class GenericPublisher {
 public:
@@ -44,19 +46,24 @@ public:
     const std::string & msg_type, const rclcpp::QoS & qos,
     proton_registry_t * registry, const std::vector<std::string> & trigger_bundles,
     SerializeFn serialize)
-  : registry_(registry), serialize_(std::move(serialize))
+  : registry_(registry), trigger_bundles_(trigger_bundles), serialize_(std::move(serialize))
   {
     pub_ = node->create_generic_publisher(topic, msg_type, qos);
   }
 
-  void publish()
+  void publish(const std::string & bundle_name)
   {
-    pub_->publish(serialize_(registry_));
+    if (std::find(trigger_bundles_.begin(), trigger_bundles_.end(),
+        bundle_name) != trigger_bundles_.end())
+    {
+      pub_->publish(serialize_(registry_));
+    }
   }
 
 private:
   rclcpp::GenericPublisher::SharedPtr pub_;
   proton_registry_t * registry_;
+  std::vector<std::string> trigger_bundles_;
   SerializeFn serialize_;
 };
 
@@ -65,19 +72,22 @@ public:
   GenericSubscription(
     rclcpp::Node * node, const std::string & topic,
     const std::string & msg_type, const rclcpp::QoS & qos,
-    protoncpp::node_builder::GeneratedNode & proton_node,
+    proton::node_builder::GeneratedNode & proton_node,
     const std::vector<std::string> & target_bundles,
     DeserializeAndConvertFn convert)
+  : target_bundles_(target_bundles)
   {
     sub_ = node->create_generic_subscription(topic, msg_type, qos,
         [&proton_node, convert = std::move(convert)]
         (std::shared_ptr<rclcpp::SerializedMessage> msg) {
+          proton::ScopedLock lock(proton_node.registry());
           convert(*msg, proton_node);
       });
   }
 
 private:
   rclcpp::GenericSubscription::SharedPtr sub_;
+  std::vector<std::string> target_bundles_;
 };
 
 }  // namespace proton_ros2_interfaces

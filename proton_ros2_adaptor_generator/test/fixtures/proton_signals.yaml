@@ -1,0 +1,25 @@
+# Minimal proton config for testing signal resolution
+signals:
+  - {name: forward_speed, id: 0x1000, type: float}
+  - {name: strafe_speed, id: 0x1001, type: float}
+  - {name: turn_rate, id: 0x1002, type: float}
+  - {name: temp_frame_id, id: 0x2000, type: string, capacity: 32}
+  - {name: temp_mcu, id: 0x2001, type: float}
+  - {name: temp_pcb, id: 0x2002, type: float}
+  - {name: value, id: 0x3000, type: float}
+  - {name: value1, id: 0x3001, type: float}
+  - {name: value2, id: 0x3002, type: double}
+
+# Minimal nodes/bundles to make it a valid proton config
+nodes:
+  producer:
+    id: 1
+  consumer:
+    id: 2
+
+bundles:
+  - name: telemetry
+    id: 0x100
+    producers: [producer]
+    consumers: [consumer]
+    signals: [0x1000, 0x1001, 0x1002]

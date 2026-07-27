@@ -9,6 +9,7 @@
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
+  <depend>rclcpp</depend>
   <depend version_gte="2.0.0">proton_vendor</depend>
 
   <test_depend>ament_lint_auto</test_depend>

@@ -1,6 +1,6 @@
 # Proton ROS 2
 
-ROS 2 adapter for [Proton](https://github.com/clearpathrobotics/proton.git).
+ROS 2 adaptor for [Proton](https://github.com/clearpathrobotics/proton.git).
 
 Documentation is available [here](https://docs.clearpathrobotics.com/docs_proton/proton_ros2)
 

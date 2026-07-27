@@ -1,0 +1,6 @@
+# Invalid data type in mapping
+messages:
+  - name: BadType
+    ros2_type: std_msgs/msg/Float32
+    mapping:
+      - {ros2.path: data, proton.signal: value, type: invalid_type}

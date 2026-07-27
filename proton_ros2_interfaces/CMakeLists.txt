@@ -7,7 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(proton REQUIRED)
+find_package(proton_vendor REQUIRED)
 
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
@@ -22,6 +22,7 @@ target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 # Link dependencies for consumers
 target_link_libraries(${PROJECT_NAME} INTERFACE
   rclcpp::rclcpp
+  proton_vendor::proton_vendor
 )
 
 # Install headers
@@ -50,6 +51,6 @@ endif()
 
 ament_export_include_directories("include/${PROJECT_NAME}")
 ament_export_targets(export_${PROJECT_NAME})
-ament_export_dependencies(rclcpp)
+ament_export_dependencies(rclcpp proton_vendor)
 
 ament_package()
