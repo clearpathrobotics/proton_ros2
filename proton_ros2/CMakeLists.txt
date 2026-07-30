@@ -19,6 +19,7 @@ find_package(pluginlib REQUIRED)
 add_library(${PROJECT_NAME}
   src/config.cpp
   src/node.cpp
+  src/plugin_loader.cpp
 )
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME}
