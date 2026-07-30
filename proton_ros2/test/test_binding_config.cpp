@@ -63,15 +63,12 @@ TEST(ParseBindingConfig, ValidConfigLoadsPublishers)
   const auto & p0 = cfg.publishers[0];
   EXPECT_EQ(p0.topic, "/robot/board_temps");
   EXPECT_EQ(p0.binding, "BoardTemps");
-  ASSERT_EQ(p0.bundles.size(), static_cast<size_t>(2));
-  EXPECT_EQ(p0.bundles[0], "telemetry");
-  EXPECT_EQ(p0.bundles[1], "diagnostics");
+  EXPECT_EQ(p0.bundle, "telemetry");
 
   const auto & p1 = cfg.publishers[1];
   EXPECT_EQ(p1.topic, "/robot/motor_temps");
   EXPECT_EQ(p1.binding, "MotorTemps");
-  ASSERT_EQ(p1.bundles.size(), static_cast<size_t>(1));
-  EXPECT_EQ(p1.bundles[0], "motor_status");
+  EXPECT_EQ(p1.bundle, "motor_status");
 }
 
 TEST(ParseBindingConfig, ValidConfigLoadsSubscribers)
@@ -83,8 +80,7 @@ TEST(ParseBindingConfig, ValidConfigLoadsSubscribers)
   const auto & s = cfg.subscribers[0];
   EXPECT_EQ(s.topic, "/cmd_vel");
   EXPECT_EQ(s.binding, "Drive");
-  ASSERT_EQ(s.bundles.size(), static_cast<size_t>(1));
-  EXPECT_EQ(s.bundles[0], "commands");
+  EXPECT_EQ(s.bundle, "commands");
 }
 
 TEST(ParseBindingConfig, ValidConfigParsesFullQos)
@@ -151,18 +147,18 @@ TEST(ParseBindingConfig, MissingAdaptorPackagesThrows)
     std::runtime_error);
 }
 
-TEST(ParseBindingConfig, PublisherMissingTriggerBundlesThrows)
+TEST(ParseBindingConfig, PublisherMissingTriggerBundleThrows)
 {
   EXPECT_THROW(
     proton_ros2::parse_binding_config(
-      test_logger(), fixture("publisher_missing_trigger_bundles.yaml")),
+      test_logger(), fixture("publisher_missing_bundle.yaml")),
     std::runtime_error);
 }
 
-TEST(ParseBindingConfig, SubscriberMissingTargetBundlesThrows)
+TEST(ParseBindingConfig, SubscriberMissingTargetBundleThrows)
 {
   EXPECT_THROW(
     proton_ros2::parse_binding_config(
-      test_logger(), fixture("subscriber_missing_target_bundles.yaml")),
+      test_logger(), fixture("subscriber_missing_bundle.yaml")),
     std::runtime_error);
 }

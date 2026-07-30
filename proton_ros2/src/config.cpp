@@ -54,7 +54,7 @@ static QosConfig parse_qos(const proton::node_builder::ConfigNode & qos_node)
   return qos;
 }
 
-proton::node_builder::GeneratedNode node_from_config(
+static proton::node_builder::Config get_filtered_proton_config(
   const std::string & config_path,
   const std::string & target_name)
 {
@@ -62,9 +62,35 @@ proton::node_builder::GeneratedNode node_from_config(
 
   const auto config_tree = ConfigTree::from_yaml_file(config_path);
   const auto proton_config = Config(config_tree);
-  const auto filtered_config = filter_for_target(proton_config, target_name);
+  return filter_for_target(proton_config, target_name);
+}
 
-  return GeneratedNode(filtered_config, target_name);
+proton::node_builder::GeneratedNode node_from_config(
+  const std::string & config_path,
+  const std::string & target_name)
+{
+  const auto filtered_config = get_filtered_proton_config(config_path, target_name);
+
+  return proton::node_builder::GeneratedNode(filtered_config, target_name);
+}
+
+BundleNameToId get_bundles(
+  const std::string & config_path,
+  const std::string & target_name)
+{
+  const auto filtered_config = get_filtered_proton_config(config_path, target_name);
+
+  BundleNameToId name_to_id;
+
+  for (const auto & bundle : filtered_config.bundles) {
+    if (!name_to_id.contains(bundle.name)) {
+      name_to_id[bundle.name] = bundle.id;
+    } else {
+      throw std::runtime_error("Duplicate bundle name in config: '" + bundle.name + "'");
+    }
+  }
+
+  return name_to_id;
 }
 
 ProtonRos2Config parse_binding_config(rclcpp::Logger logger, const std::string & config_path)
@@ -82,19 +108,14 @@ ProtonRos2Config parse_binding_config(rclcpp::Logger logger, const std::string &
   const auto publishers_node = config_tree["publishers"];
   if (publishers_node.is_sequence()) {
     for (const auto & pub : publishers_node) {
-      std::vector<std::string> trigger_bundles;
-      if (pub["trigger_bundles"].is_sequence()) {
-        for (const auto & bundle : pub["trigger_bundles"]) {
-          trigger_bundles.push_back(bundle.as_string());
-        }
-      } else {
-        throw std::runtime_error("Config 'trigger_bundles' is not a list");
+      if (!pub["bundle"].is_defined()) {
+        throw std::runtime_error("Publisher config missing 'bundle'");
       }
 
       TopicConfig pub_config {
         .topic = pub["topic"].as_string(),
         .binding = pub["binding"].as_string(),
-        .bundles = trigger_bundles,
+        .bundle = pub["bundle"].as_string(),
         .qos = parse_qos(pub["qos"]),
       };
 
@@ -107,19 +128,14 @@ ProtonRos2Config parse_binding_config(rclcpp::Logger logger, const std::string &
   const auto subscribers_node = config_tree["subscribers"];
   if (subscribers_node.is_sequence()) {
     for (const auto & sub : subscribers_node) {
-      std::vector<std::string> target_bundles;
-      if (sub["target_bundles"].is_sequence()) {
-        for (const auto & bundle : sub["target_bundles"]) {
-          target_bundles.push_back(bundle.as_string());
-        }
-      } else {
-        throw std::runtime_error("Config 'target_bundles' is not a list");
+      if (!sub["bundle"].is_defined()) {
+        throw std::runtime_error("Subscriber config missing 'bundle'");
       }
 
       TopicConfig sub_config {
         .topic = sub["topic"].as_string(),
         .binding = sub["binding"].as_string(),
-        .bundles = target_bundles,
+        .bundle = sub["bundle"].as_string(),
         .qos = parse_qos(sub["qos"]),
       };
 

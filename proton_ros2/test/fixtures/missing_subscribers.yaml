@@ -4,7 +4,7 @@ adaptor_packages:
 publishers:
   - topic: /robot/board_temps
     binding: BoardTemps
-    trigger_bundles: [telemetry]
+    bundle: telemetry
     qos:
       profile: sensor_data
 

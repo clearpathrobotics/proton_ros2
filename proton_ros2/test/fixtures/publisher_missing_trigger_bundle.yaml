@@ -4,13 +4,13 @@ adaptor_packages:
 publishers:
   - topic: /robot/board_temps
     binding: BoardTemps
-    # trigger_bundles missing
+    # bundle missing
     qos:
       profile: sensor_data
 
 subscribers:
   - topic: /cmd_vel
     binding: Drive
-    target_bundles: [commands]
+    bundle: commands
     qos:
       profile: default

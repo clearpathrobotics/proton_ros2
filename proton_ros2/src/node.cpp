@@ -50,6 +50,9 @@ ProtonRos2Node::ProtonRos2Node()
     throw;
   }
 
+  // Get names and ID's of bundles in our config
+  const auto bundle_name_to_id = get_bundles(proton_config_file, target);
+
   // Load runtime config for message bindings
   const auto binding_config = parse_binding_config(get_logger(), binding_config_file);
 
@@ -76,16 +79,57 @@ ProtonRos2Node::ProtonRos2Node()
 
     RCLCPP_INFO(
       get_logger(),
-      "Creating publisher on topic %s with binding %s",
-      pub.topic.c_str(), pub.binding.c_str()
+      "Creating publisher on topic %s with binding %s (bundle=%s)",
+      pub.topic.c_str(), pub.binding.c_str(), pub.bundle.c_str()
     );
 
     auto publisher = adaptor->create_publisher(
       this, pub.topic, pub.qos.profile, proton_node_.registry(),
-      pub.bundles
+      pub.bundle
     );
 
     publishers_.push_back(std::move(publisher));
+  }
+
+  // Aggregate publishers by bundle name and raw ptr for callback insertion
+  std::unordered_map<std::string, proton_ros2_interfaces::GenericPublisher *>
+  bundle_to_publishers;
+  for (size_t i = 0; i < binding_config.publishers.size(); ++i) {
+    auto * publisher_ptr = publishers_[i].get();
+    const auto bundle_name = binding_config.publishers[i].bundle;
+
+    if (bundle_to_publishers.contains(bundle_name)) {
+      RCLCPP_WARN(get_logger(),
+      "Bundle '%s' has already been found, there is a 1:1 binding between bundles and publishers",
+        bundle_name.c_str()
+      );
+      continue;
+    }
+    bundle_to_publishers[bundle_name] = publisher_ptr;
+  }
+
+  proton::NodeAccess node_access(proton_node_.node());
+  for (const auto & [bundle_name, pub_ptr] : bundle_to_publishers) {
+    const auto it = bundle_name_to_id.find(bundle_name);
+    if (it == bundle_name_to_id.end()) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Publisher references unknown bundle '%s' - no callback will be registered",
+        bundle_name.c_str()
+      );
+      continue;
+    }
+
+    // Capture raw pointers by value; the pointed-to GenericPublisher objects
+    // are owned by publishers_, which is declared before proton_node_ in
+    // node.hpp so it outlives proton_node_ (and thus outlives any callback
+    // invocation).
+    node_access.on_bundle_update(
+      it->second,
+      [pub_ptr](uint32_t, const uint32_t *, size_t) {
+        pub_ptr->publish();
+      }
+    );
   }
 
   for (const auto & sub : binding_config.subscribers) {
@@ -93,13 +137,13 @@ ProtonRos2Node::ProtonRos2Node()
 
     RCLCPP_INFO(
       get_logger(),
-      "Creating subscriber on topic %s with binding %s",
-      sub.topic.c_str(), sub.binding.c_str()
+      "Creating subscriber on topic %s with binding %s (bundle=%s)",
+      sub.topic.c_str(), sub.binding.c_str(), sub.bundle.c_str()
     );
 
     auto subscriber = adaptor->create_subscription(
       this, sub.topic, sub.qos.profile, proton_node_,
-      sub.bundles
+      sub.bundle
     );
 
     subscribers_.push_back(std::move(subscriber));

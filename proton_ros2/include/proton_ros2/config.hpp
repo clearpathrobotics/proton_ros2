@@ -20,6 +20,7 @@
 #define PROTON_ROS2_CONFIG_HPP
 
 #include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -203,7 +204,7 @@ struct TopicConfig
 {
   std::string topic;
   std::string binding;
-  std::vector<std::string> bundles;
+  std::string bundle;
   QosConfig qos;
 };
 
@@ -214,7 +215,13 @@ struct ProtonRos2Config
   std::vector<TopicConfig> subscribers;
 };
 
+using BundleNameToId = std::unordered_map<std::string, uint32_t>;
+
 proton::node_builder::GeneratedNode node_from_config(
+  const std::string & config_path,
+  const std::string & target_name);
+
+BundleNameToId get_bundles(
   const std::string & config_path,
   const std::string & target_name);
 

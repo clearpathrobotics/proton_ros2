@@ -3,13 +3,13 @@
 publishers:
   - topic: /robot/board_temps
     binding: BoardTemps
-    trigger_bundles: [telemetry]
+    bundle: telemetry
     qos:
       profile: sensor_data
 
 subscribers:
   - topic: /cmd_vel
     binding: Drive
-    target_bundles: [commands]
+    bundle: commands
     qos:
       profile: default

@@ -35,10 +35,10 @@ public:
   std::unique_ptr<proton_ros2_interfaces::GenericPublisher> create_publisher(
     rclcpp::Node * node, const std::string & topic,
     const rclcpp::QoS & qos, proton_registry_t * registry,
-    const std::vector<std::string> & trigger_bundles) const override
+    const std::string & bundle) const override
   {
     return std::make_unique<proton_ros2_interfaces::GenericPublisher>(
-      node, topic, get_message_type(), qos, registry, trigger_bundles,
+      node, topic, get_message_type(), qos, registry, bundle,
       [{% if binding.stamp_path %}node{% endif %}](proton_registry_t * registry) -> rclcpp::SerializedMessage {
         {{ binding.ros_cpp_type }} msg;
 {% if binding.stamp_path %}
@@ -66,10 +66,10 @@ public:
     rclcpp::Node * node, const std::string & topic,
     const rclcpp::QoS & qos,
     proton::node_builder::GeneratedNode & proton_node,
-    const std::vector<std::string> & target_bundles) const override
+    const std::string & bundle) const override
   {
     return std::make_unique<proton_ros2_interfaces::GenericSubscription>(
-      node, topic, get_message_type(), qos, proton_node, target_bundles,
+      node, topic, get_message_type(), qos, proton_node, bundle,
       [](const rclcpp::SerializedMessage & serialized,
       proton::node_builder::GeneratedNode & generated_node) {
         {{ binding.ros_cpp_type }} msg;

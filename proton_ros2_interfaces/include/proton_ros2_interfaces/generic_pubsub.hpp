@@ -19,7 +19,6 @@
 #ifndef PROTON_ROS2_INTERFACES_GENERIC_PUBSUB_HPP
 #define PROTON_ROS2_INTERFACES_GENERIC_PUBSUB_HPP
 
-#include <algorithm>
 #include <functional>
 #include <string>
 
@@ -44,26 +43,26 @@ public:
   GenericPublisher(
     rclcpp::Node * node, const std::string & topic,
     const std::string & msg_type, const rclcpp::QoS & qos,
-    proton_registry_t * registry, const std::vector<std::string> & trigger_bundles,
+    proton_registry_t * registry, const std::string & bundle,
     SerializeFn serialize)
-  : registry_(registry), trigger_bundles_(trigger_bundles), serialize_(std::move(serialize))
+  : registry_(registry), bundle_(bundle), serialize_(std::move(serialize))
   {
     pub_ = node->create_generic_publisher(topic, msg_type, qos);
   }
 
-  void publish(const std::string & bundle_name)
+  /// Serialize the current registry state and publish. Intended to be called
+  /// from a proton bundle-update callback wired to bundle().
+  void publish()
   {
-    if (std::find(trigger_bundles_.begin(), trigger_bundles_.end(),
-        bundle_name) != trigger_bundles_.end())
-    {
-      pub_->publish(serialize_(registry_));
-    }
+    pub_->publish(serialize_(registry_));
   }
+
+  const std::string & bundle() const {return bundle_;}
 
 private:
   rclcpp::GenericPublisher::SharedPtr pub_;
   proton_registry_t * registry_;
-  std::vector<std::string> trigger_bundles_;
+  std::string bundle_;
   SerializeFn serialize_;
 };
 
@@ -73,9 +72,9 @@ public:
     rclcpp::Node * node, const std::string & topic,
     const std::string & msg_type, const rclcpp::QoS & qos,
     proton::node_builder::GeneratedNode & proton_node,
-    const std::vector<std::string> & target_bundles,
+    const std::string & bundle,
     DeserializeAndConvertFn convert)
-  : target_bundles_(target_bundles)
+  : bundle_(bundle)
   {
     sub_ = node->create_generic_subscription(topic, msg_type, qos,
         [&proton_node, convert = std::move(convert)]
@@ -85,9 +84,11 @@ public:
       });
   }
 
+  const std::string & bundle() const {return bundle_;}
+
 private:
   rclcpp::GenericSubscription::SharedPtr sub_;
-  std::vector<std::string> target_bundles_;
+  std::string bundle_;
 };
 
 }  // namespace proton_ros2_interfaces

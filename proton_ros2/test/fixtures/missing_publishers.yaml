@@ -6,6 +6,6 @@ adaptor_packages:
 subscribers:
   - topic: /cmd_vel
     binding: Drive
-    target_bundles: [commands]
+    bundle: commands
     qos:
       profile: default

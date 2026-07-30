@@ -66,13 +66,13 @@ messages:
 publishers:
   - topic: /robot/board_temps
     binding: BoardTemps  # References adapter by binding name
-    trigger_bundles: [telemetry]  # Publish when ANY of these decode
+    bundle: telemetry  # Publish when this bundle decodes
     qos:
       profile: sensor_data
 
 subscribers:
   - topic: /cmd_vel
     binding: Drive
-    target_bundles: [commands]  # Trigger these bundles after conversion
+    bundle: commands  # Trigger this bundle after conversion
     qos:
       profile: default
