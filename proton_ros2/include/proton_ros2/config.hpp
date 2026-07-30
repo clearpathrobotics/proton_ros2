@@ -76,6 +76,8 @@ inline rclcpp::QoS get_qos_profile(QoSProfile profile)
     case QoSProfile::Rosout:
       return rclcpp::RosoutQoS();
   }
+
+  return rclcpp::QoS(10);
 }
 
 
@@ -111,6 +113,8 @@ inline rmw_qos_history_policy_t get_qos_history(QoSHistory history)
     case QoSHistory::KeepAll:
       return RMW_QOS_POLICY_HISTORY_KEEP_ALL;
   }
+
+  return RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT;
 }
 
 enum class QoSReliability
@@ -145,6 +149,8 @@ inline rmw_qos_reliability_policy_t get_qos_reliability(QoSReliability reliabili
     case QoSReliability::BestEffort:
       return RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
   }
+
+  return RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT;
 }
 
 enum class QoSDurability
@@ -179,36 +185,40 @@ inline rmw_qos_durability_policy_t get_qos_durability(QoSDurability durability)
     case QoSDurability::Volatile:
       return RMW_QOS_POLICY_DURABILITY_VOLATILE;
   }
+
+  return RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT;
 }
 }  // namespace qos
 
 typedef struct
 {
-  std::string profile;
-  std::string history;
+  rclcpp::QoS profile;
+  rmw_qos_history_policy_t history;
   size_t depth;
-  std::string reliability;
-  std::string durability;
+  rmw_qos_reliability_policy_t reliability;
+  rmw_qos_durability_policy_t durability;
 } QosConfig;
 
 struct TopicConfig
 {
   std::string topic;
-  std::string message;
+  std::string binding;
   std::string bundle;
   QosConfig qos;
 };
 
 struct ProtonRos2Config
 {
-  std::vector<TopicConfig> topics;
+  std::vector<std::string> adaptor_packages;
+  std::vector<TopicConfig> publishers;
+  std::vector<TopicConfig> subscribers;
 };
 
 proton::node_builder::GeneratedNode node_from_config(
   const std::string & config_path,
   const std::string & target_name);
 
-// Method for getting topics for plugins
+ProtonRos2Config runtime_config_from_yaml(const std::string & config_path);
 
 }  // namespace proton_ros2
 

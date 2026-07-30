@@ -28,6 +28,8 @@
 #include <protoncpp/node_builder/generator.hpp>
 #include <proton/common.h>
 
+#include "proton_ros2/plugin_loader.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 
 namespace proton_ros2
@@ -84,6 +86,7 @@ public:
   std::vector<DataForPeers> spin_once(const rclcpp::Time & time);
 
 private:
+  PluginLoader plugin_loader_;
   proton::node_builder::GeneratedNode proton_node_;
   std::map<std::string, uint32_t> bundle_id_map_;
   std::map<std::string, uint32_t> signal_id_map_;

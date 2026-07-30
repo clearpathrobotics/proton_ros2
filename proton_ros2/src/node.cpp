@@ -28,17 +28,20 @@ namespace proton_ros2
 
 ProtonRos2Node::ProtonRos2Node()
 : rclcpp::Node("proton_ros2")
+  , plugin_loader_(get_logger())
 {
-  this->declare_parameter("config_file", rclcpp::PARAMETER_STRING);
-  this->declare_parameter("target", rclcpp::PARAMETER_STRING);
+  declare_parameter("proton_config_file", rclcpp::PARAMETER_STRING);
+  declare_parameter("binding_config_file", rclcpp::PARAMETER_STRING);
+  declare_parameter("target", rclcpp::PARAMETER_STRING);
 
-  const auto config_file = get_parameter("config_file").as_string();
+  const auto proton_config_file = get_parameter("proton_config_file").as_string();
+  const auto binding_config_file = get_parameter("binding_config_file").as_string();
   const auto target = get_parameter("target").as_string();
 
   // Proton node builder will throw exceptions from errors in the config,
   // so allow the process to fail early.
   try {
-    proton_node_ = node_from_config(config_file, target);
+    proton_node_ = node_from_config(proton_config_file, target);
   } catch (proton::node_builder::NodeBuilderException & e) {
     RCLCPP_FATAL(
       this->get_logger(),
@@ -46,6 +49,11 @@ ProtonRos2Node::ProtonRos2Node()
     );
     throw;
   }
+
+  // Load runtime config for message bindings
+  const auto runtime_config = runtime_config_from_yaml(binding_config_file);
+
+  plugin_loader_.load_plugins(runtime_config.adaptor_packages);
 }
 
 void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
