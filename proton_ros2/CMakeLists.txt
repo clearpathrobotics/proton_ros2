@@ -51,6 +51,7 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
   # the following line skips the linter which checks for copyrights
   # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
@@ -59,6 +60,22 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  # QoS parsing unit tests
+  ament_add_gtest(test_qos test/test_qos.cpp)
+  target_link_libraries(test_qos
+    ${PROJECT_NAME}
+  )
+
+  # Binding config parsing unit tests
+  ament_add_gtest(test_binding_config test/test_binding_config.cpp)
+  target_link_libraries(test_binding_config
+    ${PROJECT_NAME}
+  )
+  target_compile_definitions(test_binding_config
+    PRIVATE
+      PROTON_ROS2_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/fixtures"
+  )
 endif()
 
 # Ament export

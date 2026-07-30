@@ -1,0 +1,11 @@
+adaptor_packages:
+  - example_bridge_adaptor
+
+publishers:
+  - topic: /robot/board_temps
+    binding: BoardTemps
+    trigger_bundles: [telemetry]
+    qos:
+      profile: sensor_data
+
+# subscribers key missing entirely

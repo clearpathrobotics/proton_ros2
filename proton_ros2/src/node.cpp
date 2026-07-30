@@ -51,7 +51,7 @@ ProtonRos2Node::ProtonRos2Node()
   }
 
   // Load runtime config for message bindings
-  const auto binding_config = runtime_config_from_yaml(get_logger(), binding_config_file);
+  const auto binding_config = parse_binding_config(get_logger(), binding_config_file);
 
   plugin_loader_.load_plugins(binding_config.adaptor_packages);
 

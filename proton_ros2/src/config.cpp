@@ -67,7 +67,7 @@ proton::node_builder::GeneratedNode node_from_config(
   return GeneratedNode(filtered_config, target_name);
 }
 
-ProtonRos2Config runtime_config_from_yaml(rclcpp::Logger logger, const std::string & config_path)
+ProtonRos2Config parse_binding_config(rclcpp::Logger logger, const std::string & config_path)
 {
   ProtonRos2Config runtime_config;
 

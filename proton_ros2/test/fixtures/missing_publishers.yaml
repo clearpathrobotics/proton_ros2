@@ -1,0 +1,11 @@
+adaptor_packages:
+  - example_bridge_adaptor
+
+# publishers key missing entirely
+
+subscribers:
+  - topic: /cmd_vel
+    binding: Drive
+    target_bundles: [commands]
+    qos:
+      profile: default

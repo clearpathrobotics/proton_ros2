@@ -1,0 +1,28 @@
+adaptor_packages:
+  - example_bridge_adaptor
+  - another_adaptor_pkg
+
+publishers:
+  - topic: /robot/board_temps
+    binding: BoardTemps
+    trigger_bundles: [telemetry, diagnostics]
+    qos:
+      profile: sensor_data
+      history: keep_last
+      depth: 5
+      reliability: reliable
+      durability: volatile
+
+  - topic: /robot/motor_temps
+    binding: MotorTemps
+    trigger_bundles: [motor_status]
+    qos:
+      profile: default
+
+subscribers:
+  - topic: /cmd_vel
+    binding: Drive
+    target_bundles: [commands]
+    qos:
+      profile: default
+      reliability: best_effort

@@ -48,6 +48,7 @@ messages:
   - name: Drive
     ros2_type: geometry_msgs/msg/Twist
     mapping:
+    # ros2.path is the path to the particular field of the message struct, including nesting
       - {ros2.path: linear.x, proton.signal: forward_speed, type: float}
       - {ros2.path: linear.y, proton.signal: strafe_speed, type: float}
       - {ros2.path: angular.z, proton.signal: turn_rate, type: float}
@@ -61,15 +62,17 @@ messages:
       - {ros2.path: temperatures, ros2.index: 1, proton.signal: temp_pcb, type: float}
       - {ros2.path: temperatures, ros2.index: 2, proton.signal: temp_fan1, type: float}
 
-# This is a runtime config to map bindings to ros topics
+# This is a runtime config to map bindings to ROS topics
 publishers:
   - topic: /robot/board_temps
     binding: BoardTemps  # References adapter by binding name
     trigger_bundles: [telemetry]  # Publish when ANY of these decode
-    qos: sensor_data
+    qos:
+      profile: sensor_data
 
 subscribers:
   - topic: /cmd_vel
     binding: Drive
     target_bundles: [commands]  # Trigger these bundles after conversion
-    qos: default
+    qos:
+      profile: default
