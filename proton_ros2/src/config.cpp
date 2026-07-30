@@ -67,24 +67,75 @@ proton::node_builder::GeneratedNode node_from_config(
   return GeneratedNode(filtered_config, target_name);
 }
 
-ProtonRos2Config runtime_config_from_yaml(const std::string & config_path)
+ProtonRos2Config runtime_config_from_yaml(rclcpp::Logger logger, const std::string & config_path)
 {
   ProtonRos2Config runtime_config;
 
+  RCLCPP_INFO(logger, "Creating binding config from %s", config_path.c_str());
+
   const auto config_tree = proton::node_builder::ConfigTree::from_yaml_file(config_path);
+
+  RCLCPP_INFO(logger, "Config tree created. Pub size: %zu, sub size: %zu",
+    config_tree["publishers"].size(), config_tree["subscribers"].size()
+  );
 
   const auto publishers_node = config_tree["publishers"];
   if (publishers_node.is_sequence()) {
     for (const auto & pub : publishers_node) {
+      std::vector<std::string> trigger_bundles;
+      if (pub["trigger_bundles"].is_sequence()) {
+        for (const auto & bundle : pub["trigger_bundles"]) {
+          trigger_bundles.push_back(bundle.as_string());
+        }
+      } else {
+        throw std::runtime_error("Config 'trigger_bundles' is not a list");
+      }
+
       TopicConfig pub_config {
         .topic = pub["topic"].as_string(),
         .binding = pub["binding"].as_string(),
-        .bundle = pub["bundle"].as_string(),
+        .bundles = trigger_bundles,
         .qos = parse_qos(pub["qos"]),
       };
 
       runtime_config.publishers.push_back(pub_config);
     }
+  } else {
+    throw std::runtime_error("Config 'publishers' is not a list");
+  }
+
+  const auto subscribers_node = config_tree["subscribers"];
+  if (subscribers_node.is_sequence()) {
+    for (const auto & sub : subscribers_node) {
+      std::vector<std::string> target_bundles;
+      if (sub["target_bundles"].is_sequence()) {
+        for (const auto & bundle : sub["target_bundles"]) {
+          target_bundles.push_back(bundle.as_string());
+        }
+      } else {
+        throw std::runtime_error("Config 'target_bundles' is not a list");
+      }
+
+      TopicConfig sub_config {
+        .topic = sub["topic"].as_string(),
+        .binding = sub["binding"].as_string(),
+        .bundles = target_bundles,
+        .qos = parse_qos(sub["qos"]),
+      };
+
+      runtime_config.subscribers.push_back(sub_config);
+    }
+  } else {
+    throw std::runtime_error("Config 'subscribers' is not a list");
+  }
+
+  const auto adaptors_node = config_tree["adaptor_packages"];
+  if (adaptors_node.is_sequence()) {
+    for (const auto & pkg : adaptors_node) {
+      runtime_config.adaptor_packages.push_back(pkg.as_string());
+    }
+  } else {
+    throw std::runtime_error("config 'adaptor_packages' is not a list");
   }
 
   return runtime_config;

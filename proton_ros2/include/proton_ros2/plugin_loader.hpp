@@ -52,6 +52,8 @@ public:
 
   std::vector<std::string> bindings() const;
 
+  bool has_binding(const std::string & binding_name) const;
+
 private:
   void register_instance(const std::string & class_id, AdaptorPtr adaptor);
 

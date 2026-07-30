@@ -62,7 +62,7 @@ void PluginLoader::load_plugins(const std::vector<std::string> & packages)
 
 void PluginLoader::register_instance(const std::string & class_id, AdaptorPtr adaptor)
 {
-  const auto binding = adaptor->getBindingName();
+  const auto binding = adaptor->get_binding_name();
 
   if (binding.empty()) {
     throw std::runtime_error("Adaptor '" + class_id + "' has empty binding name");
@@ -77,7 +77,7 @@ void PluginLoader::register_instance(const std::string & class_id, AdaptorPtr ad
   RCLCPP_INFO(
     logger_,
     "Registered binding '%s', class '%s', msg_type '%s",
-    binding.c_str(), class_id.c_str(), binding_to_adaptor_[binding]->getMessageType().c_str()
+    binding.c_str(), class_id.c_str(), binding_to_adaptor_[binding]->get_message_type().c_str()
   );
 }
 
@@ -97,6 +97,11 @@ std::vector<std::string> PluginLoader::bindings() const
   std::vector<std::string> bindings{keys_view.begin(), keys_view.end()};
 
   return bindings;
+}
+
+bool PluginLoader::has_binding(const std::string & binding_name) const
+{
+  return binding_to_adaptor_.contains(binding_name);
 }
 
 }  // namespace proton_ros2

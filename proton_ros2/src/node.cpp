@@ -44,16 +44,66 @@ ProtonRos2Node::ProtonRos2Node()
     proton_node_ = node_from_config(proton_config_file, target);
   } catch (proton::node_builder::NodeBuilderException & e) {
     RCLCPP_FATAL(
-      this->get_logger(),
+      get_logger(),
       "Proton configuration error: %s", e.what()
     );
     throw;
   }
 
   // Load runtime config for message bindings
-  const auto runtime_config = runtime_config_from_yaml(binding_config_file);
+  const auto binding_config = runtime_config_from_yaml(get_logger(), binding_config_file);
 
-  plugin_loader_.load_plugins(runtime_config.adaptor_packages);
+  plugin_loader_.load_plugins(binding_config.adaptor_packages);
+
+  // Validate that adaptor bindings exist
+  for (const auto & pub : binding_config.publishers) {
+    if (!plugin_loader_.has_binding(pub.binding)) {
+      throw std::runtime_error(
+        "Publisher on '" + pub.topic + "' references unknown binding: '" + pub.binding + "'"
+      );
+    }
+  }
+  for (const auto & sub : binding_config.subscribers) {
+    if (!plugin_loader_.has_binding(sub.binding)) {
+      throw std::runtime_error(
+        "Subscriber on '" + sub.topic + "' references unknown binding: '" + sub.binding + "'"
+      );
+    }
+  }
+
+  for (const auto & pub : binding_config.publishers) {
+    auto adaptor = plugin_loader_.get_by_binding(pub.binding);
+
+    RCLCPP_INFO(
+      get_logger(),
+      "Creating publisher on topic %s with binding %s",
+      pub.topic.c_str(), pub.binding.c_str()
+    );
+
+    auto publisher = adaptor->create_publisher(
+      this, pub.topic, pub.qos.profile, proton_node_.registry(),
+      pub.bundles
+    );
+
+    publishers_.push_back(std::move(publisher));
+  }
+
+  for (const auto & sub : binding_config.subscribers) {
+    auto adaptor = plugin_loader_.get_by_binding(sub.binding);
+
+    RCLCPP_INFO(
+      get_logger(),
+      "Creating subscriber on topic %s with binding %s",
+      sub.topic.c_str(), sub.binding.c_str()
+    );
+
+    auto subscriber = adaptor->create_subscription(
+      this, sub.topic, sub.qos.profile, proton_node_,
+      sub.bundles
+    );
+
+    subscribers_.push_back(std::move(subscriber));
+  }
 }
 
 void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
@@ -62,7 +112,7 @@ void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
 
   if (status != PROTON_OK) {
     RCLCPP_ERROR(
-      this->get_logger(),
+      get_logger(),
       "Proton reception error: %s",
       proton_status_to_string(status)
     );
@@ -87,7 +137,7 @@ std::vector<DataForPeers> ProtonRos2Node::spin_once(const rclcpp::Time & time)
     proton_status_e status = proton_node.update(time_ms, buf, out_len, peers, num_selected_peers);
     if (status != PROTON_OK) {
       RCLCPP_ERROR(
-        this->get_logger(),
+        get_logger(),
         "Could not encode proton message: %s",
         proton_status_to_string(status)
       );

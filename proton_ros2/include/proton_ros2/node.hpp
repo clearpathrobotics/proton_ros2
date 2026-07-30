@@ -20,13 +20,15 @@
 #define PROTON_ROS2_NODE_HPP
 
 #include <cstdint>
-#include <map>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
 
 #include <protoncpp/node_builder/generator.hpp>
 #include <proton/common.h>
+
+#include <proton_ros2_interfaces/adaptor_interface.hpp>
 
 #include "proton_ros2/plugin_loader.hpp"
 
@@ -88,8 +90,9 @@ public:
 private:
   PluginLoader plugin_loader_;
   proton::node_builder::GeneratedNode proton_node_;
-  std::map<std::string, uint32_t> bundle_id_map_;
-  std::map<std::string, uint32_t> signal_id_map_;
+
+  std::vector<std::unique_ptr<proton_ros2_interfaces::GenericPublisher>> publishers_;
+  std::vector<std::unique_ptr<proton_ros2_interfaces::GenericSubscription>> subscribers_;
 };
 
 }  // namespace proton_ros2
