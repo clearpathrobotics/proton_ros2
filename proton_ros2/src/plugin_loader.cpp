@@ -76,7 +76,7 @@ void PluginLoader::register_instance(const std::string & class_id, AdaptorPtr ad
 
   RCLCPP_INFO(
     logger_,
-    "Registered binding '%s', class '%s', msg_type '%s",
+    "Registered binding '%s', class '%s', msg_type '%s'",
     binding.c_str(), class_id.c_str(), binding_to_adaptor_[binding]->get_message_type().c_str()
   );
 }
@@ -87,6 +87,7 @@ PluginLoader::AdaptorPtr PluginLoader::get_by_binding(const std::string & bindin
 
   if (it == binding_to_adaptor_.end()) {
     RCLCPP_ERROR(logger_, "Could not find binding '%s'", binding_name.c_str());
+    return nullptr;
   }
   return it->second;
 }
