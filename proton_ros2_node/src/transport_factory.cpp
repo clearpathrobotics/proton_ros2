@@ -86,11 +86,13 @@ std::unique_ptr<BaseTransport> transport_factory(
   }
 
   if (host_endpoint.type == "udp4") {
-    return std::make_unique<UdpTransport>(peer_node_id, *peer_endpoint_id, host_endpoint.ip, peer_endpoint.ip, host_endpoint.port,
+    return std::make_unique<UdpTransport>(peer_node_id, *peer_endpoint_id, host_endpoint.ip,
+        peer_endpoint.ip, host_endpoint.port,
         peer_endpoint.port);
   } else if (host_endpoint.type == "serial") {
     // TODO (twallis) these parameters aren't part of the proton config, may need to add them
-    return std::make_unique<SerialTransport>(peer_node_id, *peer_endpoint_id, host_endpoint.device, host_endpoint.baud, 1024, 1000,
+    return std::make_unique<SerialTransport>(peer_node_id, *peer_endpoint_id, host_endpoint.device,
+        host_endpoint.baud, 1024, 1000,
         10);
   } else {
     throw std::runtime_error("Unknown transport type '" + host_endpoint.type + "'");

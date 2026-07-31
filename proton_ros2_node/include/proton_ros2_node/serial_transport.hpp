@@ -39,7 +39,7 @@ public:
     const std::string & port, const size_t baud, const size_t buf_size,
     const size_t recovery_timer_interval_ms, const size_t recovery_error_threshold)
   : peer_node_id_(node_id)
-  , peer_endpoint_id_(endpoint_id)
+    , peer_endpoint_id_(endpoint_id)
   {
     driver_ = std::make_unique<serial_hardware::drivers::SerialDriver>(port, baud, buf_size,
         recovery_timer_interval_ms, recovery_error_threshold);

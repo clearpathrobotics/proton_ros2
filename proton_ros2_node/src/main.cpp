@@ -29,61 +29,100 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+namespace proton_ros2_node
+{
+
+// Owns the node and its transports. Ownership flows one direction (App -> node,
+// App -> transports) so callbacks can use non-owning raw pointers without
+// creating shared_ptr cycles.
+class App
+{
+public:
+  App()
+  : node_(std::make_shared<proton_ros2::ProtonRos2Node>())
+  {
+  }
+
+  std::shared_ptr<proton_ros2::ProtonRos2Node> node() const {return node_;}
+
+  void build_transports()
+  {
+    const auto & proton_config = node_->get_config();
+    const auto target_name = node_->get_name();
+    const auto & endpoint_config = proton_config.nodes.at(target_name).endpoints;
+
+    for (const auto & ep_id : std::views::keys(endpoint_config)) {
+      try {
+        auto transport = transport_factory(
+          node_->get_logger(), proton_config, target_name, ep_id);
+        if (transport == nullptr) {
+          RCLCPP_ERROR(node_->get_logger(),
+              "transport_factory returned nullptr for %s:%d. Skipping...", target_name.c_str(),
+              ep_id);
+          continue;
+        }
+        auto * transport_raw = transport.get();
+        auto * node_raw = node_.get();
+        transport->set_receive_callback(
+          [transport_raw, node_raw](const uint8_t * buf, size_t len) {
+            if (transport_raw->receive_and_decode(buf, len) == PROTON_OK) {
+              node_raw->recv_bytes(buf, len);
+            }
+          });
+        transports_.push_back(std::move(transport));
+      } catch (std::exception & e) {
+        RCLCPP_ERROR(node_->get_logger(), "Error constructing transports: %s", e.what());
+      }
+    }
+  }
+
+  void start_spin_timer(std::chrono::milliseconds period)
+  {
+    // Capture raw pointers only; the timer is owned by the node which is owned
+    // by this App, so lifetime is guaranteed and no shared_ptr cycle is formed.
+    auto * self = this;
+    auto * node_raw = node_.get();
+    spin_timer_ = node_->create_wall_timer(
+      period,
+      [self, node_raw]() {
+        const auto data_for_peers = node_raw->spin_once(node_raw->now());
+        if (!data_for_peers.empty()) {
+          RCLCPP_INFO(
+            node_raw->get_logger(), "data for peer received. send to %ld batches",
+            data_for_peers.size());
+        }
+        for (const auto & dfp : data_for_peers) {
+          for (const auto & peer : dfp.peers) {
+            for (auto & transport : self->transports_) {
+              if (peer.node_id == transport->node_id() &&
+              peer.endpoint_id == transport->endpoint_id())
+              {
+                transport->encode_and_send(dfp.data);
+              }
+            }
+          }
+        }
+      });
+  }
+
+private:
+  std::shared_ptr<proton_ros2::ProtonRos2Node> node_;
+  std::vector<std::unique_ptr<BaseTransport>> transports_;
+  rclcpp::TimerBase::SharedPtr spin_timer_;
+};
+
+}  // namespace proton_ros2_node
+
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
+  proton_ros2_node::App app;
+  app.build_transports();
+  app.start_spin_timer(std::chrono::milliseconds(500));
+
   rclcpp::executors::SingleThreadedExecutor executor;
-
-  auto proton_node = std::make_shared<proton_ros2::ProtonRos2Node>();
-
-  const auto proton_config = proton_node->get_config();
-  const auto target_name = proton_node->get_name();
-
-  const auto endpoint_config = proton_config.nodes.at(target_name).endpoints;
-
-  std::vector<std::unique_ptr<proton_ros2_node::BaseTransport>> transports;
-  for (const auto & ep_id : std::views::keys(endpoint_config)) {
-    try {
-      std::unique_ptr<proton_ros2_node::BaseTransport> transport =
-        proton_ros2_node::transport_factory(proton_node->get_logger(), proton_config, target_name,
-        ep_id);
-      if (transport != nullptr) {
-        transport->set_receive_callback([transport, proton_node](const uint8_t * buf, size_t len){
-          if (transport->receive_and_decode(buf, len) == PROTON_OK) {
-            // Serial needs to hold on to a vector, so it's going to be a problem to pass the buf/len combo
-            proton_node->recv_bytes(buf, len);
-          }
-        });
-        transports.push_back(std::move(transport));
-      }
-    } catch (std::exception & e) {
-      RCLCPP_ERROR(proton_node->get_logger(), "Error constructing transports: %s", e.what());
-    }
-  }
-
-  auto spin_timer = proton_node->create_wall_timer(
-    std::chrono::milliseconds(500),
-    [proton_node]() {
-      std::vector<proton_ros2::DataForPeers> data_for_peers =
-      proton_node->spin_once(proton_node->now());
-      if (!data_for_peers.empty()) {
-        RCLCPP_INFO(proton_node->get_logger(), "data for peer received. send to %ld peers",
-        data_for_peers.size());
-      }
-
-      for (const auto & peer : data_for_peers.peers) {
-        for (auto & transport : transports) {
-          if (peer.node_id == transport->node_id() && peer.endpoint_id == transport->endpoint_id()) {
-            transport->encode_and_send(data_for_peers.data);
-          }
-        }
-      }
-    }
-  );
-  (void)spin_timer;
-
-  executor.add_node(proton_node);
+  executor.add_node(app.node());
   executor.spin();
 
   rclcpp::shutdown();

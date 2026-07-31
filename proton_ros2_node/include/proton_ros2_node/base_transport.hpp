@@ -57,10 +57,12 @@ public:
 
   virtual proton_status_e receive_and_decode(const uint8_t * buf, const size_t len) = 0;
 
-  void set_receive_callback(std::function<void(const uint8_t * buf, const size_t len)> & fn)
+  // Stores the callback so it outlives the driver, which holds a reference to it.
+  void set_receive_callback(std::function<void(const uint8_t * buf, const size_t len)> fn)
   {
-    // TODO fix this in HAL -_-
-    driver_->setRecieveCallback(fn);  // cspell:disable-line
+    recv_cb_ = std::move(fn);
+    // TODO fix spelling mistake in HAL -_-
+    driver_->setRecieveCallback(recv_cb_);  // cspell:disable-line
   }
 
   uint32_t node_id() const
@@ -83,6 +85,7 @@ protected:
   uint32_t peer_endpoint_id_;
 
   std::unique_ptr<serial_hardware::drivers::BaseDriver> driver_;
+  std::function<void(const uint8_t * buf, const size_t len)> recv_cb_;
 };
 
 }  // namespace proton_ros2_node
