@@ -39,28 +39,28 @@ public:
   /**
    * @brief Unique binding name
    */
-  virtual std::string getBindingName() const = 0;
+  virtual std::string get_binding_name() const = 0;
 
   /**
    * @brief Fully qualified ROS 2 message type (ex: "geometry_msgs/msg/TwistStamped")
    */
-  virtual std::string getMessageType() const = 0;
+  virtual std::string get_message_type() const = 0;
 
   /**
    * @brief Create publisher: reads from signal registry, serializes to ROS message
    */
-  virtual std::unique_ptr<GenericPublisher> createPublisher(
+  virtual std::unique_ptr<GenericPublisher> create_publisher(
     rclcpp::Node * node, const std::string & topic,
     const rclcpp::QoS & qos, proton_registry_t * registry,
-    const std::vector<std::string> & trigger_bundles) const = 0;
+    const std::string & bundle) const = 0;
 
   /**
    * @brief Create subscription: deserializes ROS message, writes to signal registry, optionally triggers bundles
    */
-  virtual std::unique_ptr<GenericSubscription> createSubscription(
+  virtual std::unique_ptr<GenericSubscription> create_subscription(
     rclcpp::Node * node, const std::string & topic, const rclcpp::QoS & qos,
     proton::node_builder::GeneratedNode & proton_node,
-    const std::vector<std::string> & target_bundles) const = 0;
+    const std::string & bundle) const = 0;
 };
 
 }  // namespace proton_ros2_interfaces

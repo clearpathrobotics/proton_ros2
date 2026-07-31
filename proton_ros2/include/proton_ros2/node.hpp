@@ -20,13 +20,17 @@
 #define PROTON_ROS2_NODE_HPP
 
 #include <cstdint>
-#include <map>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
 
 #include <protoncpp/node_builder/generator.hpp>
 #include <proton/common.h>
+
+#include <proton_ros2_interfaces/adaptor_interface.hpp>
+
+#include "proton_ros2/plugin_loader.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -84,9 +88,15 @@ public:
   std::vector<DataForPeers> spin_once(const rclcpp::Time & time);
 
 private:
+  PluginLoader plugin_loader_;
+
+  // publishers_ must be declared such that they die AFTER proton_node_. This prevents dangling
+  // raw pointers captured in bundle-update callbacks (which are deliberately leaked by proton's
+  // BundleAccess::set_callback and could be invoked during proton_node_ teardown).
+  std::vector<std::shared_ptr<proton_ros2_interfaces::GenericPublisher>> publishers_;
+  std::vector<std::unique_ptr<proton_ros2_interfaces::GenericSubscription>> subscribers_;
+
   proton::node_builder::GeneratedNode proton_node_;
-  std::map<std::string, uint32_t> bundle_id_map_;
-  std::map<std::string, uint32_t> signal_id_map_;
 };
 
 }  // namespace proton_ros2

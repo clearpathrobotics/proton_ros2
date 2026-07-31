@@ -22,23 +22,23 @@ namespace proton_ros2_adaptors
 class {{ binding.adaptor_class }} : public proton_ros2_interfaces::MessageAdaptorIface
 {
 public:
-  std::string getBindingName() const override
+  std::string get_binding_name() const override
   {
     return "{{ binding.name }}";
   }
 
-  std::string getMessageType() const override
+  std::string get_message_type() const override
   {
     return "{{ binding.ros2_type }}";
   }
 
-  std::unique_ptr<proton_ros2_interfaces::GenericPublisher> createPublisher(
+  std::unique_ptr<proton_ros2_interfaces::GenericPublisher> create_publisher(
     rclcpp::Node * node, const std::string & topic,
     const rclcpp::QoS & qos, proton_registry_t * registry,
-    const std::vector<std::string> & trigger_bundles) const override
+    const std::string & bundle) const override
   {
     return std::make_unique<proton_ros2_interfaces::GenericPublisher>(
-      node, topic, getMessageType(), qos, registry, trigger_bundles,
+      node, topic, get_message_type(), qos, registry, bundle,
       [{% if binding.stamp_path %}node{% endif %}](proton_registry_t * registry) -> rclcpp::SerializedMessage {
         {{ binding.ros_cpp_type }} msg;
 {% if binding.stamp_path %}
@@ -62,14 +62,14 @@ public:
       });
   }
 
-  std::unique_ptr<proton_ros2_interfaces::GenericSubscription> createSubscription(
+  std::unique_ptr<proton_ros2_interfaces::GenericSubscription> create_subscription(
     rclcpp::Node * node, const std::string & topic,
     const rclcpp::QoS & qos,
     proton::node_builder::GeneratedNode & proton_node,
-    const std::vector<std::string> & target_bundles) const override
+    const std::string & bundle) const override
   {
     return std::make_unique<proton_ros2_interfaces::GenericSubscription>(
-      node, topic, getMessageType(), qos, proton_node, target_bundles,
+      node, topic, get_message_type(), qos, proton_node, bundle,
       [](const rclcpp::SerializedMessage & serialized,
       proton::node_builder::GeneratedNode & generated_node) {
         {{ binding.ros_cpp_type }} msg;

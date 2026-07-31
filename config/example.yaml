@@ -1,0 +1,78 @@
+nodes:
+  - name: mcu
+    id: 0
+    endpoints:
+      - id: 0
+        type: udp4
+        ip: 127.0.0.1
+        port: 11418
+  - name: pc
+    id: 2
+    endpoints:
+      - id: 0
+        type: udp4
+        ip: 127.0.0.1
+        port: 11418
+
+connections:
+  - first: {node: pc, id: 0}
+    second: {node: mcu, id: 0}
+
+signals:
+  - {name: forward_speed, id: 0, type: float, value: 0.0}
+  - {name: strafe_speed, id: 1, type: float, value: 1.0}
+  - {name: turn_rate, id: 2, type: float, value: 2.0}
+  - {name: board_temp_frame_id, id: 3, type: string, value: "board_link"}
+  - {name: temp_mcu, id: 4, type: float, value: 4.0}
+  - {name: temp_pcb, id: 5, type: float, value: 5.0}
+  - {name: temp_fan1, id: 6, type: float, value: 6.0}
+
+bundles:
+  - name: telemetry
+    id: 0x100
+    producers: [mcu]
+    consumers: [pc]
+    signals: [4, 5, 6]
+  - name: commands
+    id: 0x101
+    producers: [pc]
+    consumers: [mcu]
+    signals: [0, 1, 2]
+
+adaptor_packages:
+  - example_bridge_adaptor
+
+# These are generation-time bindings
+messages:
+  # Binding name is unique identifier; ros2_type is the ROS message
+  - name: Drive
+    ros2_type: geometry_msgs/msg/Twist
+    mapping:
+    # ros2.path is the path to the particular field of the message struct, including nesting
+      - {ros2.path: linear.x, proton.signal: forward_speed, type: float}
+      - {ros2.path: linear.y, proton.signal: strafe_speed, type: float}
+      - {ros2.path: angular.z, proton.signal: turn_rate, type: float}
+
+  - name: BoardTemps
+    ros2_type: clearpath_platform_msgs/msg/Temperature
+    stamp: header.stamp
+    mapping:
+      - {ros2.path: header.frame_id, proton.signal: board_temp_frame_id, type: string}
+      - {ros2.path: temperatures, ros2.index: 0, proton.signal: temp_mcu, type: float}
+      - {ros2.path: temperatures, ros2.index: 1, proton.signal: temp_pcb, type: float}
+      - {ros2.path: temperatures, ros2.index: 2, proton.signal: temp_fan1, type: float}
+
+# This is a runtime config to map bindings to ROS topics
+publishers:
+  - topic: /robot/board_temps
+    binding: BoardTemps  # References adapter by binding name
+    bundle: telemetry  # Publish when this bundle decodes
+    qos:
+      profile: sensor_data
+
+subscribers:
+  - topic: /cmd_vel
+    binding: Drive
+    bundle: commands  # Trigger this bundle after conversion
+    qos:
+      profile: default

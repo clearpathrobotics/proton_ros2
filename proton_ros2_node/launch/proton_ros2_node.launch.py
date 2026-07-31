@@ -27,9 +27,14 @@ def generate_launch_description():
       description='Namespace to launch the proton_ros2 node under.',
     )
 
-    arg_config_file = DeclareLaunchArgument(
-      'config_file',
-      description='Absolute path to the proton_ros2 YAML config file.',
+    arg_proton_config_file = DeclareLaunchArgument(
+      'proton_config_file',
+      description='Path to the proton message YAML config file.',
+    )
+
+    arg_binding_config_file = DeclareLaunchArgument(
+      'binding_config_file',
+      description='Path to the proton_ros2 binding YAML config file.',
     )
 
     arg_target = DeclareLaunchArgument(
@@ -44,7 +49,8 @@ def generate_launch_description():
         namespace=LaunchConfiguration('namespace'),
         parameters=[
           {'target': LaunchConfiguration('target')},
-          {'config_file': LaunchConfiguration('config_file')},
+          {'proton_config_file': LaunchConfiguration('proton_config_file')},
+          {'binding_config_file': LaunchConfiguration('binding_config_file')},
         ],
         remappings=[
           ('/diagnostics', 'diagnostics')
@@ -55,7 +61,8 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     ld.add_action(arg_namespace)
-    ld.add_action(arg_config_file)
+    ld.add_action(arg_proton_config_file)
+    ld.add_action(arg_binding_config_file)
     ld.add_action(arg_target)
     ld.add_action(proton_ros2_node)
 
