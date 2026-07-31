@@ -90,12 +90,10 @@ public:
 private:
   PluginLoader plugin_loader_;
 
-  // publishers_/subscribers_ must be declared BEFORE proton_node_ so that
-  // during destruction they die AFTER proton_node_. This prevents dangling
-  // raw pointers captured in bundle-update callbacks (which are deliberately
-  // leaked by proton's BundleAccess::set_callback and could be invoked
-  // during proton_node_ teardown).
-  std::vector<std::unique_ptr<proton_ros2_interfaces::GenericPublisher>> publishers_;
+  // publishers_ must be declared such that they die AFTER proton_node_. This prevents dangling
+  // raw pointers captured in bundle-update callbacks (which are deliberately leaked by proton's
+  // BundleAccess::set_callback and could be invoked during proton_node_ teardown).
+  std::vector<std::shared_ptr<proton_ros2_interfaces::GenericPublisher>> publishers_;
   std::vector<std::unique_ptr<proton_ros2_interfaces::GenericSubscription>> subscribers_;
 
   proton::node_builder::GeneratedNode proton_node_;

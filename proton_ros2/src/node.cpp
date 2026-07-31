@@ -91,11 +91,12 @@ ProtonRos2Node::ProtonRos2Node()
     publishers_.push_back(std::move(publisher));
   }
 
-  // Aggregate publishers by bundle name and raw ptr for callback insertion
-  std::unordered_map<std::string, proton_ros2_interfaces::GenericPublisher *>
-  bundle_to_publishers;
+  // Aggregate publishers by bundle name and shared ptr for callback insertion
+  std::unordered_map<
+    std::string,
+    std::shared_ptr<proton_ros2_interfaces::GenericPublisher>
+  > bundle_to_publishers;
   for (size_t i = 0; i < binding_config.publishers.size(); ++i) {
-    auto * publisher_ptr = publishers_[i].get();
     const auto bundle_name = binding_config.publishers[i].bundle;
 
     if (bundle_to_publishers.contains(bundle_name)) {
@@ -105,13 +106,12 @@ ProtonRos2Node::ProtonRos2Node()
       );
       continue;
     }
-    bundle_to_publishers[bundle_name] = publisher_ptr;
+    bundle_to_publishers[bundle_name] = publishers_[i];
   }
 
   proton::NodeAccess node_access(proton_node_.node());
   for (const auto & [bundle_name, pub_ptr] : bundle_to_publishers) {
-    const auto it = bundle_name_to_id.find(bundle_name);
-    if (it == bundle_name_to_id.end()) {
+    if (!bundle_name_to_id.contains(bundle_name)) {
       RCLCPP_WARN(
         get_logger(),
         "Publisher references unknown bundle '%s' - no callback will be registered",
@@ -120,14 +120,15 @@ ProtonRos2Node::ProtonRos2Node()
       continue;
     }
 
-    // Capture raw pointers by value; the pointed-to GenericPublisher objects
-    // are owned by publishers_, which is declared before proton_node_ in
-    // node.hpp so it outlives proton_node_ (and thus outlives any callback
-    // invocation).
+    // Weak ptr here will survive post-teardown of the proton_node, which means
+    // the intentionally-leaked callbacks will not call a nullptr.
+    std::weak_ptr<proton_ros2_interfaces::GenericPublisher> weak_pub = pub_ptr;
     node_access.on_bundle_update(
-      it->second,
-      [pub_ptr](uint32_t, const uint32_t *, size_t) {
-        pub_ptr->publish();
+      bundle_name_to_id.at(bundle_name),
+      [weak_pub](uint32_t, const uint32_t *, size_t) {
+        if (auto p = weak_pub.lock()) {
+          p->publish();
+        }
       }
     );
   }

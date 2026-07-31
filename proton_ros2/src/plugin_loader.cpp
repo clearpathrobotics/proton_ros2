@@ -83,7 +83,7 @@ void PluginLoader::register_instance(const std::string & class_id, AdaptorPtr ad
 
 PluginLoader::AdaptorPtr PluginLoader::get_by_binding(const std::string & binding_name) const
 {
-  auto it = binding_to_adaptor_.find(binding_name);
+  const auto it = binding_to_adaptor_.find(binding_name);
 
   if (it == binding_to_adaptor_.end()) {
     RCLCPP_ERROR(logger_, "Could not find binding '%s'", binding_name.c_str());

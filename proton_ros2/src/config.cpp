@@ -27,20 +27,23 @@ namespace proton_ros2
 
 static QosConfig parse_qos(const proton::node_builder::ConfigNode & qos_node)
 {
-  std::string profile_str = qos_node["profile"].is_defined() ? qos_node["profile"].as_string() : "";
-  std::string history_str = qos_node["history"].is_defined() ? qos_node["history"].as_string() : "";
-  std::string durability_str =
+  const std::string profile_str =
+    qos_node["profile"].is_defined() ? qos_node["profile"].as_string() : "";
+  const std::string history_str =
+    qos_node["history"].is_defined() ? qos_node["history"].as_string() : "";
+  const std::string durability_str =
     qos_node["durability"].is_defined() ? qos_node["durability"].as_string() : "";
-  std::string reliability_str =
+  const std::string reliability_str =
     qos_node["reliability"].is_defined() ? qos_node["reliability"].as_string() : "";
-  size_t depth = qos_node["depth"].is_defined() ? qos_node["depth"].as_uint32() : 0;
+  const size_t depth = qos_node["depth"].is_defined() ? qos_node["depth"].as_uint32() : 0;
 
-  qos::QoSProfile profile = qos::parse_qos_profile(profile_str).value_or(qos::QoSProfile::Default);
-  qos::QoSHistory history =
+  const qos::QoSProfile profile =
+    qos::parse_qos_profile(profile_str).value_or(qos::QoSProfile::Default);
+  const qos::QoSHistory history =
     qos::parse_qos_history(history_str).value_or(qos::QoSHistory::SystemDefault);
-  qos::QoSReliability reliability =
+  const qos::QoSReliability reliability =
     qos::parse_qos_reliability(reliability_str).value_or(qos::QoSReliability::SystemDefault);
-  qos::QoSDurability durability =
+  const qos::QoSDurability durability =
     qos::parse_qos_durability(durability_str).value_or(qos::QoSDurability::SystemDefault);
 
   QosConfig qos {
