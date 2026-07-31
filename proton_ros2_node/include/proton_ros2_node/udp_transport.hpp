@@ -19,6 +19,7 @@
 #ifndef PROTON_ROS2_NODE_UDP_TRANSPORT_HPP
 #define PROTON_ROS2_NODE_UDP_TRANSPORT_HPP
 
+#include <cstdint>
 #include <string>
 
 #include <protoncpp/transport/core_udp4.hpp>
@@ -37,14 +38,19 @@ class UdpTransport : public BaseTransport
 {
 public:
   explicit UdpTransport(
+    uint32_t node_id, uint32_t endpoint_id,
     const std::string & host_ip, const std::string & remote_ip,
     const size_t host_port, const size_t remote_port)
+  : peer_node_id_(node_id)
+  , peer_endpoint_id_(endpoint_id)
   {
     driver_ = std::make_unique<serial_hardware::drivers::ByteUdpDriver>(host_ip, remote_ip,
         host_port, remote_port);
   }
 
   virtual ~UdpTransport() = default;
+
+  void encode_and_send(const uint8_t * buf, const size_t len) override;
 };
 
 }  // namespace proton_ros2_node

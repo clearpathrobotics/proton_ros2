@@ -2,4 +2,4 @@ repositories:
   proton_vendor:
     type: git
     url: https://github.com/clearpathrobotics/proton_vendor.git
-    version: fix/use-baud-rate-branch
+    version: feature/proton-2.0.0-beta

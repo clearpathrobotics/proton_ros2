@@ -22,6 +22,11 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <vector>
+
+#include <proton/common.h>
+
+#include <proton_ros2/node.hpp>
 
 #include <serial_hardware/drivers/base_driver.hpp>
 
@@ -48,18 +53,35 @@ public:
     driver_->disconnect();
   }
 
-  virtual void send(const uint8_t * buf, const size_t len)
-  {
-    driver_->send(buf, len);
-  }
+  virtual void encode_and_send(const std::vector<uint8_t> & buf) = 0;
 
-  virtual void set_receive_callback(std::function<void(const uint8_t * buf, const size_t len)> & fn)
+  virtual proton_status_e receive_and_decode(const uint8_t * buf, const size_t len) = 0;
+
+  void set_receive_callback(std::function<void(const uint8_t * buf, const size_t len)> & fn)
   {
     // TODO fix this in HAL -_-
     driver_->setRecieveCallback(fn);  // cspell:disable-line
   }
 
+  uint32_t node_id() const
+  {
+    return peer_node_id_;
+  }
+
+  uint32_t endpoint_id() const
+  {
+    return peer_endpoint_id_;
+  }
+
 protected:
+  virtual void send(const uint8_t * buf, const size_t len)
+  {
+    driver_->send(buf, len);
+  }
+
+  uint32_t peer_node_id_;
+  uint32_t peer_endpoint_id_;
+
   std::unique_ptr<serial_hardware::drivers::BaseDriver> driver_;
 };
 

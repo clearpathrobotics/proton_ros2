@@ -19,6 +19,7 @@
 #ifndef PROTON_ROS2_NODE_SERIAL_TRANSPORT_HPP
 #define PROTON_ROS2_NODE_SERIAL_TRANSPORT_HPP
 
+#include <cstdint>
 #include <string>
 
 #include "proton_ros2_node/base_transport.hpp"
@@ -34,14 +35,19 @@ class SerialTransport : public BaseTransport
 {
 public:
   explicit SerialTransport(
+    uint32_t node_id, uint32_t endpoint_id,
     const std::string & port, const size_t baud, const size_t buf_size,
     const size_t recovery_timer_interval_ms, const size_t recovery_error_threshold)
+  : peer_node_id_(node_id)
+  , peer_endpoint_id_(endpoint_id)
   {
     driver_ = std::make_unique<serial_hardware::drivers::SerialDriver>(port, baud, buf_size,
         recovery_timer_interval_ms, recovery_error_threshold);
   }
 
   virtual ~SerialTransport() = default;
+
+  void encode_and_send(const uint8_t * buf, const size_t len) override;
 };
 
 }  // namespace proton_ros2_node

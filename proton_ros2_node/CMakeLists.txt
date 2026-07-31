@@ -25,6 +25,8 @@ find_package(rclcpp REQUIRED)
 add_executable(${PROJECT_NAME}
   src/main.cpp
   src/transport_factory.cpp
+  src/serial_transport.cpp
+  src/udp_transport.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   proton_ros2

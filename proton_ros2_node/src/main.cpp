@@ -49,6 +49,12 @@ int main(int argc, char * argv[])
         proton_ros2_node::transport_factory(proton_node->get_logger(), proton_config, target_name,
         ep_id);
       if (transport != nullptr) {
+        transport->set_receive_callback([transport, proton_node](const uint8_t * buf, size_t len){
+          if (transport->receive_and_decode(buf, len) == PROTON_OK) {
+            // Serial needs to hold on to a vector, so it's going to be a problem to pass the buf/len combo
+            proton_node->recv_bytes(buf, len);
+          }
+        });
         transports.push_back(std::move(transport));
       }
     } catch (std::exception & e) {
@@ -64,6 +70,14 @@ int main(int argc, char * argv[])
       if (!data_for_peers.empty()) {
         RCLCPP_INFO(proton_node->get_logger(), "data for peer received. send to %ld peers",
         data_for_peers.size());
+      }
+
+      for (const auto & peer : data_for_peers.peers) {
+        for (auto & transport : transports) {
+          if (peer.node_id == transport->node_id() && peer.endpoint_id == transport->endpoint_id()) {
+            transport->encode_and_send(data_for_peers.data);
+          }
+        }
       }
     }
   );
