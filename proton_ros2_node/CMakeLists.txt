@@ -8,6 +8,8 @@ endif()
 
 # find dependencies
 find_package(proton_ros2 REQUIRED)
+find_package(proton_vendor REQUIRED)
+find_package(serial_hardware REQUIRED)pcm
 
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
@@ -16,7 +18,7 @@ find_package(rclcpp REQUIRED)
 # ROS 2 Node
 add_executable(${PROJECT_NAME}
   src/main.cpp
-  # transport stuff here
+  src/transport_factory.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   proton_ros2

@@ -22,6 +22,8 @@
 #include <memory>
 #include <vector>
 
+#include "proton_ros2_node/transport_factory.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char * argv[])
@@ -30,20 +32,21 @@ int main(int argc, char * argv[])
 
   rclcpp::executors::SingleThreadedExecutor executor;
 
-  auto node = std::make_shared<proton_ros2::ProtonRos2Node>();
-  auto spin_timer = node->create_wall_timer(
+  auto proton_node = std::make_shared<proton_ros2::ProtonRos2Node>();
+
+  auto spin_timer = proton_node->create_wall_timer(
     std::chrono::milliseconds(500),
-    [node]() {
-      std::vector<proton_ros2::DataForPeers> data_for_peers = node->spin_once(node->now());
+    [proton_node]() {
+      std::vector<proton_ros2::DataForPeers> data_for_peers = proton_node->spin_once(proton_node->now());
       if (!data_for_peers.empty()) {
-        RCLCPP_INFO(node->get_logger(), "data for peer received. send to %ld peers",
+        RCLCPP_INFO(proton_node->get_logger(), "data for peer received. send to %ld peers",
         data_for_peers.size());
       }
     }
   );
   (void)spin_timer;
 
-  executor.add_node(node);
+  executor.add_node(proton_node);
   executor.spin();
 
   rclcpp::shutdown();

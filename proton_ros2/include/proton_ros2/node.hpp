@@ -87,8 +87,14 @@ public:
    */
   std::vector<DataForPeers> spin_once(const rclcpp::Time & time);
 
+  const proton::node_builder::Config & get_config() const
+  {
+    return proton_config_;
+  }
+
 private:
   PluginLoader plugin_loader_;
+  proton::node_builder::Config proton_config_;
 
   // publishers_ must be declared such that they die AFTER proton_node_. This prevents dangling
   // raw pointers captured in bundle-update callbacks (which are deliberately leaked by proton's
