@@ -23,7 +23,7 @@
 
 #include <protoncpp/transport/core_udp4.hpp>
 
-#include <serial_hardware/drivers/udp_driver.hpp>
+#include <serial_hardware/drivers/byte_udp_driver.hpp>
 
 #include "proton_ros2_node/base_transport.hpp"
 
@@ -36,9 +36,12 @@ namespace proton_ros2_node
 class UdpTransport : public BaseTransport
 {
 public:
-  explicit UdpTransport(const std::string & host_ip, const std::string & remote_ip, const size_t host_port, const size_t remote_port)
+  explicit UdpTransport(
+    const std::string & host_ip, const std::string & remote_ip,
+    const size_t host_port, const size_t remote_port)
   {
-    driver_ = std::make_unique<serial_hardware::drivers::UdpDriver>(host_ip, remote_ip, host_port, remote_port);
+    driver_ = std::make_unique<serial_hardware::drivers::ByteUdpDriver>(host_ip, remote_ip,
+        host_port, remote_port);
   }
 
   virtual ~UdpTransport() = default;

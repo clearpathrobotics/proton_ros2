@@ -27,7 +27,9 @@
 namespace proton_ros2_node
 {
 
-std::unique_ptr<BaseTransport> transport_factory(rclcpp::Logger logger, const Config & config, const std::string & node_name, uint32_t endpoint_id)
+std::unique_ptr<BaseTransport> transport_factory(
+  rclcpp::Logger logger, const Config & config,
+  const std::string & node_name, uint32_t endpoint_id)
 {
   // Determine if there is a connection for this node and endpoint
   std::optional<std::string> peer_name = std::nullopt;
@@ -45,51 +47,54 @@ std::unique_ptr<BaseTransport> transport_factory(rclcpp::Logger logger, const Co
   }
 
   if (peer_name.has_value() && peer_endpoint_id.has_value()) {
-    RCLCPP_INFO(logger, "Connecting %s:%ld with %s:%ld",
-      node_name.c_str(), endpoint_id, peer_name.c_str(), peer_endpoint_id
+    RCLCPP_INFO(logger, "Connecting %s:%d with %s:%d",
+      node_name.c_str(), endpoint_id, peer_name->c_str(), *peer_endpoint_id
     );
   } else {
-    throw std::runtime_error("No connection found for '" + node_name + "' endpoint " + std::to_string(endpoint_id));
+    throw std::runtime_error("No connection found for '" + node_name + "' endpoint " +
+        std::to_string(endpoint_id));
   }
 
   // Check if these node/endpoint pairings exist
-  std::array<std::pair<std::string, uint32_t>, 2> node_endpoints = {
+  std::array<std::pair<std::string, uint32_t>, 2> node_endpoints = {{
     {node_name, endpoint_id},
-    {peer_name, peer_endpoint_id},
-  };
+    {*peer_name, *peer_endpoint_id}
+  }};
 
-  for (const [name, id] : node_endpoints) {
+  for (const auto & [name, id] : node_endpoints) {
     if (!config.nodes.contains(name)) {
       throw std::runtime_error("Node name '" + name + "' does not exist in config");
     }
 
     const auto & node_config = config.nodes.at(name);
 
-    if (!node_config.contains(id)) {
-      throw std::runtime_error("Endpoint ID " + std::to_string(id) + " does not exist within '" + node_name + "'");
+    if (!node_config.endpoints.contains(id)) {
+      throw std::runtime_error("Endpoint ID " + std::to_string(id) + " does not exist within '" +
+          node_name + "'");
     }
   }
 
-  const auto & host_endpoint = node_config.nodes[node_name].endpoints[endpoint_id];
-  const auto & peer_endpoint = node_config.nodes[peer_name].endpoints[peer_endpoint_id];
+  const auto & host_endpoint = config.nodes.at(node_name).endpoints.at(endpoint_id);
+  const auto & peer_endpoint = config.nodes.at(*peer_name).endpoints.at(*peer_endpoint_id);
 
   if (host_endpoint.type != peer_endpoint.type) {
     throw std::runtime_error(
       "Mismatched endpoint types for '" + node_name + "':" + std::to_string(endpoint_id) +
-      " and '" + peer_name + "':" + std::to_string(peer_endpoint_id) + ". " +
-      host_endpoint_type + " != " + peer_endpoint.type);
+      " and '" + *peer_name + "':" + std::to_string(*peer_endpoint_id) + ". " +
+      host_endpoint.type + " != " + peer_endpoint.type);
   }
 
   if (host_endpoint.type == "udp4") {
-    return std::make_unique<UdpTransport>(host_endpoint.ip, host_endpoint.port, peer_endpoint.ip, peer_endpoint.port);
+    return std::make_unique<UdpTransport>(host_endpoint.ip, peer_endpoint.ip, host_endpoint.port,
+        peer_endpoint.port);
   } else if (host_endpoint.type == "serial") {
     // TODO (twallis) these parameters aren't part of the proton config, may need to add them. Baud at the very least
-    return std::make_unique<SerialTransport>(host_endpoint.port, 115200, 1024, 1000, 10);
+    return std::make_unique<SerialTransport>(host_endpoint.device, 115200, 1024, 1000, 10);
   } else {
     throw std::runtime_error("Unknown transport type '" + host_endpoint.type + "'");
   }
 
-  return std::nullptr;
+  return nullptr;
 }
 
 }  // namespace proton_ros2_node

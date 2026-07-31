@@ -37,7 +37,8 @@ int main(int argc, char * argv[])
   auto spin_timer = proton_node->create_wall_timer(
     std::chrono::milliseconds(500),
     [proton_node]() {
-      std::vector<proton_ros2::DataForPeers> data_for_peers = proton_node->spin_once(proton_node->now());
+      std::vector<proton_ros2::DataForPeers> data_for_peers =
+      proton_node->spin_once(proton_node->now());
       if (!data_for_peers.empty()) {
         RCLCPP_INFO(proton_node->get_logger(), "data for peer received. send to %ld peers",
         data_for_peers.size());

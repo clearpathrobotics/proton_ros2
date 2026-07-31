@@ -33,10 +33,12 @@ namespace proton_ros2_node
 class SerialTransport : public BaseTransport
 {
 public:
-  explicit SerialTransport(const std::string & port, const size_t baud, const size_t buf_size,
-  const size_t recovery_timer_interval_ms, const size_t recovery_error_threshold)
+  explicit SerialTransport(
+    const std::string & port, const size_t baud, const size_t buf_size,
+    const size_t recovery_timer_interval_ms, const size_t recovery_error_threshold)
   {
-    driver_ = std::make_unique<serial_hardware::drivers::SerialDriver>(port, baud, buf_size, recovery_timer_interval_ms, recovery_error_threshold);
+    driver_ = std::make_unique<serial_hardware::drivers::SerialDriver>(port, baud, buf_size,
+        recovery_timer_interval_ms, recovery_error_threshold);
   }
 
   virtual ~SerialTransport() = default;

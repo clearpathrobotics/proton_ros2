@@ -9,7 +9,7 @@ endif()
 # find dependencies
 find_package(proton_ros2 REQUIRED)
 find_package(proton_vendor REQUIRED)
-find_package(serial_hardware REQUIRED)pcm
+find_package(serial_hardware REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)

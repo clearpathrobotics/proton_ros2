@@ -44,7 +44,9 @@ using Config = proton::node_builder::Config;
  *
  * @throws std::runtime error if the endpoints are not present, or if they are malformed.
  */
-std::unique_ptr<BaseTransport> transport_factory(rclcpp::Logger logger, const Config & config, const std::string & node_name, uint32_t endpoint_id);
+std::unique_ptr<BaseTransport> transport_factory(
+  rclcpp::Logger logger, const Config & config,
+  const std::string & node_name, uint32_t endpoint_id);
 
 }  // namespace proton_ros2_node
 
