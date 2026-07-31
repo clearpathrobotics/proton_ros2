@@ -16,11 +16,14 @@
  * @author Roni Kreinin (roni.kreinin@rockwellautomation.com)
  */
 
-#include <proton_ros2/node.hpp>
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <memory>
+#include <ranges>
 #include <vector>
+
+#include <proton_ros2/node.hpp>
 
 #include "proton_ros2_node/transport_factory.hpp"
 
@@ -33,6 +36,25 @@ int main(int argc, char * argv[])
   rclcpp::executors::SingleThreadedExecutor executor;
 
   auto proton_node = std::make_shared<proton_ros2::ProtonRos2Node>();
+
+  const auto proton_config = proton_node->get_config();
+  const auto target_name = proton_node->get_name();
+
+  const auto endpoint_config = proton_config.nodes.at(target_name).endpoints;
+
+  std::vector<std::unique_ptr<proton_ros2_node::BaseTransport>> transports;
+  for (const auto & ep_id : std::views::keys(endpoint_config)) {
+    try {
+      std::unique_ptr<proton_ros2_node::BaseTransport> transport =
+        proton_ros2_node::transport_factory(proton_node->get_logger(), proton_config, target_name,
+        ep_id);
+      if (transport != nullptr) {
+        transports.push_back(std::move(transport));
+      }
+    } catch (std::exception & e) {
+      RCLCPP_ERROR(proton_node->get_logger(), "Error constructing transports: %s", e.what());
+    }
+  }
 
   auto spin_timer = proton_node->create_wall_timer(
     std::chrono::milliseconds(500),

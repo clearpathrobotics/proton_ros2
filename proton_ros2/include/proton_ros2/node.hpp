@@ -92,7 +92,13 @@ public:
     return proton_config_;
   }
 
+  std::string get_name() const
+  {
+    return target_name_;
+  }
+
 private:
+  std::string target_name_;
   PluginLoader plugin_loader_;
   proton::node_builder::Config proton_config_;
 
