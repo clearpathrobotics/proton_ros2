@@ -31,6 +31,8 @@
 
 #include <serial_hardware/drivers/base_driver.hpp>
 
+#include "rclcpp/rclcpp.hpp"
+
 namespace proton_ros2_node
 {
 
@@ -85,9 +87,8 @@ public:
   }
 
 protected:
-  explicit BaseTransport(uint32_t peer_node_id, uint32_t peer_endpoint_id)
-  : peer_node_id_(peer_node_id)
-    , peer_endpoint_id_(peer_endpoint_id)
+  explicit BaseTransport(rclcpp::Logger logger, uint32_t peer_node_id, uint32_t peer_endpoint_id)
+  : logger_(logger), peer_node_id_(peer_node_id), peer_endpoint_id_(peer_endpoint_id)
   {}
 
   /**
@@ -107,6 +108,8 @@ protected:
   {
     driver_->send(buf, len);
   }
+
+  rclcpp::Logger logger_;
 
   uint32_t peer_node_id_;
   uint32_t peer_endpoint_id_;

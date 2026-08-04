@@ -36,10 +36,11 @@ class SerialTransport : public BaseTransport
 {
 public:
   explicit SerialTransport(
+    rclcpp::Logger logger,
     uint32_t node_id, uint32_t endpoint_id,
     const std::string & port, const size_t baud, const size_t buf_size,
     const size_t recovery_timer_interval_ms, const size_t recovery_error_threshold)
-  : BaseTransport(node_id, endpoint_id)
+  : BaseTransport(logger, node_id, endpoint_id)
   {
     driver_ = std::make_unique<serial_hardware::drivers::SerialDriver>(port, baud, buf_size,
         recovery_timer_interval_ms, recovery_error_threshold);
