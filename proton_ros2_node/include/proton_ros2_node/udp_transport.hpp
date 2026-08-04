@@ -22,8 +22,6 @@
 #include <cstdint>
 #include <string>
 
-#include <protoncpp/transport/core_udp4.hpp>
-
 #include <serial_hardware/drivers/byte_udp_driver.hpp>
 
 #include "proton_ros2_node/base_transport.hpp"
@@ -50,7 +48,7 @@ public:
 
   virtual ~UdpTransport() = default;
 
-  void encode_and_send(const std::vector<uint8_t> & buf) override;
+  proton_status_e encode_and_send(const std::vector<uint8_t> & buf) override;
 
 protected:
   void handle_bytes(const uint8_t * buf, const size_t len) override;

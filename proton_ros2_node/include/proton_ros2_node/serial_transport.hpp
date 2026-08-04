@@ -44,11 +44,12 @@ public:
   {
     driver_ = std::make_unique<serial_hardware::drivers::SerialDriver>(port, baud, buf_size,
         recovery_timer_interval_ms, recovery_error_threshold);
+    rx_buf_.resize(buf_size);
   }
 
   virtual ~SerialTransport() = default;
 
-  void encode_and_send(const std::vector<uint8_t> & buf) override;
+  proton_status_e encode_and_send(const std::vector<uint8_t> & buf) override;
 
 protected:
   void handle_bytes(const uint8_t * buf, const size_t len) override;
@@ -56,6 +57,17 @@ protected:
 private:
   // Accumulates bytes across driver callbacks for serial framing.
   std::vector<uint8_t> rx_buf_;
+  uint16_t payload_len_ {0};
+
+  // Handles internal receive state machine
+  enum class DecodeState
+  {
+    GetHeader,
+    AccumulateLength,
+    Verify,
+  };
+
+  DecodeState decode_state_{DecodeState::GetHeader};
 };
 
 }  // namespace proton_ros2_node

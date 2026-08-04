@@ -95,7 +95,11 @@ public:
               if (peer.node_id == transport->node_id() &&
               peer.endpoint_id == transport->endpoint_id())
               {
-                transport->encode_and_send(dfp.data);
+                proton_status_e send_status = transport->encode_and_send(dfp.data);
+                if (send_status != PROTON_OK) {
+                  RCLCPP_ERROR(node_raw->get_logger(), "Error sending to node %d, endpoint %d, %s",
+                    peer.node_id, peer.endpoint_id, proton_status_to_string(send_status));
+                }
               }
             }
           }

@@ -43,6 +43,7 @@ class BaseTransport
 {
 public:
   using MessageCallback = std::function<void(std::span<const uint8_t>)>;
+  using DriverCallback = std::function<void(const uint8_t * buf, const size_t len)>;
 
   virtual ~BaseTransport() = default;
 
@@ -58,7 +59,7 @@ public:
     driver_->disconnect();
   }
 
-  virtual void encode_and_send(const std::vector<uint8_t> & buf) = 0;
+  virtual proton_status_e encode_and_send(const std::vector<uint8_t> & buf) = 0;
 
   // Called by owner when a complete decoded payload is ready. Registered
   // callback is stored as a member so it outlives the driver, which holds a
@@ -118,7 +119,7 @@ protected:
 
 private:
   MessageCallback message_cb_;
-  std::function<void(const uint8_t * buf, const size_t len)> driver_recv_cb_;
+  DriverCallback driver_recv_cb_;
   bool driver_cb_registered_ = false;
 };
 
