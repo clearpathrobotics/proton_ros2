@@ -47,7 +47,10 @@ public:
     rx_buf_.resize(buf_size);
   }
 
-  virtual ~SerialTransport() = default;
+  ~SerialTransport() override
+  {
+    stop();
+  }
 
   proton_status_e encode_and_send(const std::vector<uint8_t> & buf) override;
 

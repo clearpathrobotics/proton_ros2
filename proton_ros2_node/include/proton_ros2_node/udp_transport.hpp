@@ -46,7 +46,10 @@ public:
         host_port, remote_port);
   }
 
-  virtual ~UdpTransport() = default;
+  ~UdpTransport() override
+  {
+    stop();
+  }
 
   proton_status_e encode_and_send(const std::vector<uint8_t> & buf) override;
 

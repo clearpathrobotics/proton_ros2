@@ -19,11 +19,16 @@
 #ifndef PROTON_ROS2_NODE_BASE_TRANSPORT_HPP
 #define PROTON_ROS2_NODE_BASE_TRANSPORT_HPP
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <span>
+#include <thread>
 #include <vector>
+
+#include <boost/asio.hpp>
+#include <boost/system/error_code.hpp>
 
 #include <proton/common.h>
 
@@ -45,7 +50,43 @@ public:
   using MessageCallback = std::function<void(std::span<const uint8_t>)>;
   using DriverCallback = std::function<void(const uint8_t * buf, const size_t len)>;
 
-  virtual ~BaseTransport() = default;
+  virtual ~BaseTransport()
+  {
+    stop();
+  }
+
+  void init()
+  {
+    if (!driver_->init(io_)) {
+      throw std::runtime_error("Failed to initialize driver");
+    }
+
+    io_thread_ = std::thread{std::bind(&BaseTransport::run_io, this)};
+    start_keep_alive_timer();
+  }
+
+  // Idempotent, safe to call from any thread except io_thread_ itself.
+  void stop() noexcept
+  {
+    if (stopped_.exchange(true)) {
+      return;
+    }
+
+    boost::system::error_code ec;
+    keep_alive_timer_.cancel(ec);
+
+    if (driver_) {
+      try {
+        driver_->disconnect();
+      } catch (...) {
+      }
+    }
+
+    io_.stop();
+    if (io_thread_.joinable()) {
+      io_thread_.join();
+    }
+  }
 
   // TODO (inherited from HAL) UDP requires reconnection logic.
   // Will come from upstream serial_hardware at a later date.
@@ -89,8 +130,10 @@ public:
 
 protected:
   explicit BaseTransport(rclcpp::Logger logger, uint32_t peer_node_id, uint32_t peer_endpoint_id)
-  : logger_(logger), peer_node_id_(peer_node_id), peer_endpoint_id_(peer_endpoint_id)
-  {}
+  : logger_(logger), peer_node_id_(peer_node_id), peer_endpoint_id_(peer_endpoint_id),
+    keep_alive_timer_{io_, boost::posix_time::seconds(60)}
+  {
+  }
 
   /**
    * @brief Receive bytes from transport drivers and alert via
@@ -107,7 +150,9 @@ protected:
 
   virtual void send(const uint8_t * buf, const size_t len)
   {
-    driver_->send(buf, len);
+    if (driver_) {
+      driver_->send(buf, len);
+    }
   }
 
   rclcpp::Logger logger_;
@@ -118,9 +163,33 @@ protected:
   std::unique_ptr<serial_hardware::drivers::BaseDriver> driver_;
 
 private:
+  void run_io()
+  {
+    io_.run();
+    RCLCPP_ERROR(logger_, "IO thread terminated");
+  }
+
+  void keep_alive()
+  {
+    start_keep_alive_timer();
+  }
+
+  void start_keep_alive_timer()
+  {
+    keep_alive_timer_.expires_at(keep_alive_timer_.expires_at() + boost::posix_time::seconds(60));
+    keep_alive_timer_.async_wait(std::bind(&BaseTransport::keep_alive, this));
+  }
+
   MessageCallback message_cb_;
   DriverCallback driver_recv_cb_;
   bool driver_cb_registered_ = false;
+
+  std::atomic<bool> stopped_{false};
+
+  boost::asio::io_context io_;
+  std::thread io_thread_;
+
+  boost::asio::deadline_timer keep_alive_timer_;
 };
 
 }  // namespace proton_ros2_node

@@ -7,12 +7,12 @@ nodes:
         ip: 127.0.0.1
         port: 11418
   - name: pc
-    id: 2
+    id: 1
     endpoints:
       - id: 0
         type: udp4
         ip: 127.0.0.1
-        port: 11418
+        port: 11419
 
 connections:
   - first: {node: pc, id: 0}
@@ -33,11 +33,13 @@ bundles:
     producers: [mcu]
     consumers: [pc]
     signals: [4, 5, 6]
+    period_ms: 500
   - name: commands
     id: 0x101
     producers: [pc]
     consumers: [mcu]
     signals: [0, 1, 2]
+    period_ms: 300
 
 adaptor_packages:
   - example_bridge_adaptor

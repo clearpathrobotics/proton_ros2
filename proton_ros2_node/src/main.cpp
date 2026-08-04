@@ -44,6 +44,13 @@ public:
   {
   }
 
+  ~App()
+  {
+    for (auto & transport : transports_) {
+      transport->stop();
+    }
+  }
+
   std::shared_ptr<proton_ros2::ProtonRos2Node> node() const {return node_;}
 
   void build_transports()
@@ -67,6 +74,8 @@ public:
           [node_raw](std::span<const uint8_t> payload) {
             node_raw->recv_bytes(payload);
           });
+        transport->init();
+        transport->connect();
         transports_.push_back(std::move(transport));
       } catch (std::exception & e) {
         RCLCPP_ERROR(node_->get_logger(), "Error constructing transports: %s", e.what());

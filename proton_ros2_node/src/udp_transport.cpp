@@ -53,7 +53,7 @@ void UdpTransport::handle_bytes(const uint8_t * buf, const size_t len)
   udp4::Header header;
   proton_status_e status = udp4::check_payload({buf, len}, header);
   if (status == PROTON_OK) {
-    message_ready({&buf[sizeof(header)], len});
+    message_ready({&buf[sizeof(header)], len - sizeof(header)});
   } else {
     RCLCPP_ERROR(logger_, "UDP transport error: %s", proton_status_to_string(status));
   }
