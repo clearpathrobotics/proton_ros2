@@ -26,6 +26,7 @@ signals:
   - {name: temp_mcu, id: 4, type: float, value: 4.0}
   - {name: temp_pcb, id: 5, type: float, value: 5.0}
   - {name: temp_fan1, id: 6, type: float, value: 6.0}
+  - {name: shared_signal, id: 7, type: uint32}
 
 bundles:
   - name: telemetry
@@ -40,6 +41,18 @@ bundles:
     consumers: [mcu]
     signals: [0, 1, 2]
     period_ms: 300
+  - name: ping
+    id: 0x102
+    producers: [pc]
+    consumers: [mcu]
+    signals: [7]
+    period_ms: 500
+  - name: pong
+    id: 0x103
+    producers: [mcu]
+    consumers: [pc]
+    signals: [7]
+    period_ms: 500
 
 adaptor_packages:
   - example_bridge_adaptor
@@ -64,6 +77,11 @@ messages:
       - {ros2.path: temperatures, ros2.index: 1, proton.signal: temp_pcb, type: float}
       - {ros2.path: temperatures, ros2.index: 2, proton.signal: temp_fan1, type: float}
 
+  - name: PingPong
+    ros2_type: std_msgs/msg/UInt32
+    mapping:
+      - {ros2.path: data, proton.signal: shared_signal, type: uint32}
+
 # This is a runtime config to map bindings to ROS topics
 publishers:
   - topic: /robot/board_temps
@@ -71,6 +89,9 @@ publishers:
     bundle: telemetry  # Publish when this bundle decodes
     qos:
       profile: sensor_data
+  - topic: /pong
+    binding: PingPong
+    bundle: pong
 
 subscribers:
   - topic: /cmd_vel
@@ -78,3 +99,6 @@ subscribers:
     bundle: commands  # Trigger this bundle after conversion
     qos:
       profile: default
+  - topic: /ping
+    binding: PingPong
+    bundle: ping
