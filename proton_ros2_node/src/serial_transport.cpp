@@ -31,7 +31,7 @@ namespace serial = proton::transport::serial;
 void SerialTransport::encode_and_send(const std::vector<uint8_t> & buf)
 {
   std::vector<uint8_t> send_buf;
-  send_buf.resize(len + sizeof(serial::FRAME_OVERHEAD));
+  send_buf.resize(buf.size() + sizeof(serial::FRAME_OVERHEAD));
 
   std::array<uint8_t, serial::FRAME_CRC_OVERHEAD> crc;
   serial::fill_crc16(buf.data(), buf.size(), crc.data());
@@ -41,6 +41,14 @@ void SerialTransport::encode_and_send(const std::vector<uint8_t> & buf)
   std::copy(buf.begin(), buf.end(), std::next(send_buf.begin(), serial::FRAME_OVERHEAD));
 
   send(send_buf.data(), send_buf.size());
+}
+
+void SerialTransport::handle_bytes(const uint8_t * buf, const size_t len)
+{
+  // TODO(twallis) Append to rx_buf_, run the framing state machine, and call
+  // message_ready(payload) for each complete frame extracted.
+  (void)buf;
+  (void)len;
 }
 
 }  // namespace proton_ros2_node

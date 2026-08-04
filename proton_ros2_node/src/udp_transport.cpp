@@ -42,4 +42,11 @@ void UdpTransport::encode_and_send(const std::vector<uint8_t> & buf)
   send(send_buf.data(), send_buf.size());
 }
 
+void UdpTransport::handle_bytes(const uint8_t * buf, const size_t len)
+{
+  // TODO(twallis) Validate the udp4 header and message_ready() the payload.
+  (void)buf;
+  (void)len;
+}
+
 }  // namespace proton_ros2_node

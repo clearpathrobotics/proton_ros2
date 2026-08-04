@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include <proton/common.h>
@@ -39,6 +40,8 @@ namespace proton_ros2_node
 class BaseTransport
 {
 public:
+  using MessageCallback = std::function<void(std::span<const uint8_t>)>;
+
   virtual ~BaseTransport() = default;
 
   // TODO (inherited from HAL) UDP requires reconnection logic.
@@ -55,14 +58,20 @@ public:
 
   virtual void encode_and_send(const std::vector<uint8_t> & buf) = 0;
 
-  virtual proton_status_e receive_and_decode(const uint8_t * buf, const size_t len) = 0;
-
-  // Stores the callback so it outlives the driver, which holds a reference to it.
-  void set_receive_callback(std::function<void(const uint8_t * buf, const size_t len)> fn)
+  // Called by owner when a complete decoded payload is ready. Registered
+  // callback is stored as a member so it outlives the driver, which holds a
+  // reference-typed callback of its own.
+  void set_message_callback(MessageCallback fn)
   {
-    recv_cb_ = std::move(fn);
-    // TODO fix spelling mistake in HAL -_-
-    driver_->setRecieveCallback(recv_cb_);  // cspell:disable-line
+    message_cb_ = std::move(fn);
+    if (!driver_cb_registered_) {
+      driver_recv_cb_ = [this](const uint8_t * buf, const size_t len) {
+          this->handle_bytes(buf, len);
+        };
+      // TODO fix spelling mistake in HAL -_-
+      driver_->setRecieveCallback(driver_recv_cb_);  // cspell:disable-line
+      driver_cb_registered_ = true;
+    }
   }
 
   uint32_t node_id() const
@@ -76,6 +85,24 @@ public:
   }
 
 protected:
+  explicit BaseTransport(uint32_t peer_node_id, uint32_t peer_endpoint_id)
+  : peer_node_id_(peer_node_id)
+    , peer_endpoint_id_(peer_endpoint_id)
+  {}
+
+  /**
+   * @brief Receive bytes from transport drivers and alert via
+   * message_ready when a complete payload is received.
+   */
+  virtual void handle_bytes(const uint8_t * buf, const size_t len) = 0;
+
+  void message_ready(std::span<const uint8_t> payload)
+  {
+    if (message_cb_) {
+      message_cb_(payload);
+    }
+  }
+
   virtual void send(const uint8_t * buf, const size_t len)
   {
     driver_->send(buf, len);
@@ -85,7 +112,11 @@ protected:
   uint32_t peer_endpoint_id_;
 
   std::unique_ptr<serial_hardware::drivers::BaseDriver> driver_;
-  std::function<void(const uint8_t * buf, const size_t len)> recv_cb_;
+
+private:
+  MessageCallback message_cb_;
+  std::function<void(const uint8_t * buf, const size_t len)> driver_recv_cb_;
+  bool driver_cb_registered_ = false;
 };
 
 }  // namespace proton_ros2_node
