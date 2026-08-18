@@ -75,6 +75,8 @@ class MessageBinding:
     mappings: list[Mapping] = field(default_factory=list)
     # Path to timestamp field for injection (e.g., "header.stamp")
     stamp_path: Optional[str] = None
+    # Path for specific include names (e.g., std_msgs/msg/color_rgba.hpp)
+    hpp_path: Optional[str] = None
 
     @property
     def adaptor_class(self) -> str:
@@ -100,8 +102,20 @@ class MessageBinding:
 
     @property
     def hpp_include(self) -> str:
-        """Generate C++ include path for ROS message header."""
-        return self.ros2_type.lower().replace('/msg/', '/msg/') + '.hpp'
+        """
+        Generate C++ include path for ROS message header.
+
+        (e.g., 'std_msgs/msg/Float32' -> 'std_msgs/msg/float32.hpp'
+        or
+        'std_msgs/msg/UInt32' -> 'std_msgs/msg/u_int32.hpp').
+
+        Key is that the header path is the snake_case version of the PascalCase message name,
+        but without an underscore preceding numbers.
+        """
+        if self.hpp_path is not None:
+            return self.hpp_path
+        hpp = re.sub(r'(?<!^)(?=[A-Z])', '_', self.ros2_type).replace('msg/_', 'msg/').lower()
+        return hpp + '.hpp'
 
     @property
     def ros_package(self) -> str:
@@ -117,6 +131,7 @@ class MessageBinding:
             ros2_type=d['ros2_type'],
             mappings=mappings,
             stamp_path=d.get('stamp'),
+            hpp_path=d.get('hpp_path'),
         )
 
 

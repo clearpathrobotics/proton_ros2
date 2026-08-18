@@ -89,6 +89,14 @@ class TestMessageBinding:
         """hpp_include should generate lowercase include path."""
         binding = MessageBinding(name='Test', ros2_type='geometry_msgs/msg/Twist')
         assert binding.hpp_include == 'geometry_msgs/msg/twist.hpp'
+        # Deal with PascalCase names
+        pascal_case = MessageBinding(name='TestUInt32', ros2_type='std_msgs/msg/UInt32')
+        assert pascal_case.hpp_include == 'std_msgs/msg/u_int32.hpp'
+        # Deal with user-defined path
+        user_defined = MessageBinding(name='UserDefined',
+                                      ros2_type='std_msgs/msg/ColorRGBA',
+                                      hpp_path='std_msgs/msg/color_rgba.hpp')
+        assert user_defined.hpp_include == 'std_msgs/msg/color_rgba.hpp'
 
     def test_ros_package(self):
         """ros_package should extract package name from type."""
