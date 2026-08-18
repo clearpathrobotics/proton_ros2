@@ -78,7 +78,8 @@ public:
     if (driver_) {
       try {
         driver_->disconnect();
-      } catch (...) {
+      } catch (const std::exception & e) {
+        RCLCPP_ERROR(logger_, "Driver shutdown error: %s", e.what());
       }
     }
 
