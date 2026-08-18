@@ -6,6 +6,12 @@ nodes:
         type: udp4
         ip: 127.0.0.1
         port: 11418
+# To test serial communication, run the following in a separate terminal and uncomment the lines below
+# socat -d -d PTY,raw,echo=0,link=/tmp/ttyPC0 PTY,raw,echo=0,link=/tmp/ttyMCU0
+      # - id: 1
+      #   type: serial
+      #   device: /tmp/ttyMCU0
+      #   baud: 115200
   - name: pc
     id: 1
     endpoints:
@@ -13,10 +19,16 @@ nodes:
         type: udp4
         ip: 127.0.0.1
         port: 11419
+      # - id: 1
+      #   type: serial
+      #   device: /tmp/ttyPC0
+      #   baud: 115200
 
 connections:
   - first: {node: pc, id: 0}
     second: {node: mcu, id: 0}
+  # - first: {node: pc, id: 1}
+  #   second: {node: mcu, id: 1}
 
 signals:
   - {name: forward_speed, id: 0, type: float, value: 0.0}

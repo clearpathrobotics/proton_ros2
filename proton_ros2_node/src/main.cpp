@@ -75,10 +75,10 @@ public:
             node_raw->recv_bytes(payload);
           });
         transport->init();
-        transport->connect();
         transports_.push_back(std::move(transport));
       } catch (std::exception & e) {
         RCLCPP_ERROR(node_->get_logger(), "Error constructing transports: %s", e.what());
+        throw;
       }
     }
   }
@@ -94,8 +94,8 @@ public:
       [self, node_raw]() {
         const auto data_for_peers = node_raw->spin_once(node_raw->now());
         if (!data_for_peers.empty()) {
-          RCLCPP_INFO(
-            node_raw->get_logger(), "data for peer received. send to %ld batches",
+          RCLCPP_DEBUG(
+            node_raw->get_logger(), "data for peers ready. send to %ld peers",
             data_for_peers.size());
         }
         for (const auto & dfp : data_for_peers) {

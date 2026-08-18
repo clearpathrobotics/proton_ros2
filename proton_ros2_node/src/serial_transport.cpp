@@ -33,6 +33,8 @@ proton_status_e SerialTransport::encode_and_send(const std::vector<uint8_t> & bu
   std::vector<uint8_t> send_buf;
   send_buf.resize(buf.size() + serial::FRAME_OVERHEAD);
 
+  serial::fill_frame_header(send_buf.data(), buf.size());
+
   uint16_t crc;
   proton_status_e status = serial::fill_crc16(buf.data(), buf.size(), &crc);
 
@@ -59,6 +61,7 @@ void SerialTransport::handle_bytes(const uint8_t * buf, const size_t len)
 
   if (decode_state_ == DecodeState::GetHeader) {
     if (buf_len <= serial::FRAME_HEADER_OVERHEAD) {
+      RCLCPP_DEBUG(logger_, "Buffer length not long enough: %ld bytes, waiting for more", buf_len);
       return;
     }
 
