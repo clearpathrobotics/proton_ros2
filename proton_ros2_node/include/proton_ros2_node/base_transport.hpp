@@ -160,8 +160,6 @@ protected:
   uint32_t peer_node_id_;
   uint32_t peer_endpoint_id_;
 
-  std::unique_ptr<serial_hardware::drivers::BaseDriver> driver_;
-
 private:
   void run_io()
   {
@@ -190,6 +188,11 @@ private:
   std::thread io_thread_;
 
   boost::asio::deadline_timer keep_alive_timer_;
+
+protected:
+  // The driver must be destroyed before the io_context, because the destructor of the drivers will interact with the
+  // io context in asio's inner layers.
+  std::unique_ptr<serial_hardware::drivers::BaseDriver> driver_;
 };
 
 }  // namespace proton_ros2_node
