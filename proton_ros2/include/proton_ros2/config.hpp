@@ -27,6 +27,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <protoncpp/node_builder/config.hpp>
 #include <protoncpp/node_builder/generator.hpp>
 
 #include "rclcpp/rclcpp.hpp"
@@ -217,7 +218,7 @@ struct ProtonRos2Config
 
 using BundleNameToId = std::unordered_map<std::string, uint32_t>;
 
-proton::node_builder::GeneratedNode node_from_config(
+proton::node_builder::Config get_filtered_proton_config(
   const std::string & config_path,
   const std::string & target_name);
 

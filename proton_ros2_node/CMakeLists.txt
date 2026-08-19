@@ -8,6 +8,14 @@ endif()
 
 # find dependencies
 find_package(proton_ros2 REQUIRED)
+find_package(proton_vendor REQUIRED)
+find_package(serial_hardware REQUIRED)
+# TODO export serial_hardware_drivers from within serial_hardware
+find_library(SERIAL_HARDWARE_DRIVERS_LIB
+  NAMES serial_hardware_drivers
+  HINTS ${serial_hardware_LIBRARY_DIRS} ${serial_hardware_DIR}/../../../lib
+  REQUIRED
+)
 
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
@@ -16,11 +24,17 @@ find_package(rclcpp REQUIRED)
 # ROS 2 Node
 add_executable(${PROJECT_NAME}
   src/main.cpp
-  # transport stuff here
+  src/transport_factory.cpp
+  src/serial_transport.cpp
+  src/udp_transport.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   proton_ros2
   rclcpp
+  serial_hardware
+)
+target_link_libraries(${PROJECT_NAME}
+  ${SERIAL_HARDWARE_DRIVERS_LIB}
 )
 target_include_directories(${PROJECT_NAME}
   PUBLIC

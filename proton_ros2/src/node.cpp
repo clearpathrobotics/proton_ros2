@@ -36,22 +36,29 @@ ProtonRos2Node::ProtonRos2Node()
 
   const auto proton_config_file = get_parameter("proton_config_file").as_string();
   const auto binding_config_file = get_parameter("binding_config_file").as_string();
-  const auto target = get_parameter("target").as_string();
+  target_name_ = get_parameter("target").as_string();
 
   // Proton node builder will throw exceptions from errors in the config,
   // so allow the process to fail early.
   try {
-    proton_node_ = node_from_config(proton_config_file, target);
+    proton_config_ = get_filtered_proton_config(proton_config_file, target_name_);
+    proton_node_ = proton::node_builder::GeneratedNode(proton_config_, target_name_);
   } catch (proton::node_builder::NodeBuilderException & e) {
     RCLCPP_FATAL(
       get_logger(),
       "Proton configuration error: %s", e.what()
     );
     throw;
+  } catch (std::exception & e) {
+    RCLCPP_FATAL(
+      get_logger(),
+      "proton_ros2 encountered an error: %s", e.what()
+    );
+    throw;
   }
 
   // Get names and ID's of bundles in our config
-  const auto bundle_name_to_id = get_bundles(proton_config_file, target);
+  const auto bundle_name_to_id = get_bundles(proton_config_file, target_name_);
 
   // Load runtime config for message bindings
   const auto binding_config = parse_binding_config(get_logger(), binding_config_file);

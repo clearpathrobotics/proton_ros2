@@ -35,6 +35,8 @@
   if (sig.get(tmp) == PROTON_OK) {
 {% if m.ros_index is not none %}
   {# Indexed array access #}
+  {# Need to resize the indexed type so it can include the user index without [] operators failing #}
+    msg.{{ m.ros_path }}.resize({{ m.ros_index }} + 1);
     msg.{{ m.ros_path }}[{{ m.ros_index }}] = tmp;
 {% else %}
     msg.{{ m.ros_path }} = tmp;

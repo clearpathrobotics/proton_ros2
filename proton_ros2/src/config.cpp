@@ -57,7 +57,7 @@ static QosConfig parse_qos(const proton::node_builder::ConfigNode & qos_node)
   return qos;
 }
 
-static proton::node_builder::Config get_filtered_proton_config(
+proton::node_builder::Config get_filtered_proton_config(
   const std::string & config_path,
   const std::string & target_name)
 {
@@ -66,15 +66,6 @@ static proton::node_builder::Config get_filtered_proton_config(
   const auto config_tree = ConfigTree::from_yaml_file(config_path);
   const auto proton_config = Config(config_tree);
   return filter_for_target(proton_config, target_name);
-}
-
-proton::node_builder::GeneratedNode node_from_config(
-  const std::string & config_path,
-  const std::string & target_name)
-{
-  const auto filtered_config = get_filtered_proton_config(config_path, target_name);
-
-  return proton::node_builder::GeneratedNode(filtered_config, target_name);
 }
 
 BundleNameToId get_bundles(
