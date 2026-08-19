@@ -1,0 +1,11 @@
+# Duplicate binding names
+messages:
+  - name: Duplicate
+    ros2_type: std_msgs/msg/Float32
+    mapping:
+      - {ros2.path: data, proton.signal: value1, type: float}
+
+  - name: Duplicate
+    ros2_type: std_msgs/msg/Float64
+    mapping:
+      - {ros2.path: data, proton.signal: value2, type: double}

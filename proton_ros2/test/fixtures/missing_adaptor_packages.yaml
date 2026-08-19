@@ -1,0 +1,15 @@
+# adaptor_packages key missing entirely
+
+publishers:
+  - topic: /robot/board_temps
+    binding: BoardTemps
+    bundle: telemetry
+    qos:
+      profile: sensor_data
+
+subscribers:
+  - topic: /cmd_vel
+    binding: Drive
+    bundle: commands
+    qos:
+      profile: default

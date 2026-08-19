@@ -59,6 +59,7 @@
     "clangd",
     "clearpath",
     "clearpathrobotics",
+    "cmakelists",
     "colcon",
     "commandable",
     "contactors",
@@ -135,6 +136,7 @@
     "packethook",
     "pathlib",
     "pinout",
+    "pluginlib",
     "Protobuf",
     "protobuf",
     "PROTOC",
@@ -144,6 +146,7 @@
     "PROTONCPP",
     "protoncpp",
     "Purvis",
+    "pytest",
     "PYTHONPATH",
     "pyyaml",
     "rclc",
@@ -178,11 +181,14 @@
     "tbaltovski",
     "TCPIP",
     "tempsensor",
+    "twallis",
     "Txps",
     "txps",
     "venv",
     "Werror",
     "Wextra",
-    "Wpedantic"
+    "Wnon",
+    "Wpedantic",
+    "Wshadow"
   ]
 }

@@ -1,0 +1,6 @@
+# Adaptor config referencing a signal not in proton config
+messages:
+  - name: MissingSignal
+    ros2_type: std_msgs/msg/Float32
+    mapping:
+      - {ros2.path: data, proton.signal: nonexistent_signal, type: float}
