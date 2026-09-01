@@ -46,7 +46,7 @@ ROS 2 node handling serial and/or ethernet transport and transport-level verific
 ## Building
 
 ```sh
-mkdir =p proton_ws/src
+mkdir -p proton_ws/src
 cd proton_ws/src
 git clone https://github.com/clearpathrobotics/proton_vendor.git
 git clone https://github.com/clearpathrobotics/proton_ros2.git
