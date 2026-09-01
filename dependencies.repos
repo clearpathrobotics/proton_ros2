@@ -1,0 +1,5 @@
+repositories:
+  proton_vendor:
+    type: git
+    url: https://github.com/clearpathrobotics/proton_vendor.git
+    version: main

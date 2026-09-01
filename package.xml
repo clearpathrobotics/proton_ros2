@@ -3,10 +3,14 @@
 <package format="3">
   <name>proton_ros2</name>
 <<<<<<< HEAD:package.xml
+<<<<<<< HEAD:package.xml
   <version>1.0.0</version>
 =======
   <version>2.0.0</version>
 >>>>>>> dc4571c (Add license, readme for packages):proton_ros2/package.xml
+=======
+  <version>0.0.0</version>
+>>>>>>> 06e98d4 (Revert package version changes):proton_ros2/package.xml
   <description>Proton ROS 2 integration package</description>
   <maintainer email="thomas.wallis@rockwellautomation.com">Tom Wallis</maintainer>
   <license>Apache 2.0</license>
