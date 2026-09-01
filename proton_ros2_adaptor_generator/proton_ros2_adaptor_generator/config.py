@@ -1,0 +1,284 @@
+# Copyright 2026 Rockwell Automation Technologies, Inc., All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Configuration dataclasses for proton_ros2_adaptor_generator.
+
+These dataclasses represent the YAML configuration format and provide
+methods for parsing and validation.
+"""
+
+from dataclasses import dataclass, field
+from enum import auto, Enum
+from pathlib import Path
+import re
+from typing import Optional
+
+import yaml
+
+
+class MappingType(Enum):
+    """Classification of signal-to-field mapping types."""
+
+    SCALAR = auto()  # Direct field: msg.data -> signal
+    ROS_INDEXED = auto()  # Array with fixed index: msg.temps[0] -> signal
+
+
+@dataclass
+class Mapping:
+    """A single field-to-signal mapping."""
+
+    ros_path: str  # Dot-separated path in ROS message (e.g., "header.frame_id")
+    signal_name: str  # Proton signal name
+    data_type: str  # Proton type: double, float, int32, int64, uint32, uint64, bool, string, bytes
+    ros_index: Optional[int] = None  # Array index for ROS_INDEXED mappings
+
+    # Resolved at generation time
+    signal_id: Optional[int] = None  # Signal ID integer
+    signal_capacity: Optional[int] = None  # Signal capacity for repeated types (bytes, string)
+
+    @property
+    def mapping_type(self) -> MappingType:
+        """Determine mapping type from configuration."""
+        if self.ros_index is not None:
+            return MappingType.ROS_INDEXED
+        return MappingType.SCALAR
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'Mapping':
+        """Parse a mapping from YAML dict format."""
+        return cls(
+            ros_path=d['ros2.path'],
+            signal_name=d['proton.signal'],
+            data_type=d['type'],
+            ros_index=d.get('ros2.index'),
+        )
+
+
+@dataclass
+class MessageBinding:
+    """Configuration for a single message adaptor binding."""
+
+    name: str  # Unique binding name (e.g., "BoardTemps")
+    ros2_type: str  # Fully qualified ROS type (e.g., "clearpath_platform_msgs/msg/Temperature")
+    mappings: list[Mapping] = field(default_factory=list)
+    # Path to timestamp field for injection (e.g., "header.stamp")
+    stamp_path: Optional[str] = None
+    # Path for specific include names (e.g., std_msgs/msg/color_rgba.hpp)
+    hpp_path: Optional[str] = None
+
+    @property
+    def adaptor_class(self) -> str:
+        """Generate C++ class name for this adaptor."""
+        return f'{self.name}Adaptor'
+
+    @property
+    def source_file(self) -> str:
+        """Generate source filename for this adaptor."""
+        # Convert CamelCase to snake_case
+
+        name = re.sub(r'(?<!^)(?=[A-Z])', '_', self.name).lower()
+        return f'{name}_adaptor.cpp'
+
+    @property
+    def ros_cpp_type(self) -> str:
+        """
+        Convert ROS type to C++ type.
+
+        (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist').
+        """
+        return self.ros2_type.replace('/', '::')
+
+    @property
+    def hpp_include(self) -> str:
+        """
+        Generate C++ include path for ROS message header.
+
+        (e.g., 'std_msgs/msg/Float32' -> 'std_msgs/msg/float32.hpp'
+        or
+        'std_msgs/msg/UInt32' -> 'std_msgs/msg/u_int32.hpp').
+
+        Key is that the header path is the snake_case version of the PascalCase message name,
+        but without an underscore preceding numbers.
+        """
+        if self.hpp_path is not None:
+            return self.hpp_path
+        hpp = re.sub(r'(?<!^)(?=[A-Z])', '_', self.ros2_type).replace('msg/_', 'msg/').lower()
+        return hpp + '.hpp'
+
+    @property
+    def ros_package(self) -> str:
+        """Extract ROS package name from type."""
+        return self.ros2_type.split('/')[0]
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'MessageBinding':
+        """Parse a message binding from YAML dict format."""
+        mappings = [Mapping.from_dict(m) for m in d.get('mapping', [])]
+        return cls(
+            name=d['name'],
+            ros2_type=d['ros2_type'],
+            mappings=mappings,
+            stamp_path=d.get('stamp'),
+            hpp_path=d.get('hpp_path'),
+        )
+
+
+@dataclass
+class AdaptorConfig:
+    """Complete configuration for an adaptor package."""
+
+    messages: list[MessageBinding] = field(default_factory=list)
+
+    @property
+    def ros_msg_dependencies(self) -> set[str]:
+        """Collect all ROS message package dependencies."""
+        deps = set()
+        for msg in self.messages:
+            deps.add(msg.ros_package)
+        return deps
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> 'AdaptorConfig':
+        """Load configuration from a YAML file."""
+        with open(path) as f:
+            data = yaml.safe_load(f)
+
+        messages = [MessageBinding.from_dict(m) for m in data.get('messages', [])]
+
+        return cls(messages=messages)
+
+    def resolve_signal_ids(self, proton_config_path: Path) -> list[str]:
+        """
+        Resolve signal IDs from proton config file.
+
+        Looks up each mapping's signal_name in the proton config's signals
+        stanza and sets the signal_id field to the integer ID.
+
+        :param proton_config_path: Path to proton YAML config with signals stanza
+        :return: List of error messages (empty if all resolved successfully)
+        """
+        # Load proton config
+        with open(proton_config_path) as f:
+            proton_data = yaml.safe_load(f)
+
+        # Build signal name -> id lookup
+        signal_lookup: dict[str, int] = {}
+        for sig in proton_data.get('signals', []):
+            name = sig.get('name')
+            sig_id = sig.get('id')
+            if name and sig_id is not None:
+                # Handle hex strings (e.g., '0x1000') or integers
+                if isinstance(sig_id, str):
+                    sig_id = int(sig_id, 0)  # auto-detect base (handles 0x prefix)
+                signal_lookup[name] = sig_id
+
+        # Resolve each mapping's signal_id
+        errors = []
+        for msg in self.messages:
+            for mapping in msg.mappings:
+                if mapping.signal_name in signal_lookup:
+                    mapping.signal_id = signal_lookup[mapping.signal_name]
+                else:
+                    errors.append(
+                        f'Signal "{mapping.signal_name}" not found in proton config '
+                        f'(binding "{msg.name}", field "{mapping.ros_path}")'
+                    )
+
+        return errors
+
+    def resolve_signal_capacities(self, proton_config_path: Path) -> list[str]:
+        """
+        Resolve signal capacities for repeated types from proton config.
+
+        Looks up each mapping's signal_name in the proton config and sets
+        the signal_capacity field for string/bytes types.
+
+        :param proton_config_path: Path to proton YAML config with signals stanza
+        :return: List of error messages (empty if all resolved successfully)
+        """
+        # Load proton config
+        with open(proton_config_path) as f:
+            proton_data = yaml.safe_load(f)
+
+        errors = []
+
+        # Build signal name -> capacity lookup
+        signal_lookup: dict[str, int] = {}
+        for sig in proton_data.get('signals', []):
+            name = sig.get('name')
+            sig_cap = sig.get('capacity')
+            sig_value = sig.get('value')
+            sig_type = sig.get('type')
+            if name is not None:
+                if sig_cap is not None:
+                    # Handle hex strings (e.g., '0x1000') or integers
+                    if isinstance(sig_cap, str):
+                        sig_cap = int(sig_cap, 0)  # auto-detect base (handles 0x prefix)
+                    signal_lookup[name] = sig_cap
+                # if signal has a default value
+                if sig_value is not None:
+                    if sig_type == 'bytes':
+                        if sig_cap is None:
+                            signal_lookup[name] = len(sig_value)
+                        elif sig_cap < len(sig_value):
+                            errors.append(f'Signal "{name}" has default value longer '
+                                          f'than capacity: ({len(sig_value)} > {sig_cap})')
+                    elif sig_type == 'string':
+                        if sig_cap is None or sig_cap == len(sig_value):
+                            signal_lookup[name] = len(sig_value) + 1
+                        elif sig_cap < len(sig_value):
+                            errors.append(f'Signal "{name}" has default value longer '
+                                          f'than capacity: ({len(sig_value)} > {sig_cap})')
+
+        for msg in self.messages:
+            for mapping in msg.mappings:
+                if mapping.signal_name in signal_lookup:
+                    mapping.signal_capacity = signal_lookup[mapping.signal_name]
+
+        return errors
+
+    def validate(self) -> list[str]:
+        """Validate configuration and return list of errors."""
+        errors = []
+
+        # Check for duplicate binding names
+        names = [m.name for m in self.messages]
+        seen = set()
+        for name in names:
+            if name in seen:
+                errors.append(f'Duplicate binding name: {name}')
+            seen.add(name)
+
+        # Validate data types
+        valid_types = {'double', 'float', 'int32',
+                       'int64', 'uint32', 'uint64', 'bool', 'string', 'bytes'}
+        for msg in self.messages:
+            for mapping in msg.mappings:
+                if mapping.data_type not in valid_types:
+                    errors.append(
+                        f'Invalid data type "{mapping.data_type}" in binding "{msg.name}"')
+
+        return errors
+
+
+@dataclass
+class PackageConfig:
+    """Configuration for the generated package metadata."""
+
+    package_name: str
+    version: str = '0.0.1'
+    maintainer_name: str = 'Unknown'
+    maintainer_email: str = 'unknown@example.com'
+    pkg_license: str = 'TODO: License declaration'
