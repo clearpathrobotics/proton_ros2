@@ -88,7 +88,6 @@ def generate_package_xml(
 
     content = template.render(
         package_name=package_config.package_name,
-        project_name=package_config.project_name,
         version=package_config.version,
         maintainer_name=package_config.maintainer_name,
         maintainer_email=package_config.maintainer_email,
@@ -124,7 +123,6 @@ def generate_package(
     config_path: Path,
     output_dir: Path,
     package_name: str,
-    project_name: str,
     maintainer_name: str = 'Unknown',
     maintainer_email: str = 'unknown@example.com',
 ) -> int:
@@ -160,7 +158,6 @@ def generate_package(
 
     package_config = PackageConfig(
         package_name=package_name,
-        project_name=project_name,
         maintainer_name=maintainer_name,
         maintainer_email=maintainer_email,
     )
@@ -198,44 +195,34 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    subparsers = parser.add_subparsers(dest='command', required=True)
-
-    # generate command
-    gen_parser = subparsers.add_parser('generate', help='Generate an adaptor package')
-    gen_parser.add_argument(
+    parser.add_argument(
         '--config',
         '-c',
         type=Path,
         required=True,
         help='Path to YAML configuration file',
     )
-    gen_parser.add_argument(
+    parser.add_argument(
         '--output',
         '-o',
         type=Path,
         required=True,
         help='Output directory for generated package',
     )
-    gen_parser.add_argument(
+    parser.add_argument(
         '--package-name',
         '-p',
         type=str,
         required=True,
         help='Name of the generated ROS package',
     )
-    gen_parser.add_argument(
-        '--project-name',
-        type=str,
-        required=True,
-        help='Project name for description (e.g., "A300")',
-    )
-    gen_parser.add_argument(
+    parser.add_argument(
         '--maintainer-name',
         type=str,
         default='Unknown',
         help='Package maintainer name',
     )
-    gen_parser.add_argument(
+    parser.add_argument(
         '--maintainer-email',
         type=str,
         default='unknown@example.com',
@@ -244,17 +231,13 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if args.command == 'generate':
-        return generate_package(
-            config_path=args.config,
-            output_dir=args.output,
-            package_name=args.package_name,
-            project_name=args.project_name,
-            maintainer_name=args.maintainer_name,
-            maintainer_email=args.maintainer_email,
-        )
-
-    return 0
+    return generate_package(
+        config_path=args.config,
+        output_dir=args.output,
+        package_name=args.package_name,
+        maintainer_name=args.maintainer_name,
+        maintainer_email=args.maintainer_email,
+    )
 
 
 if __name__ == '__main__':

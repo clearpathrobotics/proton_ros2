@@ -278,7 +278,6 @@ class PackageConfig:
     """Configuration for the generated package metadata."""
 
     package_name: str
-    project_name: str
     version: str = '0.0.1'
     maintainer_name: str = 'Unknown'
     maintainer_email: str = 'unknown@example.com'
