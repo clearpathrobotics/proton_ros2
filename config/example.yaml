@@ -67,7 +67,7 @@ bundles:
     period_ms: 500
 
 adaptor_packages:
-  - example_bridge_adaptor
+  - example_bridge
 
 # These are generation-time bindings
 messages:
