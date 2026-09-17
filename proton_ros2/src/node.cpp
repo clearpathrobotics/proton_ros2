@@ -156,6 +156,30 @@ ProtonRos2Node::ProtonRos2Node()
 
     subscribers_.push_back(std::move(subscriber));
   }
+
+  // Forward proton log entries to this node's rclcpp logger.
+  node_access.on_log_received(
+    [logger = get_logger()](const proton_Log & log) {
+      switch (log.level) {
+        case proton_Log_Level_LEVEL_TRACE:
+        case proton_Log_Level_LEVEL_DEBUG:
+          RCLCPP_DEBUG(logger, "[proton:%s] (%ld) %s", log.name, log.timestamp_ms, log.text);
+          break;
+        case proton_Log_Level_LEVEL_INFO:
+          RCLCPP_INFO(logger, "[proton:%s] (%ld) %s", log.name, log.timestamp_ms, log.text);
+          break;
+        case proton_Log_Level_LEVEL_WARN:
+          RCLCPP_WARN(logger, "[proton:%s] (%ld) %s", log.name, log.timestamp_ms, log.text);
+          break;
+        case proton_Log_Level_LEVEL_ERROR:
+          RCLCPP_ERROR(logger, "[proton:%s] (%ld) %s", log.name, log.timestamp_ms, log.text);
+          break;
+        case proton_Log_Level_LEVEL_FATAL:
+          RCLCPP_FATAL(logger, "[proton:%s] (%ld) %s", log.name, log.timestamp_ms, log.text);
+          break;
+      }
+    }
+  );
 }
 
 void ProtonRos2Node::recv_bytes(const uint8_t * buf, std::size_t len)
