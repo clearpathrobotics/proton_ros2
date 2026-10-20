@@ -35,9 +35,7 @@
   if (sig.get(tmp) == PROTON_OK) {
 {% if m.ros_index is not none %}
   {# Indexed array access #}
-  {# Need to resize the indexed type so it can include the user index without [] operators failing #}
-    msg.{{ m.ros_path }}.resize({{ m.ros_index }} + 1);
-    msg.{{ m.ros_path }}[{{ m.ros_index }}] = tmp;
+    proton_ros2_interfaces::set_indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}, tmp);
 {% else %}
     msg.{{ m.ros_path }} = tmp;
 {% endif %}
@@ -59,9 +57,9 @@
 {# Indexed array access #}
 {% if m.data_type in ['string', 'bytes'] %}
 {# Capacity types cannot be statically cast. But this will be caught via static_assert #}
-  {{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }}[{{ m.ros_index }}];
+  {{ CPP_TYPE[m.data_type] }} val = proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }});
 {% else %}
-  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }}[{{ m.ros_index }}]);
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}));
 {% endif %}
 {% else %}
 {# Scalar access #}
