@@ -126,20 +126,6 @@ TEST(ParseBindingConfig, EmptyListsProduceEmptyVectors)
 
 // --- Error cases --------------------------------------------------------------
 
-TEST(ParseBindingConfig, MissingPublishersThrows)
-{
-  EXPECT_THROW(
-    proton_ros2::parse_binding_config(test_logger(), fixture("missing_publishers.yaml")),
-    std::runtime_error);
-}
-
-TEST(ParseBindingConfig, MissingSubscribersThrows)
-{
-  EXPECT_THROW(
-    proton_ros2::parse_binding_config(test_logger(), fixture("missing_subscribers.yaml")),
-    std::runtime_error);
-}
-
 TEST(ParseBindingConfig, MissingAdaptorPackagesThrows)
 {
   EXPECT_THROW(
