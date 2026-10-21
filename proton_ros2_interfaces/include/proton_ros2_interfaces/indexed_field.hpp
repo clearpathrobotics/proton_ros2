@@ -29,7 +29,7 @@ template<typename T>
 struct IsFixedArray : std::false_type {};
 
 template<typename T, std::size_t Size>
-struct IsFixedArray<std::array<T, Size>> : std::true_type {};
+struct IsFixedArray<std::array<T, Size>>: std::true_type {};
 
 template<std::size_t Index, typename Container>
 decltype(auto) indexed_field(Container & field)
