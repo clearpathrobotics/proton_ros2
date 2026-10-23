@@ -30,7 +30,7 @@
   ],
   "overrides": [
     {
-      "filename": "**/proton_ros2_generator",
+      "filename": "**/proton_ros2_adaptor_generator/**/*.py",
       "languageId": "python"
     }
   ],
@@ -55,6 +55,7 @@
     "buildtool",
     "bytearray",
     "Camero",
+    "cassert",
     "checkmark",
     "clangd",
     "clearpath",
@@ -96,6 +97,7 @@
     "hosmar",
     "ifdef",
     "ifndef",
+    "IMU",
     "intellicode",
     "IPHL",
     "iphl",
@@ -161,6 +163,7 @@
     "ridgeback",
     "rkreinin",
     "roni",
+    "ROS",
     "rosidl",
     "rosout",
     "RTTI",
@@ -174,6 +177,7 @@
     "srvs",
     "SSBTN",
     "statemachine",
+    "stdexcept",
     "STDEV",
     "STREQ",
     "SUBMESSAGE",
