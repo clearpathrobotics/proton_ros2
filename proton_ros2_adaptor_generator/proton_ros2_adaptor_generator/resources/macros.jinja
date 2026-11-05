@@ -19,11 +19,14 @@
   Parameters:
     m - Mapping object with:
       - signal_id: proton signal ID
-      - ros_path: dot-separated path in ROS message (e.g., "header.frame_id")
-      - ros_index: (optional) array index for indexed access
+      - ros_path: dot-separated path in ROS message (e.g., "header.frame_id"); a component
+        may carry array indexes (e.g., "lights[0].red")
+      - ros_index: (optional) array index for the last path component
+      - proton_index: (optional) byte of a bytes signal that holds the field
       - data_type: proton type name (double, float, int32, etc.)
 #}
 {% macro to_ros(m) %}
+{% set value = 'tmp[' ~ m.proton_index ~ ']' if m.proton_index is not none else 'tmp' %}
 {
 {# Create temporary type value #}
   {{ CPP_TYPE[m.data_type] }} tmp;
@@ -33,11 +36,14 @@
 {% endif %}
   proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(registry, {{ m.signal_id }});
   if (sig.get(tmp) == PROTON_OK) {
-{% if m.ros_index is not none %}
+{% if m.nested_access %}
+{# Member of an array element, or several array levels #}
+    {{ m.write_expr }} = {{ value }};
+{% elif m.ros_index is not none %}
   {# Indexed array access #}
-    proton_ros2_interfaces::set_indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}, tmp);
+    proton_ros2_interfaces::set_indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}, {{ value }});
 {% else %}
-    msg.{{ m.ros_path }} = tmp;
+    msg.{{ m.ros_path }} = {{ value }};
 {% endif %}
   }
 }
@@ -53,7 +59,22 @@
 {% macro to_proton(m) %}
 {
   proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(generated_node.registry(), {{ m.signal_id }});
-{% if m.ros_index is not none %}
+{% if m.proton_index is not none %}
+{# Replace one byte of the signal and keep the others #}
+  std::vector<uint8_t> val({{ m.signal_capacity }});
+  if (sig.get(val) == PROTON_OK) {
+    val[{{ m.proton_index }}] = static_cast<uint8_t>({{ m.read_expr }});
+    sig.set(val);
+  }
+{% else %}
+{% if m.nested_access %}
+{# Member of an array element, or several array levels #}
+{% if m.data_type in ['string', 'bytes'] %}
+  {{ CPP_TYPE[m.data_type] }} val = {{ m.read_expr }};
+{% else %}
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>({{ m.read_expr }});
+{% endif %}
+{% elif m.ros_index is not none %}
 {# Indexed array access #}
 {% if m.data_type in ['string', 'bytes'] %}
 {# Capacity types cannot be statically cast. But this will be caught via static_assert #}
@@ -71,6 +92,7 @@
 {% endif %}
 
   sig.set(val);
+{% endif %}
 }
 {% endmacro %}
 
