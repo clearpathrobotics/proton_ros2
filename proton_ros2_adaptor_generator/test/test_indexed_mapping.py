@@ -128,13 +128,13 @@ int main() {{
   void * registry = nullptr;
   GeneratedNode generated_node;
   proton::Signal<float>::input = 8.5f;
-  {render_mapping("to_ros", 8)}
+    {render_mapping("to_ros", 8)}
   proton::Signal<float>::input = 0.5f;
-  {render_mapping("to_ros", 0)}
+    {render_mapping("to_ros", 0)}
   assert(msg.values.size() == 9);
   assert(msg.values[8] == 8.5);
   assert(msg.values[0] == 0.5);
-  {render_mapping("to_proton", 8)}
+    {render_mapping("to_proton", 8)}
   assert(proton::Signal<float>::output == 8.5f);
 }}
 """)
@@ -154,7 +154,7 @@ int main() {{
   struct {{ {container} values{{}}; }} msg;
   GeneratedNode generated_node;
   proton_ros2_interfaces::set_indexed_field<8>(msg.values, std::string("imu"));
-  {render_mapping("to_proton", 8, "string")}
+    {render_mapping("to_proton", 8, "string")}
   assert(proton::Signal<std::string>::output == "imu");
 }}
 """)
@@ -270,7 +270,7 @@ int main() {{
   struct {{ {container} values{{}}; }} msg;
   void * registry = nullptr;
   proton::Signal<{BYTES}>::input = {{10, 20, 30}};
-  {render_path_mapping("to_ros", "values[3].green", "bytes", 3, 1)}
+    {render_path_mapping("to_ros", "values[3].green", "bytes", 3, 1)}
   assert(msg.values.size() == 4);
   assert(msg.values[3].green == 20);
   assert(msg.values[3].red == 0);
@@ -290,7 +290,7 @@ int main() {{
   msg.values[3].green = 99;
   GeneratedNode generated_node;
   proton::Signal<{BYTES}>::input = {{10, 20, 30}};
-  {render_path_mapping("to_proton", "values[3].green", "bytes", 3, 1)}
+    {render_path_mapping("to_proton", "values[3].green", "bytes", 3, 1)}
   assert((proton::Signal<{BYTES}>::output == {BYTES}{{10, 99, 30}}));
 }}
 """)
@@ -360,7 +360,7 @@ int main() {{
   struct {{ std::array<Rgb, 4> values{{}}; }} msg;
   [[maybe_unused]] void * registry = nullptr;
   [[maybe_unused]] GeneratedNode generated_node;
-  {render_path_mapping(direction, "values[4].red", "bytes", 3, 0)}
+    {render_path_mapping(direction, "values[4].red", "bytes", 3, 0)}
 }}
 """,
         expect_failure=True,
@@ -466,12 +466,12 @@ int main() {{
   void * registry = nullptr;
   GeneratedNode generated_node;
   proton::Signal<uint32_t>::input = 200;
-  {render_path_mapping("to_ros", "values[3].green", "uint32")}
+    {render_path_mapping("to_ros", "values[3].green", "uint32")}
   assert(msg.values.size() == 4);
   assert(msg.values[3].green == 200);
   assert(msg.values[3].red == 0);
   assert(msg.values[3].blue == 0);
-  {render_path_mapping("to_proton", "values[3].green", "uint32")}
+    {render_path_mapping("to_proton", "values[3].green", "uint32")}
   assert(proton::Signal<uint32_t>::output == 200);
 }}
 """)
@@ -489,14 +489,14 @@ int main() {{
   void * registry = nullptr;
   GeneratedNode generated_node;
   proton::Signal<double>::input = 1.5;
-  {render_path_mapping("to_ros", "values[2].items[1].x", "double")}
+    {render_path_mapping("to_ros", "values[2].items[1].x", "double")}
   assert(msg.values.size() == 3);
   assert(msg.values[2].items[1].x == 1.5);
   assert(msg.values[2].items[0].x == 0.0);
-  {render_path_mapping("to_ros", "top.items[1].x", "double")}
+    {render_path_mapping("to_ros", "top.items[1].x", "double")}
   assert(msg.top.items[1].x == 1.5);
   proton::Signal<double>::output = 0.0;
-  {render_path_mapping("to_proton", "values[2].items[1].x", "double")}
+    {render_path_mapping("to_proton", "values[2].items[1].x", "double")}
   assert(proton::Signal<double>::output == 1.5);
 }}
 """)
@@ -512,15 +512,15 @@ int main() {{
   void * registry = nullptr;
   GeneratedNode generated_node;
   proton::Signal<std::string>::input = "imu";
-  {render_path_mapping("to_ros", "values[1].label", "string", 3)}
+    {render_path_mapping("to_ros", "values[1].label", "string", 3)}
   assert(msg.values.size() == 2);
   assert(msg.values[1].label == "imu");
   proton::Signal<std::vector<uint8_t>>::input = {{7, 8}};
-  {render_path_mapping("to_ros", "values[0].data", "bytes", 2)}
+    {render_path_mapping("to_ros", "values[0].data", "bytes", 2)}
   assert((msg.values[0].data == std::vector<uint8_t>{{7, 8}}));
-  {render_path_mapping("to_proton", "values[0].data", "bytes", 2)}
+    {render_path_mapping("to_proton", "values[0].data", "bytes", 2)}
   assert((proton::Signal<std::vector<uint8_t>>::output == std::vector<uint8_t>{{7, 8}}));
-  {render_path_mapping("to_proton", "values[1].label", "string", 3)}
+    {render_path_mapping("to_proton", "values[1].label", "string", 3)}
   assert(proton::Signal<std::string>::output == "imu");
 }}
 """)
@@ -557,7 +557,7 @@ int main() {{
   struct {{ std::array<Rgb, 4> values{{}}; }} msg;
   [[maybe_unused]] void * registry = nullptr;
   [[maybe_unused]] GeneratedNode generated_node;
-  {render_path_mapping(direction, "values[4].red", "uint32")}
+    {render_path_mapping(direction, "values[4].red", "uint32")}
 }}
 """,
         expect_failure=True,
