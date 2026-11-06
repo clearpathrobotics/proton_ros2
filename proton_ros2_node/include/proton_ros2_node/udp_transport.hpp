@@ -37,10 +37,10 @@ class UdpTransport : public BaseTransport
 public:
   explicit UdpTransport(
     rclcpp::Logger logger,
-    uint32_t node_id, uint32_t endpoint_id,
+    uint32_t node_id, uint32_t endpoint_id, uint32_t host_node_id,
     const std::string & host_ip, const std::string & remote_ip,
     const size_t host_port, const size_t remote_port)
-  : BaseTransport(logger, node_id, endpoint_id)
+  : BaseTransport(logger, node_id, endpoint_id), host_node_id_(host_node_id)
   {
     driver_ = std::make_unique<serial_hardware::drivers::ByteUdpDriver>(host_ip, remote_ip,
         host_port, remote_port);
@@ -55,6 +55,10 @@ public:
 
 protected:
   void handle_bytes(const uint8_t * buf, const size_t len) override;
+
+private:
+  // The UDP4 header carries the sender's node id, which receivers check.
+  uint32_t host_node_id_;
 };
 
 }  // namespace proton_ros2_node

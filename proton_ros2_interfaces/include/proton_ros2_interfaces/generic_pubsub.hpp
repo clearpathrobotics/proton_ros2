@@ -77,18 +77,28 @@ public:
   : bundle_(bundle)
   {
     sub_ = node->create_generic_subscription(topic, msg_type, qos,
-        [&proton_node, convert = std::move(convert)]
+        [this, &proton_node, convert = std::move(convert)]
         (std::shared_ptr<rclcpp::SerializedMessage> msg) {
-          proton::ScopedLock lock(proton_node.registry());
-          convert(*msg, proton_node);
+          {
+            proton::ScopedLock lock(proton_node.registry());
+            convert(*msg, proton_node);
+          }
+          // Triggering takes the registry lock itself, so it runs after the scope above.
+          if (on_converted_) {
+            on_converted_();
+          }
       });
   }
+
+  /// Called after each message has been written to the registry. Set before spinning.
+  void set_on_converted(std::function<void()> fn) {on_converted_ = std::move(fn);}
 
   const std::string & bundle() const {return bundle_;}
 
 private:
   rclcpp::GenericSubscription::SharedPtr sub_;
   std::string bundle_;
+  std::function<void()> on_converted_;
 };
 
 }  // namespace proton_ros2_interfaces
