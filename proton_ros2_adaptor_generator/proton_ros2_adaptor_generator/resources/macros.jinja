@@ -63,7 +63,8 @@
 {# Replace one byte of the signal and keep the others #}
   std::vector<uint8_t> val({{ m.signal_capacity }});
   if (sig.get(val) == PROTON_OK) {
-    val[{{ m.proton_index }}] = static_cast<uint8_t>({{ m.read_expr }});
+    val[{{ m.proton_index }}] = static_cast<uint8_t>(
+      {{ m.read_expr }});
     sig.set(val);
   }
 {% else %}
@@ -72,7 +73,8 @@
 {% if m.data_type in ['string', 'bytes'] %}
   {{ CPP_TYPE[m.data_type] }} val = {{ m.read_expr }};
 {% else %}
-  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>({{ m.read_expr }});
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(
+    {{ m.read_expr }});
 {% endif %}
 {% elif m.ros_index is not none %}
 {# Indexed array access #}
@@ -80,7 +82,8 @@
 {# Capacity types cannot be statically cast. But this will be caught via static_assert #}
   {{ CPP_TYPE[m.data_type] }} val = proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }});
 {% else %}
-  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}));
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(
+    proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}));
 {% endif %}
 {% else %}
 {# Scalar access #}

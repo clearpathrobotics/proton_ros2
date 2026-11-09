@@ -120,11 +120,11 @@ class Mapping:
     def from_dict(cls, d: dict) -> "Mapping":
         """Parse a mapping from YAML dict format."""
         return cls(
-            ros_path=d["ros2.path"],
-            signal_name=d["proton.signal"],
-            data_type=d["type"],
-            ros_index=d.get("ros2.index"),
-            proton_index=d.get("proton.index"),
+            ros_path=d['ros2.path'],
+            signal_name=d['proton.signal'],
+            data_type=d['type'],
+            ros_index=d.get('ros2.index'),
+            proton_index=d.get('proton.index'),
         )
 
 
@@ -143,15 +143,15 @@ class MessageBinding:
     @property
     def adaptor_class(self) -> str:
         """Generate C++ class name for this adaptor."""
-        return f"{self.name}Adaptor"
+        return f'{self.name}Adaptor'
 
     @property
     def source_file(self) -> str:
         """Generate source filename for this adaptor."""
         # Convert CamelCase to snake_case
 
-        name = re.sub(r"(?<!^)(?=[A-Z])", "_", self.name).lower()
-        return f"{name}_adaptor.cpp"
+        name = re.sub(r'(?<!^)(?=[A-Z])', '_', self.name).lower()
+        return f'{name}_adaptor.cpp'
 
     @property
     def ros_cpp_type(self) -> str:
@@ -160,7 +160,7 @@ class MessageBinding:
 
         (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist').
         """
-        return self.ros2_type.replace("/", "::")
+        return self.ros2_type.replace('/', '::')
 
     @property
     def hpp_include(self) -> str:
@@ -176,28 +176,24 @@ class MessageBinding:
         """
         if self.hpp_path is not None:
             return self.hpp_path
-        hpp = (
-            re.sub(r"(?<!^)(?=[A-Z])", "_", self.ros2_type)
-            .replace("msg/_", "msg/")
-            .lower()
-        )
-        return hpp + ".hpp"
+        hpp = re.sub(r'(?<!^)(?=[A-Z])', '_', self.ros2_type).replace('msg/_', 'msg/').lower()
+        return hpp + '.hpp'
 
     @property
     def ros_package(self) -> str:
         """Extract ROS package name from type."""
-        return self.ros2_type.split("/")[0]
+        return self.ros2_type.split('/')[0]
 
     @classmethod
-    def from_dict(cls, d: dict) -> "MessageBinding":
+    def from_dict(cls, d: dict) -> 'MessageBinding':
         """Parse a message binding from YAML dict format."""
-        mappings = [Mapping.from_dict(m) for m in d.get("mapping", [])]
+        mappings = [Mapping.from_dict(m) for m in d.get('mapping', [])]
         return cls(
-            name=d["name"],
-            ros2_type=d["ros2_type"],
+            name=d['name'],
+            ros2_type=d['ros2_type'],
             mappings=mappings,
-            stamp_path=d.get("stamp"),
-            hpp_path=d.get("hpp_path"),
+            stamp_path=d.get('stamp'),
+            hpp_path=d.get('hpp_path'),
         )
 
 
@@ -216,12 +212,12 @@ class AdaptorConfig:
         return deps
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "AdaptorConfig":
+    def from_yaml(cls, path: Path) -> 'AdaptorConfig':
         """Load configuration from a YAML file."""
         with open(path) as f:
             data = yaml.safe_load(f)
 
-        messages = [MessageBinding.from_dict(m) for m in data.get("messages", [])]
+        messages = [MessageBinding.from_dict(m) for m in data.get('messages', [])]
 
         return cls(messages=messages)
 
@@ -241,9 +237,9 @@ class AdaptorConfig:
 
         # Build signal name -> id lookup
         signal_lookup: dict[str, int] = {}
-        for sig in proton_data.get("signals", []):
-            name = sig.get("name")
-            sig_id = sig.get("id")
+        for sig in proton_data.get('signals', []):
+            name = sig.get('name')
+            sig_id = sig.get('id')
             if name and sig_id is not None:
                 # Handle hex strings (e.g., '0x1000') or integers
                 if isinstance(sig_id, str):
@@ -282,22 +278,20 @@ class AdaptorConfig:
 
         # Build signal name -> capacity lookup
         signal_lookup: dict[str, int] = {}
-        for sig in proton_data.get("signals", []):
-            name = sig.get("name")
-            sig_cap = sig.get("capacity")
-            sig_value = sig.get("value")
-            sig_type = sig.get("type")
+        for sig in proton_data.get('signals', []):
+            name = sig.get('name')
+            sig_cap = sig.get('capacity')
+            sig_value = sig.get('value')
+            sig_type = sig.get('type')
             if name is not None:
                 if sig_cap is not None:
                     # Handle hex strings (e.g., '0x1000') or integers
                     if isinstance(sig_cap, str):
-                        sig_cap = int(
-                            sig_cap, 0
-                        )  # auto-detect base (handles 0x prefix)
+                        sig_cap = int(sig_cap, 0)  # auto-detect base (handles 0x prefix)
                     signal_lookup[name] = sig_cap
                 # if signal has a default value
                 if sig_value is not None:
-                    if sig_type == "bytes":
+                    if sig_type == 'bytes':
                         if sig_cap is None:
                             signal_lookup[name] = len(sig_value)
                         elif sig_cap < len(sig_value):
@@ -342,21 +336,12 @@ class AdaptorConfig:
         seen = set()
         for name in names:
             if name in seen:
-                errors.append(f"Duplicate binding name: {name}")
+                errors.append(f'Duplicate binding name: {name}')
             seen.add(name)
 
         # Validate data types
-        valid_types = {
-            "double",
-            "float",
-            "int32",
-            "int64",
-            "uint32",
-            "uint64",
-            "bool",
-            "string",
-            "bytes",
-        }
+        valid_types = {'double', 'float', 'int32',
+                       'int64', 'uint32', 'uint64', 'bool', 'string', 'bytes'}
         for msg in self.messages:
             for mapping in msg.mappings:
                 if mapping.path_error:
@@ -390,7 +375,7 @@ class PackageConfig:
     """Configuration for the generated package metadata."""
 
     package_name: str
-    version: str = "0.0.1"
-    maintainer_name: str = "Unknown"
-    maintainer_email: str = "unknown@example.com"
-    pkg_license: str = "TODO: License declaration"
+    version: str = '0.0.1'
+    maintainer_name: str = 'Unknown'
+    maintainer_email: str = 'unknown@example.com'
+    pkg_license: str = 'TODO: License declaration'
