@@ -19,13 +19,15 @@ These dataclasses represent the YAML configuration format and provide
 methods for parsing and validation.
 """
 
-from dataclasses import dataclass, field
-from enum import auto, Enum
-from pathlib import Path
 import re
-from typing import Optional
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from pathlib import Path
 
 import yaml
+
+# One dotted path component: a field name followed by any number of [index] suffixes
+_PATH_COMPONENT = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)((?:\[\d+\])*)$")
 
 
 class MappingType(Enum):
@@ -42,27 +44,87 @@ class Mapping:
     ros_path: str  # Dot-separated path in ROS message (e.g., "header.frame_id")
     signal_name: str  # Proton signal name
     data_type: str  # Proton type: double, float, int32, int64, uint32, uint64, bool, string, bytes
-    ros_index: Optional[int] = None  # Array index for ROS_INDEXED mappings
+    ros_index: int | None = None  # Array index for ROS_INDEXED mappings
+    proton_index: int | None = None  # Byte of a bytes signal that holds this field
 
     # Resolved at generation time
-    signal_id: Optional[int] = None  # Signal ID integer
-    signal_capacity: Optional[int] = None  # Signal capacity for repeated types (bytes, string)
+    signal_id: int | None = None  # Signal ID integer
+    signal_capacity: int | None = (
+        None  # Signal capacity for repeated types (bytes, string)
+    )
 
     @property
     def mapping_type(self) -> MappingType:
         """Determine mapping type from configuration."""
-        if self.ros_index is not None:
+        if self.ros_index is not None or "[" in self.ros_path:
             return MappingType.ROS_INDEXED
         return MappingType.SCALAR
 
+    def __post_init__(self) -> None:
+        """Turn a single trailing "[n]" on the path into ros_index, as ros2.index would."""
+        match = re.fullmatch(r"([^\[\]]+)\[(\d+)\]", self.ros_path)
+        if match and self.ros_index is None:
+            self.ros_path = match.group(1)
+            self.ros_index = int(match.group(2))
+
+    @property
+    def path_error(self) -> str | None:
+        """Describe what is wrong with ros_path, or None if it is usable."""
+        for part in self.ros_path.split("."):
+            if _PATH_COMPONENT.match(part) is None:
+                return f'invalid component "{part}" in ros2.path "{self.ros_path}"'
+        if "[" in self.ros_path and self.ros_index is not None:
+            return f'use either ros2.index or [n] in ros2.path "{self.ros_path}"'
+        return None
+
+    @property
+    def components(self) -> list[tuple[str, list[int]]]:
+        """Split the path into components with array indexes; ros_index goes on the last."""
+        parts = []
+        for part in self.ros_path.split("."):
+            match = _PATH_COMPONENT.match(part)
+            parts.append(
+                (match.group(1), [int(i) for i in re.findall(r"\d+", match.group(2))])
+            )
+        if self.ros_index is not None:
+            parts[-1][1].append(self.ros_index)
+        return parts
+
+    @property
+    def nested_access(self) -> bool:
+        """Return False only when the one array index is a single index on the last component."""
+        counts = [len(indexes) for _, indexes in self.components]
+        return sum(counts) > 1 or (sum(counts) == 1 and counts[-1] != 1)
+
+    def _expression(self, accessor: str) -> str:
+        expression = "msg"
+        for name, indexes in self.components:
+            expression += f".{name}"
+            for index in indexes:
+                expression = (
+                    f"proton_ros2_interfaces::{accessor}<{index}>({expression})"
+                )
+        return expression
+
+    @property
+    def write_expr(self) -> str:
+        """Return the C++ reference to the ROS field for writing; dynamic arrays grow to fit."""
+        return self._expression("indexed_element")
+
+    @property
+    def read_expr(self) -> str:
+        """Return the C++ reference to the ROS field for reading; a missing element throws."""
+        return self._expression("indexed_field")
+
     @classmethod
-    def from_dict(cls, d: dict) -> 'Mapping':
+    def from_dict(cls, d: dict) -> "Mapping":
         """Parse a mapping from YAML dict format."""
         return cls(
-            ros_path=d['ros2.path'],
-            signal_name=d['proton.signal'],
-            data_type=d['type'],
-            ros_index=d.get('ros2.index'),
+            ros_path=d["ros2.path"],
+            signal_name=d["proton.signal"],
+            data_type=d["type"],
+            ros_index=d.get("ros2.index"),
+            proton_index=d.get("proton.index"),
         )
 
 
@@ -74,22 +136,22 @@ class MessageBinding:
     ros2_type: str  # Fully qualified ROS type (e.g., "clearpath_platform_msgs/msg/Temperature")
     mappings: list[Mapping] = field(default_factory=list)
     # Path to timestamp field for injection (e.g., "header.stamp")
-    stamp_path: Optional[str] = None
+    stamp_path: str | None = None
     # Path for specific include names (e.g., std_msgs/msg/color_rgba.hpp)
-    hpp_path: Optional[str] = None
+    hpp_path: str | None = None
 
     @property
     def adaptor_class(self) -> str:
         """Generate C++ class name for this adaptor."""
-        return f'{self.name}Adaptor'
+        return f"{self.name}Adaptor"
 
     @property
     def source_file(self) -> str:
         """Generate source filename for this adaptor."""
         # Convert CamelCase to snake_case
 
-        name = re.sub(r'(?<!^)(?=[A-Z])', '_', self.name).lower()
-        return f'{name}_adaptor.cpp'
+        name = re.sub(r"(?<!^)(?=[A-Z])", "_", self.name).lower()
+        return f"{name}_adaptor.cpp"
 
     @property
     def ros_cpp_type(self) -> str:
@@ -98,7 +160,7 @@ class MessageBinding:
 
         (e.g., 'geometry_msgs/msg/Twist' -> 'geometry_msgs::msg::Twist').
         """
-        return self.ros2_type.replace('/', '::')
+        return self.ros2_type.replace("/", "::")
 
     @property
     def hpp_include(self) -> str:
@@ -114,24 +176,28 @@ class MessageBinding:
         """
         if self.hpp_path is not None:
             return self.hpp_path
-        hpp = re.sub(r'(?<!^)(?=[A-Z])', '_', self.ros2_type).replace('msg/_', 'msg/').lower()
-        return hpp + '.hpp'
+        hpp = (
+            re.sub(r"(?<!^)(?=[A-Z])", "_", self.ros2_type)
+            .replace("msg/_", "msg/")
+            .lower()
+        )
+        return hpp + ".hpp"
 
     @property
     def ros_package(self) -> str:
         """Extract ROS package name from type."""
-        return self.ros2_type.split('/')[0]
+        return self.ros2_type.split("/")[0]
 
     @classmethod
-    def from_dict(cls, d: dict) -> 'MessageBinding':
+    def from_dict(cls, d: dict) -> "MessageBinding":
         """Parse a message binding from YAML dict format."""
-        mappings = [Mapping.from_dict(m) for m in d.get('mapping', [])]
+        mappings = [Mapping.from_dict(m) for m in d.get("mapping", [])]
         return cls(
-            name=d['name'],
-            ros2_type=d['ros2_type'],
+            name=d["name"],
+            ros2_type=d["ros2_type"],
             mappings=mappings,
-            stamp_path=d.get('stamp'),
-            hpp_path=d.get('hpp_path'),
+            stamp_path=d.get("stamp"),
+            hpp_path=d.get("hpp_path"),
         )
 
 
@@ -150,12 +216,12 @@ class AdaptorConfig:
         return deps
 
     @classmethod
-    def from_yaml(cls, path: Path) -> 'AdaptorConfig':
+    def from_yaml(cls, path: Path) -> "AdaptorConfig":
         """Load configuration from a YAML file."""
         with open(path) as f:
             data = yaml.safe_load(f)
 
-        messages = [MessageBinding.from_dict(m) for m in data.get('messages', [])]
+        messages = [MessageBinding.from_dict(m) for m in data.get("messages", [])]
 
         return cls(messages=messages)
 
@@ -175,9 +241,9 @@ class AdaptorConfig:
 
         # Build signal name -> id lookup
         signal_lookup: dict[str, int] = {}
-        for sig in proton_data.get('signals', []):
-            name = sig.get('name')
-            sig_id = sig.get('id')
+        for sig in proton_data.get("signals", []):
+            name = sig.get("name")
+            sig_id = sig.get("id")
             if name and sig_id is not None:
                 # Handle hex strings (e.g., '0x1000') or integers
                 if isinstance(sig_id, str):
@@ -216,36 +282,54 @@ class AdaptorConfig:
 
         # Build signal name -> capacity lookup
         signal_lookup: dict[str, int] = {}
-        for sig in proton_data.get('signals', []):
-            name = sig.get('name')
-            sig_cap = sig.get('capacity')
-            sig_value = sig.get('value')
-            sig_type = sig.get('type')
+        for sig in proton_data.get("signals", []):
+            name = sig.get("name")
+            sig_cap = sig.get("capacity")
+            sig_value = sig.get("value")
+            sig_type = sig.get("type")
             if name is not None:
                 if sig_cap is not None:
                     # Handle hex strings (e.g., '0x1000') or integers
                     if isinstance(sig_cap, str):
-                        sig_cap = int(sig_cap, 0)  # auto-detect base (handles 0x prefix)
+                        sig_cap = int(
+                            sig_cap, 0
+                        )  # auto-detect base (handles 0x prefix)
                     signal_lookup[name] = sig_cap
                 # if signal has a default value
                 if sig_value is not None:
-                    if sig_type == 'bytes':
+                    if sig_type == "bytes":
                         if sig_cap is None:
                             signal_lookup[name] = len(sig_value)
                         elif sig_cap < len(sig_value):
-                            errors.append(f'Signal "{name}" has default value longer '
-                                          f'than capacity: ({len(sig_value)} > {sig_cap})')
-                    elif sig_type == 'string':
+                            errors.append(
+                                f'Signal "{name}" has default value longer '
+                                f"than capacity: ({len(sig_value)} > {sig_cap})"
+                            )
+                    elif sig_type == "string":
                         if sig_cap is None or sig_cap == len(sig_value):
                             signal_lookup[name] = len(sig_value) + 1
                         elif sig_cap < len(sig_value):
-                            errors.append(f'Signal "{name}" has default value longer '
-                                          f'than capacity: ({len(sig_value)} > {sig_cap})')
+                            errors.append(
+                                f'Signal "{name}" has default value longer '
+                                f"than capacity: ({len(sig_value)} > {sig_cap})"
+                            )
 
         for msg in self.messages:
             for mapping in msg.mappings:
                 if mapping.signal_name in signal_lookup:
                     mapping.signal_capacity = signal_lookup[mapping.signal_name]
+                if mapping.proton_index is not None:
+                    if mapping.signal_capacity is None:
+                        errors.append(
+                            f'Signal "{mapping.signal_name}" needs a capacity for '
+                            f'"proton.index" (binding "{msg.name}")'
+                        )
+                    elif mapping.proton_index >= mapping.signal_capacity:
+                        errors.append(
+                            f'"proton.index" {mapping.proton_index} is outside the capacity '
+                            f'{mapping.signal_capacity} of signal "{mapping.signal_name}" '
+                            f'(binding "{msg.name}")'
+                        )
 
         return errors
 
@@ -258,17 +342,45 @@ class AdaptorConfig:
         seen = set()
         for name in names:
             if name in seen:
-                errors.append(f'Duplicate binding name: {name}')
+                errors.append(f"Duplicate binding name: {name}")
             seen.add(name)
 
         # Validate data types
-        valid_types = {'double', 'float', 'int32',
-                       'int64', 'uint32', 'uint64', 'bool', 'string', 'bytes'}
+        valid_types = {
+            "double",
+            "float",
+            "int32",
+            "int64",
+            "uint32",
+            "uint64",
+            "bool",
+            "string",
+            "bytes",
+        }
         for msg in self.messages:
             for mapping in msg.mappings:
+                if mapping.path_error:
+                    errors.append(f'{mapping.path_error} (binding "{msg.name}")')
+                if mapping.proton_index is not None:
+                    index = mapping.proton_index
+                    if (
+                        isinstance(index, bool)
+                        or not isinstance(index, int)
+                        or index < 0
+                    ):
+                        errors.append(
+                            f'"proton.index" must be a non-negative integer in binding '
+                            f'"{msg.name}", field "{mapping.ros_path}"'
+                        )
+                    if mapping.data_type != "bytes":
+                        errors.append(
+                            f'"proton.index" needs a bytes signal in binding "{msg.name}", '
+                            f'field "{mapping.ros_path}"'
+                        )
                 if mapping.data_type not in valid_types:
                     errors.append(
-                        f'Invalid data type "{mapping.data_type}" in binding "{msg.name}"')
+                        f'Invalid data type "{mapping.data_type}" in binding "{msg.name}"'
+                    )
 
         return errors
 
@@ -278,7 +390,7 @@ class PackageConfig:
     """Configuration for the generated package metadata."""
 
     package_name: str
-    version: str = '0.0.1'
-    maintainer_name: str = 'Unknown'
-    maintainer_email: str = 'unknown@example.com'
-    pkg_license: str = 'TODO: License declaration'
+    version: str = "0.0.1"
+    maintainer_name: str = "Unknown"
+    maintainer_email: str = "unknown@example.com"
+    pkg_license: str = "TODO: License declaration"
