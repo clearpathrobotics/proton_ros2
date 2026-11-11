@@ -53,7 +53,7 @@ inline std::optional<QoSProfile> parse_qos_profile(std::string_view s)
     {"default", QoSProfile::Default},
     {"system_defaults", QoSProfile::SystemDefaults},
     {"sensor_data", QoSProfile::SensorData},
-    {"state", QosProfile::State},
+    {"state", QoSProfile::State},
     {"services", QoSProfile::Services},
     {"rosout", QoSProfile::Rosout},
   };
@@ -85,7 +85,7 @@ inline rclcpp::QoS get_qos_profile(QoSProfile profile)
       return rclcpp::SystemDefaultsQoS();
     case QoSProfile::SensorData:
       return rclcpp::SensorDataQoS();
-    case QosProfile::State:
+    case QoSProfile::State:
       return state_profile();
     case QoSProfile::Services:
       return rclcpp::ServicesQoS();
@@ -213,14 +213,14 @@ typedef struct
   size_t depth;
   rmw_qos_reliability_policy_t reliability;
   rmw_qos_durability_policy_t durability;
-} QosConfig;
+} QoSConfig;
 
 struct TopicConfig
 {
   std::string topic;
   std::string binding;
   std::string bundle;
-  QosConfig qos;
+  QoSConfig qos;
 };
 
 struct ProtonRos2Config
