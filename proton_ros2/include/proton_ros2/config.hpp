@@ -42,6 +42,7 @@ enum class QoSProfile
   Default,
   SystemDefaults,
   SensorData,
+  State,
   Services,
   Rosout,
 };
@@ -52,6 +53,7 @@ inline std::optional<QoSProfile> parse_qos_profile(std::string_view s)
     {"default", QoSProfile::Default},
     {"system_defaults", QoSProfile::SystemDefaults},
     {"sensor_data", QoSProfile::SensorData},
+    {"state", QosProfile::State},
     {"services", QoSProfile::Services},
     {"rosout", QoSProfile::Rosout},
   };
@@ -64,22 +66,34 @@ inline std::optional<QoSProfile> parse_qos_profile(std::string_view s)
   return std::nullopt;
 }
 
+inline rclcpp::QoS state_profile()
+{
+  auto profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+  profile.keep_last(10);
+  profile.history(RMW_QOS_POLICY_HISTORY_KEEP_LAST);
+  profile.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+  profile.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
+  return profile;
+}
+
 inline rclcpp::QoS get_qos_profile(QoSProfile profile)
 {
   switch (profile) {
     case QoSProfile::Default:
-      return rclcpp::QoS(10);
+      return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
     case QoSProfile::SystemDefaults:
       return rclcpp::SystemDefaultsQoS();
     case QoSProfile::SensorData:
       return rclcpp::SensorDataQoS();
+    case QosProfile::State:
+      return state_profile();
     case QoSProfile::Services:
       return rclcpp::ServicesQoS();
     case QoSProfile::Rosout:
       return rclcpp::RosoutQoS();
   }
 
-  return rclcpp::QoS(10);
+  return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
 }
 
 
