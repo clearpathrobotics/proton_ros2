@@ -1,0 +1,128 @@
+{# Shared Jinja2 macros for proton_ros2 adaptor generation #}
+
+{# C++ type mapping from proton signal types #}
+{% set CPP_TYPE = {
+  'double': 'double',
+  'float': 'float',
+  'int32': 'int32_t',
+  'int64': 'int64_t',
+  'uint32': 'uint32_t',
+  'uint64': 'uint64_t',
+  'bool': 'bool',
+  'string': 'std::string',
+  'bytes': 'std::vector<uint8_t>'
+} %}
+
+{#
+  Generate code to read from proton registry and write to ROS message field.
+
+  Parameters:
+    m - Mapping object with:
+      - signal_id: proton signal ID
+      - ros_path: dot-separated path in ROS message (e.g., "header.frame_id")
+      - ros_index: (optional) array index for indexed access
+      - data_type: proton type name (double, float, int32, etc.)
+#}
+{% macro to_ros(m) %}
+{
+{# Create temporary type value #}
+  {{ CPP_TYPE[m.data_type] }} tmp;
+{% if m.data_type in ['string', 'bytes'] %}
+  {# Capacity types need to be sized correctly #}
+  tmp.resize({{ m.signal_capacity }});
+{% endif %}
+  proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(registry, {{ m.signal_id }});
+  if (sig.get(tmp) == PROTON_OK) {
+{% if m.ros_index is not none %}
+  {# Indexed array access #}
+    proton_ros2_interfaces::set_indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}, tmp);
+{% else %}
+    msg.{{ m.ros_path }} = tmp;
+{% endif %}
+  }
+}
+{% endmacro %}
+
+{#
+  Generate code to read from ROS message field and write to proton registry.
+
+  Parameters:
+    m - Mapping object (same as to_ros)
+#}
+
+{% macro to_proton(m) %}
+{
+  proton::Signal<{{ CPP_TYPE[m.data_type] }}> sig(generated_node.registry(), {{ m.signal_id }});
+{% if m.ros_index is not none %}
+{# Indexed array access #}
+{% if m.data_type in ['string', 'bytes'] %}
+{# Capacity types cannot be statically cast. But this will be caught via static_assert #}
+  {{ CPP_TYPE[m.data_type] }} val = proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }});
+{% else %}
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(proton_ros2_interfaces::indexed_field<{{ m.ros_index }}>(msg.{{ m.ros_path }}));
+{% endif %}
+{% else %}
+{# Scalar access #}
+{% if m.data_type in ['string', 'bytes'] %}
+  {{ CPP_TYPE[m.data_type] }} val = msg.{{ m.ros_path }};
+{% else %}
+  {{ CPP_TYPE[m.data_type] }} val = static_cast<{{ CPP_TYPE[m.data_type] }}>(msg.{{ m.ros_path }});
+{% endif %}
+{% endif %}
+
+  sig.set(val);
+}
+{% endmacro %}
+
+{#
+  Generate timestamp injection code for messages with stamp field.
+
+  Parameters:
+    stamp_path - dot-separated path to builtin_interfaces/Time field (e.g., "header.stamp")
+#}
+{% macro array_to_ros(array) %}
+{
+  {{ CPP_TYPE[array.num_elements.data_type] }} count{};
+  proton::Signal<{{ CPP_TYPE[array.num_elements.data_type] }}> count_signal(
+    registry, {{ array.num_elements.signal_id }});
+  if (count_signal.get(count) == PROTON_OK) {
+{% if array.num_elements.data_type in ['int32', 'int64'] %}
+    if (count < 0) {
+      throw std::length_error("Negative array count: {{ array.ros_path }}");
+    }
+{% endif %}
+    if (static_cast<uint64_t>(count) > msg.{{ array.ros_path }}.max_size()) {
+      throw std::length_error("Array count exceeds ROS sequence limit: {{ array.ros_path }}");
+    }
+    msg.{{ array.ros_path }}.resize(static_cast<size_t>(count));
+{% for element in array.elements %}
+    if (msg.{{ array.ros_path }}.size() > {{ loop.index0 }}) {
+      {{ to_ros(element) | indent(6) }}
+    }
+{% endfor %}
+  }
+}
+{% endmacro %}
+
+{% macro array_to_proton(array) %}
+{
+  using CountType = {{ CPP_TYPE[array.num_elements.data_type] }};
+  if (msg.{{ array.ros_path }}.size() >
+    static_cast<uint64_t>(std::numeric_limits<CountType>::max()))
+  {
+    throw std::length_error("Array size exceeds count signal range: {{ array.ros_path }}");
+  }
+  proton::Signal<CountType> count_signal(
+    generated_node.registry(), {{ array.num_elements.signal_id }});
+  count_signal.set(static_cast<CountType>(msg.{{ array.ros_path }}.size()));
+{% for element in array.elements %}
+  if (msg.{{ array.ros_path }}.size() > {{ loop.index0 }}) {
+    {{ to_proton(element) | indent(4) }}
+  }
+{% endfor %}
+}
+{% endmacro %}
+
+{% macro inject_timestamp(stamp_path) %}
+msg.{{ stamp_path }} = node->get_clock()->now();
+{% endmacro %}
