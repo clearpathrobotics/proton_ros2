@@ -25,7 +25,7 @@
 namespace proton_ros2
 {
 
-static QosConfig parse_qos(const proton::node_builder::ConfigNode & qos_node)
+static QoSConfig parse_qos(const proton::node_builder::ConfigNode & qos_node)
 {
   const std::string profile_str =
     qos_node["profile"].is_defined() ? qos_node["profile"].as_string() : "";
@@ -46,7 +46,7 @@ static QosConfig parse_qos(const proton::node_builder::ConfigNode & qos_node)
   const qos::QoSDurability durability =
     qos::parse_qos_durability(durability_str).value_or(qos::QoSDurability::SystemDefault);
 
-  QosConfig qos {
+  QoSConfig qos {
     .profile = get_qos_profile(profile),
     .history = get_qos_history(history),
     .depth = depth,
