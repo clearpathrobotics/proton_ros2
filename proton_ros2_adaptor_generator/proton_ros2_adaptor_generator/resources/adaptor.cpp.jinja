@@ -16,6 +16,10 @@
 #include <{{ binding.hpp_include }}>
 #include <rclcpp/serialization.hpp>
 #include <pluginlib/class_list_macros.hpp>
+{% if binding.arrays %}
+#include <limits>
+#include <stdexcept>
+{% endif %}
 
 namespace proton_ros2_adaptors
 {
@@ -54,6 +58,9 @@ public:
 {% for m in binding.mappings %}
         {{ macros.to_ros(m) | indent(8) }}
 {% endfor %}
+{% for array in binding.arrays %}
+  {{ macros.array_to_ros(array) | indent(8) }}
+{% endfor %}
 
         // Serialize message
         rclcpp::SerializedMessage serialized;
@@ -80,6 +87,9 @@ public:
         // Write message fields to signals
 {% for m in binding.mappings %}
         {{ macros.to_proton(m) | indent(8) }}
+{% endfor %}
+{% for array in binding.arrays %}
+  {{ macros.array_to_proton(array) | indent(8) }}
 {% endfor %}
       });
   }

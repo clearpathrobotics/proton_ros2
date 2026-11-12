@@ -122,6 +122,7 @@
     "lstdc",
     "lsupc",
     "managedbuilder",
+    "magline",
     "MessageDifferencer",
     "msgopt",
     "nanopb",
