@@ -54,6 +54,18 @@ void set_indexed_field(Container & field, const Value & value)
   indexed_field<Index>(field) = value;
 }
 
+/// Element reference whose members can be written; a dynamic array grows to hold it.
+template<std::size_t Index, typename Container>
+decltype(auto) indexed_element(Container & field)
+{
+  if constexpr (!IsFixedArray<Container>::value) {
+    if (field.size() <= Index) {
+      field.resize(Index + 1);
+    }
+  }
+  return indexed_field<Index>(field);
+}
+
 }  // namespace proton_ros2_interfaces
 
 #endif  // PROTON_ROS2_INTERFACES_INDEXED_FIELD_HPP

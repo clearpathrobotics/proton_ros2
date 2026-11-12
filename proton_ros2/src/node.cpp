@@ -154,6 +154,26 @@ ProtonRos2Node::ProtonRos2Node()
       sub.bundle
     );
 
+    if (bundle_name_to_id.contains(sub.bundle)) {
+      const auto bundle_id = bundle_name_to_id.at(sub.bundle);
+      subscriber->set_on_converted(
+        [this, bundle_id, bundle = sub.bundle]() {
+          const auto status = proton::NodeAccess(proton_node_.node()).trigger_bundle(bundle_id);
+          if (status != PROTON_OK) {
+            RCLCPP_WARN_THROTTLE(
+              get_logger(), *get_clock(), 5000,
+              "Could not trigger bundle '%s': %s", bundle.c_str(),
+              proton_status_to_string(status));
+          }
+        });
+    } else {
+      RCLCPP_WARN(
+        get_logger(),
+        "Subscriber references unknown bundle '%s' - messages will not be sent",
+        sub.bundle.c_str()
+      );
+    }
+
     subscribers_.push_back(std::move(subscriber));
   }
 

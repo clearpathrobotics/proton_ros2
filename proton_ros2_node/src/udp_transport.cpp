@@ -32,7 +32,7 @@ namespace udp4 = proton::transport::udp4;
 proton_status_e UdpTransport::encode_and_send(const std::vector<uint8_t> & buf)
 {
   udp4::Header header;
-  proton_status_e status = udp4::fill_header(header, peer_node_id_);
+  proton_status_e status = udp4::fill_header(header, static_cast<uint8_t>(host_node_id_));
 
   if (status == PROTON_OK) {
     std::vector<uint8_t> send_buf;
