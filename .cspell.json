@@ -119,6 +119,7 @@
     "libgtest",
     "libyaml",
     "listdir",
+    "lont",
     "lstdc",
     "lsupc",
     "managedbuilder",

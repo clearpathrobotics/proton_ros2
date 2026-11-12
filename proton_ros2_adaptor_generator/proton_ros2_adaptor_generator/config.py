@@ -19,10 +19,10 @@ These dataclasses represent the YAML configuration format and provide
 methods for parsing and validation.
 """
 
-import re
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import auto, Enum
 from pathlib import Path
+import re
 from typing import Optional
 
 import yaml
