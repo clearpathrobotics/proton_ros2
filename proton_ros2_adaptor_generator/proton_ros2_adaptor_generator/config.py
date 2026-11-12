@@ -67,6 +67,26 @@ class Mapping:
 
 
 @dataclass
+class ArrayBinding:
+    """A variable-length ROS array backed by ordered signals and a count signal."""
+
+    ros_path: str
+    elements: list[Mapping]
+    num_elements: Mapping
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ArrayBinding':
+        """Parse an array binding; signal types are resolved from the Proton schema."""
+        path = data['ros2.path']
+        return cls(
+            ros_path=path,
+            elements=[Mapping(path, name, '', ros_index=index)
+                      for index, name in enumerate(data['elements'])],
+            num_elements=Mapping(path, data['num_elements'], ''),
+        )
+
+
+@dataclass
 class MessageBinding:
     """Configuration for a single message adaptor binding."""
 
@@ -77,6 +97,13 @@ class MessageBinding:
     stamp_path: Optional[str] = None
     # Path for specific include names (e.g., std_msgs/msg/color_rgba.hpp)
     hpp_path: Optional[str] = None
+    arrays: list[ArrayBinding] = field(default_factory=list)
+
+    @property
+    def all_mappings(self) -> list[Mapping]:
+        """Collect scalar and array signal references for schema resolution."""
+        return self.mappings + [mapping for array in self.arrays
+                                for mapping in [array.num_elements, *array.elements]]
 
     @property
     def adaptor_class(self) -> str:
@@ -132,6 +159,7 @@ class MessageBinding:
             mappings=mappings,
             stamp_path=d.get('stamp'),
             hpp_path=d.get('hpp_path'),
+            arrays=[ArrayBinding.from_dict(array) for array in d.get('arrays', [])],
         )
 
 
@@ -184,17 +212,33 @@ class AdaptorConfig:
                     sig_id = int(sig_id, 0)  # auto-detect base (handles 0x prefix)
                 signal_lookup[name] = sig_id
 
+        signal_types = {sig['name']: sig.get('type') for sig in proton_data.get('signals', [])}
+
         # Resolve each mapping's signal_id
         errors = []
         for msg in self.messages:
-            for mapping in msg.mappings:
+            for mapping in msg.all_mappings:
                 if mapping.signal_name in signal_lookup:
                     mapping.signal_id = signal_lookup[mapping.signal_name]
+                    if not mapping.data_type:
+                        mapping.data_type = signal_types[mapping.signal_name]
                 else:
                     errors.append(
                         f'Signal "{mapping.signal_name}" not found in proton config '
                         f'(binding "{msg.name}", field "{mapping.ros_path}")'
                     )
+            for array in msg.arrays:
+                if (array.num_elements.signal_id is not None and
+                    array.num_elements.data_type not in {
+                        'int32', 'int64', 'uint32', 'uint64'}):
+                    errors.append(f'Array count signal "{array.num_elements.signal_name}" '
+                                  f'must have an integer type (binding "{msg.name}")')
+                for element in array.elements:
+                    if element.signal_id is not None and element.data_type not in {
+                            'double', 'float', 'int32', 'int64', 'uint32', 'uint64',
+                            'bool', 'string', 'bytes'}:
+                        errors.append(f'Invalid array element type "{element.data_type}" '
+                                      f'(binding "{msg.name}", signal "{element.signal_name}")')
 
         return errors
 
@@ -243,7 +287,7 @@ class AdaptorConfig:
                                           f'than capacity: ({len(sig_value)} > {sig_cap})')
 
         for msg in self.messages:
-            for mapping in msg.mappings:
+            for mapping in msg.all_mappings:
                 if mapping.signal_name in signal_lookup:
                     mapping.signal_capacity = signal_lookup[mapping.signal_name]
 
@@ -265,6 +309,22 @@ class AdaptorConfig:
         valid_types = {'double', 'float', 'int32',
                        'int64', 'uint32', 'uint64', 'bool', 'string', 'bytes'}
         for msg in self.messages:
+            array_paths = set()
+            for array in msg.arrays:
+                if not re.fullmatch(r'[A-Za-z_]\w*(\.[A-Za-z_]\w*)*', array.ros_path):
+                    errors.append(f'Invalid array path "{array.ros_path}" '
+                                  f'in binding "{msg.name}"')
+                if array.ros_path in array_paths:
+                    errors.append(f'Duplicate array path "{array.ros_path}" '
+                                  f'in binding "{msg.name}"')
+                array_paths.add(array.ros_path)
+                for mapping in msg.mappings:
+                    if (mapping.ros_path == array.ros_path or
+                            mapping.ros_path.startswith(array.ros_path + '[') or
+                            mapping.ros_path.startswith(array.ros_path + '.')):
+                        errors.append(f'Array path "{array.ros_path}" also has '
+                                      f'an explicit mapping '
+                                      f'in binding "{msg.name}"')
             for mapping in msg.mappings:
                 if mapping.data_type not in valid_types:
                     errors.append(
